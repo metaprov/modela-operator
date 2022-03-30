@@ -1,2 +1,0 @@
-# modela-operator
-modela operator.

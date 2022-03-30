@@ -1,0 +1,6 @@
+apiVersion: core.modela.ai/v1alpha1
+kind: ModelaConfiguration
+metadata:
+  name: modelaconfiguration-sample
+spec:
+  # TODO(user): Add fields here
