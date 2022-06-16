@@ -35,13 +35,39 @@ spec:
           spec:
             description: ModelaBackupSpec defines the desired state of ModelaBackup
             properties:
-              foo:
-                description: Foo is an example field of ModelaBackup. Edit modelabackup_types.go
-                  to remove/update
+              modelaRef:
+                description: The modela cluster to backup
+                properties:
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?'
+                    type: string
+                type: object
+              schedule:
+                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                  Important: Run "make" to regenerate code after modifying this file
+                  The schedule follows the same format used in Kubernetes CronJobs,
+                  see https://pkg.go.dev/github.com/robfig/cron#hdr-CRON_Expression_Format
+                  Cron Schedule to backup'
                 type: string
+              suspended:
+                type: boolean
+            required:
+            - modelaRef
+            - schedule
             type: object
           status:
             description: ModelaBackupStatus defines the observed state of ModelaBackup
+            properties:
+              error:
+                description: Last error that occur in the backup.
+                type: string
+              startedAt:
+                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                  of cluster Important: Run "make" to regenerate code after modifying
+                  this file The last time a backup completed'
+                format: date-time
+                type: string
             type: object
         type: object
     served: true

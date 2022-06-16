@@ -23,19 +23,47 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+// BackupPhase is the phase of the backup
+type BackupRunPhase string
+
+const (
+	// Backup waiting to start
+	BackupRunPhasePending = "pending"
+
+	// Backup is running
+	BackupRunPhaseRunning = "running"
+
+	// Backup completed
+	BackupRunPhaseCompleted = "completed"
+
+	// Backup failed
+	BackupRunPhaseFailed = "failed"
+)
+
 // ModelaBackupRunSpec defines the desired state of ModelaBackupRun
 type ModelaBackupRunSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of ModelaBackupRun. Edit modelabackuprun_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
 }
 
 // ModelaBackupRunStatus defines the observed state of ModelaBackupRun
 type ModelaBackupRunStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	// The phase of the backup run
+	Phase BackupRunPhase `json:"phase,omitempty"`
+
+	// The backup folder
+	Folder string `json:"folder,omitempty"`
+
+	// When the backup run was started
+	StartedAt *metav1.Time `json:"startedAt,omitempty"`
+
+	// Time of completion
+	CompletedAt *metav1.Time `json:"stoppedAt,omitempty"`
+
+	Error string `json:"error,omitempty"`
 }
 
 //+kubebuilder:object:root=true
