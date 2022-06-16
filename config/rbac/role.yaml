@@ -6,9 +6,9 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - core.modela.ai
+  - management.modela.ai
   resources:
-  - modelaconfigurations
+  - modelabackupruns
   verbs:
   - create
   - delete
@@ -18,15 +18,67 @@ rules:
   - update
   - watch
 - apiGroups:
-  - core.modela.ai
+  - management.modela.ai
   resources:
-  - modelaconfigurations/finalizers
+  - modelabackupruns/finalizers
   verbs:
   - update
 - apiGroups:
-  - core.modela.ai
+  - management.modela.ai
   resources:
-  - modelaconfigurations/status
+  - modelabackupruns/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - management.modela.ai
+  resources:
+  - modelabackups
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - management.modela.ai
+  resources:
+  - modelabackups/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - management.modela.ai
+  resources:
+  - modelabackups/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - management.modela.ai
+  resources:
+  - modelas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - management.modela.ai
+  resources:
+  - modelas/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - management.modela.ai
+  resources:
+  - modelas/status
   verbs:
   - get
   - patch

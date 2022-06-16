@@ -1,0 +1,55 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+  name: modela-operator.v0.0.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: ModelaBackupRun is the Schema for the modelabackupruns API
+      displayName: Modela Backup Run
+      kind: ModelaBackupRun
+      name: modelabackupruns.management.modela.ai
+      version: v1alpha1
+    - description: ModelaBackup is the Schema for the modelabackups API
+      displayName: Modela Backup
+      kind: ModelaBackup
+      name: modelabackups.management.modela.ai
+      version: v1alpha1
+    - description: Modela is the Schema for the modelas API
+      displayName: Modela
+      kind: Modela
+      name: modelas.management.modela.ai
+      version: v1alpha1
+  description: Cloud Native AutoML
+  displayName: modela.ai
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      deployments: null
+    strategy: ""
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - Machine Learning;AutoML;MLOps
+  links:
+  - name: Modela Operator
+    url: https://modela-operator.domain
+  maturity: alpha
+  provider:
+    name: Metaprov Inc
+    url: https://www.modela.ai
+  version: 0.0.0

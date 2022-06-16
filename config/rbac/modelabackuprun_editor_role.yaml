@@ -1,0 +1,24 @@
+# permissions for end users to edit modelabackupruns.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: modelabackuprun-editor-role
+rules:
+- apiGroups:
+  - management.modela.ai
+  resources:
+  - modelabackupruns
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - management.modela.ai
+  resources:
+  - modelabackupruns/status
+  verbs:
+  - get

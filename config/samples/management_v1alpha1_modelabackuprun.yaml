@@ -1,0 +1,6 @@
+apiVersion: management.modela.ai/v1alpha1
+kind: ModelaBackupRun
+metadata:
+  name: modelabackuprun-sample
+spec:
+  # TODO(user): Add fields here

@@ -12,8 +12,38 @@ resources:
     namespaced: true
   controller: true
   domain: modela.ai
-  group: core
-  kind: ModelaConfiguration
+  group: management
+  kind: Modela
   path: github.com/metaprov/modela-operator/api/v1alpha1
   version: v1alpha1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: modela.ai
+  group: management
+  kind: ModelaBackupRun
+  path: github.com/metaprov/modela-operator/api/v1alpha1
+  version: v1alpha1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: modela.ai
+  group: management
+  kind: ModelaBackup
+  path: github.com/metaprov/modela-operator/api/v1alpha1
+  version: v1alpha1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
 version: "3"

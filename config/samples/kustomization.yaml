@@ -1,4 +1,6 @@
 ## Append samples you want in your CSV to this file as resources ##
 resources:
-- core_v1alpha1_modelaconfiguration.yaml
+- management_v1alpha1_modela.yaml
+- management_v1alpha1_modelabackuprun.yaml
+- management_v1alpha1_modelabackup.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

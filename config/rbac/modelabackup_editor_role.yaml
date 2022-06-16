@@ -1,13 +1,13 @@
-# permissions for end users to edit modelaconfigurations.
+# permissions for end users to edit modelabackups.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: modelaconfiguration-editor-role
+  name: modelabackup-editor-role
 rules:
 - apiGroups:
-  - core.modela.ai
+  - management.modela.ai
   resources:
-  - modelaconfigurations
+  - modelabackups
   verbs:
   - create
   - delete
@@ -17,8 +17,8 @@ rules:
   - update
   - watch
 - apiGroups:
-  - core.modela.ai
+  - management.modela.ai
   resources:
-  - modelaconfigurations/status
+  - modelabackups/status
   verbs:
   - get
