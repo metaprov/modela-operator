@@ -10,7 +10,7 @@ type ModelaBackupSpec struct {
 	// The schedule follows the same format used in Kubernetes CronJobs,
 	// see https://pkg.go.dev/github.com/robfig/cron#hdr-CRON_Expression_Format
 	// Cron Schedule to backup
-	CronSchedule *string `json:"schedule"`
+	Schedule *string `json:"schedule"`
 	// The modela cluster to backup
 	ModelaRef v1.LocalObjectReference `json:"modelaRef"`
 	//+kubebuilder:validation:Optional

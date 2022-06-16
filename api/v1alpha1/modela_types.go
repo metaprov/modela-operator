@@ -144,17 +144,20 @@ type ModelaSpec struct {
 	//+kubebuilder:validation:Optional
 	DefaultTenant *bool `json:"defaultTenant,omitempty"`
 
-	// If true install minio
+	// If true the system will use local object storage.
+	// By default the system uses minio
 	//+kubebuilder:validation:Optional
-	Minio *bool `json:"minio,omitempty"`
+	UseLocalObjectStore *bool `json:"useLocalObjectStore,omitempty"`
 
 	// Minio Connection Reference
-	MinioConnectionRef v1.ObjectReference `json:"minioConnectionRef,omitempty"`
-
-	// Install local db to use as the backing db store.
+	LocalObjectStoreConnectionRef v1.ObjectReference `json:"localObjectStoreConnectionRef,omitempty"`
+	// If true, install cert manager if not exist
+	//+kubebuilder:validation:Optional
+	UseCertManager *bool `json:"UseCertManager,omitempty"`
+	// If True the system will install a database
 	// By default install postgress
 	//+kubebuilder:validation:Optional
-	LocalDatabase *bool `json:"localDatabase,omitempty"`
+	UseLocalDatabase *bool `json:"UseLocalDatabase,omitempty"`
 
 	// Connection reference to the db connection
 	DatabaseConnectionRef v1.ObjectReference `json:"databaseConnectionRef,omitempty"`

@@ -36,6 +36,8 @@ type ModelaReconciler struct {
 //+kubebuilder:rbac:groups=management.modela.ai,resources=modelas,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=management.modela.ai,resources=modelas/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=management.modela.ai,resources=modelas/finalizers,verbs=update
+//+kubebuilder:rbac:groups=app,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=app,resources=deployment/status,verbs=get
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -47,9 +49,54 @@ type ModelaReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.1/pkg/reconcile
 func (r *ModelaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	logger := log.FromContext(ctx)
 
-	// TODO(user): your logic here
+	var modela managementv1alpha1.Modela
+	if err := r.Get(ctx, req.NamespacedName, &modela); err != nil {
+		logger.Error(err, "unable to fetch Modela")
+		// we'll ignore not-found errors, since they can't be fixed by an immediate
+		// requeue (we'll need to wait for a new notification), and we can get them
+		// on deleted requests.
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	certManager := NewCertManager()
+	result, err := r.reconcileComponment(ctx, certManager)
+	if err != nil || result.Requeue {
+		return result, err
+	}
+
+	objectStore := NewObjectStorage()
+	result, err = r.reconcileComponment(ctx, objectStore)
+	if err != nil || result.Requeue {
+		return result, err
+	}
+
+	database := NewDatabase()
+	result, err = r.reconcileComponment(ctx, database)
+	if err != nil || result.Requeue {
+		return result, err
+	}
+
+	monitoring := NewMonitoring()
+	result, err = r.reconcileComponment(ctx, monitoring)
+	if err != nil || result.Requeue {
+		return result, err
+	}
+
+	modelaSystem := NewModelaSystem()
+	// reconcile modela system, make sure that all the items are as defined
+	result, err = r.reconcileComponment(ctx, modelaSystem)
+	if err != nil || result.Requeue {
+		return result, err
+	}
+
+	defaultTenant := NewDefaultTenant()
+	// reconcile default tenant, make sure that all the items are as defined.
+	result, err = r.reconcileComponment(ctx, defaultTenant)
+	if err != nil || result.Requeue {
+		return result, err
+	}
 
 	return ctrl.Result{}, nil
 }
@@ -59,4 +106,47 @@ func (r *ModelaReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&managementv1alpha1.Modela{}).
 		Complete(r)
+}
+
+// Define the interface for modela components that can be reconciled
+type ModelaComponent interface {
+	Installed() (bool, error)
+	Install() error
+	Installing() (bool, error)
+	Ready() (bool, error)
+	Uninstall() error
+}
+
+func (r *ModelaReconciler) reconcileComponment(ctx context.Context, component ModelaComponent) (ctrl.Result, error) {
+	logger := log.FromContext(ctx)
+	installed, err := component.Installed()
+	if err != nil {
+		logger.Error(err, "failed to check if database installed")
+		return ctrl.Result{}, err
+	}
+	if !installed {
+		installing, err := component.Installing()
+		if err != nil {
+			logger.Error(err, "failed to check if database installed")
+			return ctrl.Result{}, err
+		}
+		if !installing {
+			err := component.Install()
+			if err != nil {
+				logger.Error(err, "failed to check if database installed")
+				return ctrl.Result{}, err
+			}
+		} else {
+			// installing, dequeue the request
+			return ctrl.Result{
+				Requeue:      true,
+				RequeueAfter: 0,
+			}, nil
+		}
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *ModelaReconciler) updateSystemStatus(ctx context.Context, modela *managementv1alpha1.Modela) (ctrl.Result, error) {
+	return ctrl.Result{}, nil
 }
