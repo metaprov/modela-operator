@@ -1,31 +1,53 @@
-
 # Binaries for programs and plugins
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
-/bin/
-/testbin/
 
-# Test binary, build with `go test -c`
+# Test binary, built with `go test -c`
 *.test
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
-# editor and IDE paraphernalia
-.idea
-*.swp
-*.swo
+.vscode/
+.idea/
+.DS_Store
+dist/
+*.iml
+# delve debug binaries
+cmd/**/debug
+debug.test
+coverage.out
+ui/node_modules/
+vendor/
+
+bin
+.mockgen
+.cache
+.golangci-bin
+.coverage/
+
+.DS_Store
+
+# VIM
+.*.swp
+
+# Emacs
 *~
 
-# Testing artifacts and logs
-_*/
-tests/e2e/out/
+.idea/
+.vscode/
+lang/python/modelaapi.egg-info/
+gateway/
 
-# goreleaser
-/dist/
-
-# Spellcheck dictionary
-dictionary.dic
+vendor/
+dist/
+*.iml
+# delve debug binaries
+cmd/**/debug
+debug.test
+coverage.out
+ui/node_modules/
+.go.mod.swp
