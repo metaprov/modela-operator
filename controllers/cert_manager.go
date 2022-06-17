@@ -1,32 +1,99 @@
 package controllers
 
+import (
+	"fmt"
+	"github.com/metaprov/modela-operator/internal/pkg/util"
+)
+
 // Modela system represent the model core system
 type CertManager struct {
+	Namespace     string
+	Version       string
+	ReleaseName   string
+	Url           string
+	RepoUrl       string
+	RepoName      string
+	Name          string
+	PodNamePrefix string
 }
 
 func NewCertManager() *CertManager {
-	return &CertManager{}
+	return &CertManager{
+		Namespace:     "cert-manager",
+		Version:       "v1.6.1",
+		ReleaseName:   "cert-manager",
+		Url:           "jetstack/cert-manager",
+		RepoUrl:       "https://charts.jetstack.io",
+		RepoName:      "jetstack",
+		Name:          "cert-manager",
+		PodNamePrefix: "cert-manager",
+	}
 }
 
-// Check if the database installed
-func (d CertManager) Installed() (bool, error) {
-	return false, nil
+func (cm CertManager) Installed() (bool, error) {
+	return util.IsChartInstalled(
+		cm.RepoName,
+		cm.RepoUrl,
+		cm.Url,
+		cm.Namespace,
+		cm.ReleaseName,
+		cm.Version,
+	)
 }
 
-func (d CertManager) Install() error {
-	return nil
+func (cm CertManager) Install() error {
+	if err := util.AddRepo(cm.RepoName, cm.RepoUrl, false); err != nil {
+		return err
+	}
+	fmt.Println("\u2713 added repo " + cm.RepoName)
+	// install namespace modela-system
+	if err := util.CreateNamespace(cm.Namespace); err != nil {
+		return err
+	}
+	fmt.Println("\u2713 created namespace " + cm.Namespace)
+
+	return util.InstallChart(
+		cm.RepoName,
+		cm.RepoUrl,
+		"",
+		cm.Namespace,
+		cm.ReleaseName,
+		cm.Version,
+	)
 }
 
-// Check if we are still installing the database
-func (d CertManager) Installing() (bool, error) {
-	return false, nil
+func (cm CertManager) Installing() (bool, error) {
+	installed, err := cm.Installed()
+	if !installed {
+		return installed, err
+	}
+	running, err := util.IsPodRunning(cm.Namespace, cm.PodNamePrefix)
+	if err != nil {
+		return false, err
+	}
+	return !running, nil
+
 }
 
-// Check if the database is ready
-func (d CertManager) Ready() (bool, error) {
-	return false, nil
+func (cm CertManager) Ready() (bool, error) {
+	installed, err := cm.Installed()
+	if !installed {
+		return installed, err
+	}
+	running, err := util.IsPodRunning(cm.Namespace, cm.PodNamePrefix)
+	if err != nil {
+		return false, err
+	}
+	return running, nil
 }
 
-func (d CertManager) Uninstall() error {
-	return nil
+func (cm CertManager) Uninstall() error {
+	return util.UninstallChart(
+		cm.RepoName,
+		cm.RepoUrl,
+		"",
+		cm.Namespace,
+		cm.ReleaseName,
+		cm.Version,
+	)
 }

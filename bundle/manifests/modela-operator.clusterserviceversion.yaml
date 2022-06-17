@@ -63,6 +63,24 @@ spec:
       clusterPermissions:
       - rules:
         - apiGroups:
+          - app
+          resources:
+          - deployment/status
+          verbs:
+          - get
+        - apiGroups:
+          - app
+          resources:
+          - deployments
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
           - management.modela.ai
           resources:
           - modelabackupruns
@@ -197,7 +215,7 @@ spec:
                 - --leader-elect
                 command:
                 - /manager
-                image: ghcr.io/metaprov/modela-operator:v0.0.1
+                image: controller:latest
                 livenessProbe:
                   httpGet:
                     path: /healthz

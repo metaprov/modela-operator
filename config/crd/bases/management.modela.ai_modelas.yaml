@@ -9,9 +9,15 @@ metadata:
 spec:
   group: management.modela.ai
   names:
+    categories:
+    - data
+    - modela
+    - all
     kind: Modela
     listKind: ModelaList
     plural: modelas
+    shortNames:
+    - md
     singular: modela
   scope: Namespaced
   versions:
@@ -35,6 +41,13 @@ spec:
           spec:
             description: ModelaSpec defines the desired state of Modela
             properties:
+              UseCertManager:
+                description: If true, install cert manager if not exist
+                type: boolean
+              UseLocalDatabase:
+                description: If True the system will install a database By default
+                  install postgress
+                type: boolean
               access:
                 description: Define how to access modela cluster
                 properties:
@@ -444,14 +457,7 @@ spec:
               license:
                 description: Define the desired state for modela license desired state
                 type: object
-              localDatabase:
-                description: Install local db to use as the backing db store. By default
-                  install postgress
-                type: boolean
-              minio:
-                description: If true install minio
-                type: boolean
-              minioConnectionRef:
+              localObjectStoreConnectionRef:
                 description: Minio Connection Reference
                 properties:
                   apiVersion:
@@ -7945,6 +7951,10 @@ spec:
                         type: object
                     type: object
                 type: object
+              useLocalObjectStore:
+                description: If true the system will use local object storage. By
+                  default the system uses minio
+                type: boolean
               version:
                 type: string
             type: object

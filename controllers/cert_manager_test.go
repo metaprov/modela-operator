@@ -5,9 +5,11 @@ import (
 	"testing"
 )
 
-func TestDatabase_Install(t *testing.T) {
-	database := NewDatabase()
+func TestCertManager_Install(t *testing.T) {
+	database := NewCertManager()
+
 	installed, err := database.Installed()
 	assert.NoError(t, err)
 	assert.True(t, installed)
+
 }
