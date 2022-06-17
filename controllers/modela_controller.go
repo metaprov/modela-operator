@@ -78,20 +78,26 @@ func (r *ModelaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return result, err
 	}
 
-	monitoring := NewMonitoring()
-	result, err = r.reconcileComponment(ctx, monitoring)
+	loki := NewLoki()
+	result, err = r.reconcileComponment(ctx, loki)
 	if err != nil || result.Requeue {
 		return result, err
 	}
 
-	modelaSystem := NewModelaSystem()
+	prom := NewPrometheus()
+	result, err = r.reconcileComponment(ctx, prom)
+	if err != nil || result.Requeue {
+		return result, err
+	}
+
+	modelaSystem := NewModelaSystem(*modela.Spec.Version)
 	// reconcile modela system, make sure that all the items are as defined
 	result, err = r.reconcileComponment(ctx, modelaSystem)
 	if err != nil || result.Requeue {
 		return result, err
 	}
 
-	defaultTenant := NewDefaultTenant()
+	defaultTenant := NewDefaultTenant(*modela.Spec.Version)
 	// reconcile default tenant, make sure that all the items are as defined.
 	result, err = r.reconcileComponment(ctx, defaultTenant)
 	if err != nil || result.Requeue {

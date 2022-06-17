@@ -31,14 +31,7 @@ func NewCertManager() *CertManager {
 }
 
 func (cm CertManager) Installed() (bool, error) {
-	return util.IsChartInstalled(
-		cm.RepoName,
-		cm.RepoUrl,
-		cm.Url,
-		cm.Namespace,
-		cm.ReleaseName,
-		cm.Version,
-	)
+	return util.IsPodRunning(cm.Namespace, cm.PodNamePrefix)
 }
 
 func (cm CertManager) Install() error {
@@ -51,15 +44,8 @@ func (cm CertManager) Install() error {
 		return err
 	}
 	fmt.Println("\u2713 created namespace " + cm.Namespace)
+	return util.InstallCrd("https://github.com/cert-manager/cert-manager/releases/download/v1.7.1/cert-manager.yaml")
 
-	return util.InstallChart(
-		cm.RepoName,
-		cm.RepoUrl,
-		"",
-		cm.Namespace,
-		cm.ReleaseName,
-		cm.Version,
-	)
 }
 
 func (cm CertManager) Installing() (bool, error) {

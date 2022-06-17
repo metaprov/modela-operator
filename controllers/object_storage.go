@@ -36,7 +36,7 @@ func (os ObjectStorage) Installed() (bool, error) {
 	return util.IsChartInstalled(
 		os.RepoName,
 		os.RepoUrl,
-		"",
+		os.Name,
 		os.Namespace,
 		os.ReleaseName,
 		os.Version,
@@ -58,7 +58,7 @@ func (os ObjectStorage) Install() error {
 	return util.InstallChart(
 		os.RepoName,
 		os.RepoUrl,
-		"",
+		os.Name,
 		os.Namespace,
 		os.ReleaseName,
 		os.Version,

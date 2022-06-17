@@ -58,7 +58,7 @@ func (db Database) Install() error {
 	return util.InstallChart(
 		db.RepoName,
 		db.RepoUrl,
-		"",
+		db.Name,
 		db.Namespace,
 		db.ReleaseName,
 		db.Version,

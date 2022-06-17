@@ -78,9 +78,22 @@ type ControlPlaneSpec struct {
 
 type BackupSpec struct {
 	//+kubebuilder:validation:Optional
+	Enabled *bool `json:"suspended"`
+	//+kubebuilder:validation:Optional
 	CronSchedule string `json:"schedule"`
 	//+kubebuilder:validation:Optional
 	Suspended *bool `json:"suspended"`
+}
+
+type ObservabilitySpec struct {
+	//+kubebuilder:validation:Optional
+	Enabled *bool `json:"suspended"`
+	// If true install the Prometheus helm chart (if not installed)
+	//+kubebuilder:validation:Optional
+	Prometheus *bool `json:"prometheus"`
+	// If true install the loki helm chart (if not installed)
+	//+kubebuilder:validation:Optional
+	Loki *bool `json:"loki"`
 }
 
 type ControlPlaneStatus struct {
@@ -127,12 +140,14 @@ type ModelaSpec struct {
 	Version *string `json:"version,omitempty"`
 
 	// If true, install the modela cluster is not installed
+	// +kubebuilder:default:=true
 	//+kubebuilder:validation:Optional
 	Installed *bool `json:"installed,omitempty"`
 
 	// If true, configure monitoring.
+	// +kubebuilder:default:=true
 	//+kubebuilder:validation:Optional
-	Monitored *bool `json:"monitored,omitempty"`
+	Observability ObservabilitySpec `json:"observability,omitempty"`
 
 	// Define how to access modela cluster
 	Access ModelaAccessSpec `json:"access,omitempty"`
@@ -141,11 +156,13 @@ type ModelaSpec struct {
 	License ModelaLicenseSpec `json:"license,omitempty"`
 
 	// If true install the default tenant.
+	// +kubebuilder:default:=true
 	//+kubebuilder:validation:Optional
 	DefaultTenant *bool `json:"defaultTenant,omitempty"`
 
 	// If true the system will use local object storage.
 	// By default the system uses minio
+	// +kubebuilder:default:=true
 	//+kubebuilder:validation:Optional
 	UseLocalObjectStore *bool `json:"useLocalObjectStore,omitempty"`
 

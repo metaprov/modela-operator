@@ -6,7 +6,7 @@ import (
 )
 
 // Modela system represent the model core system
-type Monitoring struct {
+type Prometheus struct {
 	Namespace     string
 	Version       string
 	ReleaseName   string
@@ -17,21 +17,21 @@ type Monitoring struct {
 	Dryrun        bool
 }
 
-func NewMonitoring() *Monitoring {
-	return &Monitoring{
-		Namespace:     "loki",
+func NewPrometheus() *Prometheus {
+	return &Prometheus{
+		Namespace:     "prometheus-community",
 		Version:       "2.8.4",
-		ReleaseName:   "loki",
-		RepoName:      "grafana",
-		Name:          "loki-stack",
-		PodNamePrefix: "loki",
-		RepoUrl:       "https://grafana.github.io/helm-charts",
+		ReleaseName:   "kube-prometheus-stack",
+		RepoName:      "prometheus-community",
+		Name:          "kube-prometheus-stack",
+		PodNamePrefix: "prometheus",
+		RepoUrl:       "https://prometheus-community.github.io/helm-charts",
 		Dryrun:        false,
 	}
 }
 
 // Check if the database installed
-func (m Monitoring) Installed() (bool, error) {
+func (m Prometheus) Installed() (bool, error) {
 	return util.IsChartInstalled(
 		m.RepoName,
 		m.RepoUrl,
@@ -42,7 +42,7 @@ func (m Monitoring) Installed() (bool, error) {
 	)
 }
 
-func (m Monitoring) Install() error {
+func (m Prometheus) Install() error {
 
 	if err := util.AddRepo(m.RepoName, m.RepoUrl, m.Dryrun); err != nil {
 		return err
@@ -65,7 +65,7 @@ func (m Monitoring) Install() error {
 }
 
 // Check if we are still installing the database
-func (m Monitoring) Installing() (bool, error) {
+func (m Prometheus) Installing() (bool, error) {
 	installed, err := m.Installed()
 	if !installed {
 		return installed, err
@@ -78,7 +78,7 @@ func (m Monitoring) Installing() (bool, error) {
 }
 
 // Check if the database is ready
-func (m Monitoring) Ready() (bool, error) {
+func (m Prometheus) Ready() (bool, error) {
 	installed, err := m.Installed()
 	if !installed {
 		return installed, err
@@ -90,7 +90,7 @@ func (m Monitoring) Ready() (bool, error) {
 	return running, nil
 }
 
-func (m Monitoring) Uninstall() error {
+func (m Prometheus) Uninstall() error {
 	return util.UninstallChart(
 		m.RepoName,
 		m.RepoUrl,
