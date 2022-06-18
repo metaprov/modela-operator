@@ -1,13 +1,18 @@
 package controllers
 
 import (
-	"github.com/stretchr/testify/assert"
+	"context"
 	"testing"
+
+	"github.com/metaprov/modela-operator/api/v1alpha1"
+	"github.com/stretchr/testify/assert"
 )
+
+const ObjectVersion = "1.1.1"
 
 func TestObjectStorage_Installed(t *testing.T) {
 	t.Skip("Run only on empty cluster")
-	prem := NewObjectStorage()
+	prem := NewObjectStorage(ObjectVersion)
 	installed, err := prem.Installed()
 	assert.NoError(t, err)
 	assert.False(t, installed)
@@ -16,9 +21,9 @@ func TestObjectStorage_Installed(t *testing.T) {
 // run on an empty system
 func TestObjectStorage_Install(t *testing.T) {
 	t.Skip("Run only on empty cluster")
-	prem := NewObjectStorage()
+	prem := NewObjectStorage(ObjectVersion)
 
-	err := prem.Install()
+	err := prem.Install(context.Background(), v1alpha1.Modela{})
 	assert.NoError(t, err)
 
 }

@@ -1,8 +1,11 @@
 package controllers
 
 import (
-	"github.com/stretchr/testify/assert"
+	"context"
 	"testing"
+
+	"github.com/metaprov/modela-operator/api/v1alpha1"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDefaultTenant_Installed(t *testing.T) {
@@ -19,7 +22,7 @@ func TestDefaultTenant_Install(t *testing.T) {
 	t.Skip("Run only on empty cluster")
 	tenant := NewDefaultTenant("v0.4.716")
 
-	err := tenant.Install()
+	err := tenant.Install(context.Background(), v1alpha1.Modela{})
 	assert.NoError(t, err)
 
 }

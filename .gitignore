@@ -43,6 +43,7 @@ lang/python/modelaapi.egg-info/
 gateway/
 
 vendor/
+bin/
 dist/
 *.iml
 # delve debug binaries

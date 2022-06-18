@@ -1,7 +1,11 @@
 package controllers
 
 import (
+	"context"
 	"fmt"
+
+	managementv1 "github.com/metaprov/modela-operator/api/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // Modela system represent the model core system
@@ -16,10 +20,10 @@ type CertManager struct {
 	PodNamePrefix string
 }
 
-func NewCertManager() *CertManager {
+func NewCertManager(version string) *CertManager {
 	return &CertManager{
 		Namespace:     "cert-manager",
-		Version:       "v1.6.1",
+		Version:       version,
 		ReleaseName:   "cert-manager",
 		Url:           "jetstack/cert-manager",
 		RepoUrl:       "https://charts.jetstack.io",
@@ -29,23 +33,30 @@ func NewCertManager() *CertManager {
 	}
 }
 
-func (cm CertManager) IsEnabled() (bool, error) {
+func (cm CertManager) IsEnabled(modela managementv1.Modela) bool {
+	return *modela.Spec.CertManager.Installed
+}
 
 func (cm CertManager) Installed() (bool, error) {
 	return IsPodRunning(cm.Namespace, cm.PodNamePrefix)
 }
 
-func (cm CertManager) Install() error {
+func (cm CertManager) Install(ctx context.Context, modela managementv1.Modela) error {
+	logger := log.FromContext(ctx)
+
 	if err := AddRepo(cm.RepoName, cm.RepoUrl, false); err != nil {
+		logger.Error(err, "failed to add repo "+cm.RepoUrl)
 		return err
 	}
-	fmt.Println("\u2713 added repo " + cm.RepoName)
+	logger.Info("added repo " + cm.RepoName)
 	// install namespace modela-system
 	if err := CreateNamespace(cm.Namespace); err != nil {
+		logger.Error(err, "failed to create namespace "+cm.Namespace)
 		return err
 	}
-	fmt.Println("\u2713 created namespace " + cm.Namespace)
-	return InstallCrd("https://github.com/cert-manager/cert-manager/releases/download/v1.7.1/cert-manager.yaml")
+	logger.Info("created namespace " + cm.Namespace)
+	versionUrl := fmt.Sprintf("https://github.com/cert-manager/cert-manager/releases/download/%s/cert-manager.yaml", *modela.Spec.CertManager.ChartVersion)
+	return InstallCrd(versionUrl)
 
 }
 

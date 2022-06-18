@@ -94,10 +94,22 @@ type ControlPlaneSpec struct {
 	Replicas *int32 `json:"replicas,omitempty"`
 }
 
+type CertManagerSpec struct {
+	// +kubebuilder:default:=true
+	//+kubebuilder:validation:Optional
+	Installed *bool `json:"installed"`
+
+	//+kubebuilder:validation:Optional
+	ChartVersion *string `json:"chartVersion,omitempty"`
+}
+
 type ObjectStorageSpec struct {
 	// +kubebuilder:default:=true
 	//+kubebuilder:validation:Optional
-	Enabled *bool `json:"enabled"`
+	Installed *bool `json:"installed"`
+
+	//+kubebuilder:validation:Optional
+	MinioChartVersion *string `json:"minioChartVersion,omitempty"`
 
 	// Minio Connection Reference
 	//+kubebuilder:validation:Optional
@@ -107,24 +119,18 @@ type ObjectStorageSpec struct {
 type SystemDatabaseSpec struct {
 	// +kubebuilder:default:=true
 	//+kubebuilder:validation:Optional
-	Enabled *bool `json:"enabled"`
+	Installed *bool `json:"enabled"`
+	// +kubebuilder:default:="10.9.2"
+	//+kubebuilder:validation:Optional
+	PostgresChartVersion *string `json:"postgresChartVersion,omitempty"`
 
 	// Minio Connection Reference
 	//+kubebuilder:validation:Optional
 	ConnectionRef v1.ObjectReference `json:"connectionRef,omitempty"`
 }
 
-type CertManagerSpec struct {
-	// +kubebuilder:default:=true
-	//+kubebuilder:validation:Optional
-	Enabled *bool `json:"enabled"`
-
-	// Desired cert manager version
-	//+kubebuilder:validation:Optional
-	Version v1.ObjectReference `json:"version,omitempty"`
-}
-
 type BackupSpec struct {
+	// If true enable backups
 	// +kubebuilder:default:=false
 	//+kubebuilder:validation:Optional
 	Enabled *bool `json:"enabled"`
@@ -136,17 +142,21 @@ type BackupSpec struct {
 }
 
 type ObservabilitySpec struct {
-	//+kubebuilder:validation:Optional
-	// +kubebuilder:default:=false
-	Enabled *bool `json:"enabled"`
 	// If true install the Prometheus helm chart (if not installed)
 	// +kubebuilder:default:=false
 	//+kubebuilder:validation:Optional
 	Prometheus *bool `json:"prometheus"`
+	// Prometheus Chart version.
+	// +kubebuilder:default:="2.8.4"
+	//+kubebuilder:validation:Optional
+	PrometheusVersion *string `json:"prometheusChartVersion"`
 	// If true install the loki helm chart (if not installed)
 	// +kubebuilder:default:=false
 	//+kubebuilder:validation:Optional
 	Loki *bool `json:"loki"`
+	// Loki Chart version.
+	//+kubebuilder:validation:Optional
+	LokiVersion *string `json:"lokiChartVersion"`
 }
 
 type DataPlaneSpec struct {
@@ -188,17 +198,26 @@ type ApiGatewayStatus struct {
 type ModelaLicenseSpec struct {
 }
 
-// ModelaSpec defines the desired state of Modela
-type ModelaSpec struct {
-
-	// The current version of modela cluster
-	//+kubebuilder:validation:Optional
-	Version *string `json:"version,omitempty"`
-
-	// If true, install the modela cluster is not installed
+type DefaultTenantSpec struct {
 	// +kubebuilder:default:=true
 	//+kubebuilder:validation:Optional
-	Installed *bool `json:"installed,omitempty"`
+	Installed *bool `json:"installed"`
+
+	//+kubebuilder:validation:Optional
+	ChartVersion *string `json:"chartVersion"`
+}
+
+type ModelaSystemSpec struct {
+	// +kubebuilder:default:=true
+	//+kubebuilder:validation:Optional
+	Installed *bool `json:"installed"`
+
+	//+kubebuilder:validation:Optional
+	ChartVersion *string `json:"chartVersion"`
+}
+
+// ModelaSpec defines the desired state of Modela
+type ModelaSpec struct {
 
 	// If true, configure monitoring.
 	//+kubebuilder:validation:Optional
@@ -211,17 +230,20 @@ type ModelaSpec struct {
 	License ModelaLicenseSpec `json:"license,omitempty"`
 
 	// If true install the default tenant.
-	// +kubebuilder:default:=true
 	//+kubebuilder:validation:Optional
-	DefaultTenant *bool `json:"defaultTenant,omitempty"`
+	ModelaChart ModelaSystemSpec `json:"modelaChart,omitempty"`
+
+	// If true install the default tenant.
+	//+kubebuilder:validation:Optional
+	DefaultTenantChart DefaultTenantSpec `json:"defaultTenantChart,omitempty"`
+
+	// Desired state of object storage
+	//+kubebuilder:validation:Optional
+	CertManager CertManagerSpec `json:"certManager,omitempty"`
 
 	// Desired state of object storage
 	//+kubebuilder:validation:Optional
 	ObjectStore ObjectStorageSpec `json:"objectStore,omitempty"`
-
-	// If true, install cert manager if not exist
-	//+kubebuilder:validation:Optional
-	UseCertManager CertManagerSpec `json:"certManager,omitempty"`
 
 	// Desired state of the system database
 	SystemDatabase SystemDatabaseSpec `json:"systemDatabase,omitempty"`

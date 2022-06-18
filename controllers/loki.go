@@ -1,7 +1,10 @@
 package controllers
 
 import (
-	"fmt"
+	"context"
+
+	managementv1 "github.com/metaprov/modela-operator/api/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // Modela system represent the model core system
@@ -16,10 +19,10 @@ type Loki struct {
 	Dryrun        bool
 }
 
-func NewLoki() *Loki {
+func NewLoki(version string) *Loki {
 	return &Loki{
 		Namespace:     "loki",
-		Version:       "2.8.4",
+		Version:       version,
 		ReleaseName:   "loki",
 		RepoName:      "grafana",
 		Name:          "loki-stack",
@@ -27,6 +30,10 @@ func NewLoki() *Loki {
 		RepoUrl:       "https://grafana.github.io/helm-charts",
 		Dryrun:        false,
 	}
+}
+
+func (m Loki) IsEnabled(modela managementv1.Modela) bool {
+	return *modela.Spec.Observability.Loki
 }
 
 // Check if the database installed
@@ -41,17 +48,20 @@ func (m Loki) Installed() (bool, error) {
 	)
 }
 
-func (m Loki) Install() error {
+func (m Loki) Install(ctx context.Context, modela managementv1.Modela) error {
+	logger := log.FromContext(ctx)
 
 	if err := AddRepo(m.RepoName, m.RepoUrl, m.Dryrun); err != nil {
+		logger.Error(err, "failed to add repo %s"+m.RepoName)
 		return err
 	}
-	fmt.Println("\u2713 added repo " + m.RepoName)
+	logger.Info("added repo " + m.RepoName)
 	// install namespace modela-system
 	if err := CreateNamespace(m.Namespace); err != nil {
+		logger.Error(err, "failed to create namespace %s"+m.RepoName)
 		return err
 	}
-	fmt.Println("\u2713 created namespace " + m.Namespace)
+	logger.Info("created namespace " + m.Namespace)
 
 	return InstallChart(
 		m.RepoName,

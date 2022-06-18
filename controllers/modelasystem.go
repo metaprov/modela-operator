@@ -1,7 +1,10 @@
 package controllers
 
 import (
-	"fmt"
+	"context"
+
+	managementv1 "github.com/metaprov/modela-operator/api/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // Modela system represent the model core system
@@ -16,6 +19,10 @@ type ModelaSystem struct {
 	PodNamePrefix string
 	Images        []string
 	Dryrun        bool
+}
+
+func (m ModelaSystem) IsEnabled(modela managementv1.Modela) bool {
+	return *modela.Spec.DefaultTenantChart.Installed
 }
 
 func NewModelaSystem(version string) *ModelaSystem {
@@ -57,34 +64,38 @@ func (ms ModelaSystem) Installed() (bool, error) {
 	)
 }
 
-func (d ModelaSystem) Install() error {
+func (d ModelaSystem) Install(ctx context.Context, modela managementv1.Modela) error {
+	logger := log.FromContext(ctx)
+
 	if err := CreateNamespace("modela-system"); err != nil {
+		logger.Error(err, "failed to create modela-system namespace")
 		return err
 	}
-	fmt.Println("\u2713 created namespace modela-system")
+	logger.Info("created namespace modela-system")
 
 	// apply the crd
 	if err := CreateNamespace("modela-catalog"); err != nil {
+		logger.Error(err, "failed to create modela-catalog namespace")
 		return err
 	}
-	fmt.Println("\u2713 created namespace modela-catalog")
+	logger.Info("created namespace modela-catalog")
 
 	if err := CreateNamespace("default-tenant"); err != nil {
+		logger.Error(err, "failed to create default-tenant namespace")
 		return err
 	}
 
-	fmt.Println("\u2713 created namespace default-tenant")
+	logger.Info("created namespace default-tenant")
 
 	// pull the images.
-	fmt.Println("\u2713 pulling modela images")
+	logger.Info("pulling modela images")
 
 	dockerClient := RealDockerClient{}
 	for _, v := range d.Images {
-		fmt.Println("\u2713 pulling image " + v)
+		logger.Info("pulling image " + v)
 		err := dockerClient.Pull(v)
 		if err != nil {
-			fmt.Println("\u2713 failed to pull image " + v)
-			return err
+			logger.Error(err, "failed to pull image "+v)
 		}
 	}
 

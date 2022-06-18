@@ -1,7 +1,10 @@
 package controllers
 
 import (
-	"fmt"
+	"context"
+
+	managementv1 "github.com/metaprov/modela-operator/api/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type Database struct {
@@ -16,10 +19,10 @@ type Database struct {
 	Dryrun        bool
 }
 
-func NewDatabase() *Database {
+func NewDatabase(version string) *Database {
 	return &Database{
 		Namespace:     "modela-system",
-		Version:       "10.9.2",
+		Version:       version,
 		ReleaseName:   "modela-postgresql",
 		RepoUrl:       "https://charts.bitnami.com/bitnami",
 		Name:          "postgresql",
@@ -28,6 +31,11 @@ func NewDatabase() *Database {
 		PodNamePrefix: "cert-manager",
 		Dryrun:        false,
 	}
+}
+
+func (db Database) IsEnabled(modela managementv1.Modela) bool {
+	return *modela.Spec.SystemDatabase.Installed
+
 }
 
 // Check if the database installed
@@ -42,17 +50,19 @@ func (db Database) Installed() (bool, error) {
 	)
 }
 
-func (db Database) Install() error {
+func (db Database) Install(ctx context.Context, modela managementv1.Modela) error {
+	logger := log.FromContext(ctx)
 
 	if err := AddRepo(db.RepoName, db.RepoUrl, db.Dryrun); err != nil {
 		return err
 	}
-	fmt.Println("\u2713 added repo " + db.RepoName)
+	logger.Info("added repo " + db.RepoName)
 	// install namespace modela-system
 	if err := CreateNamespace(db.Namespace); err != nil {
+		logger.Error(err, "failed to create namespace")
 		return err
 	}
-	fmt.Println("\u2713 created namespace " + db.Namespace)
+	logger.Info("created namespace " + db.Namespace)
 
 	return InstallChart(
 		db.RepoName,

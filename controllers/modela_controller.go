@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+
 	"k8s.io/apimachinery/pkg/types"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -26,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
+	managementv1 "github.com/metaprov/modela-operator/api/v1alpha1"
 	managementv1alpha1 "github.com/metaprov/modela-operator/api/v1alpha1"
 )
 
@@ -90,28 +92,30 @@ func (r *ModelaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 }
 
 func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alpha1.Modela) (ctrl.Result, error) {
+	logger := log.FromContext(ctx)
 	// try to install cert manager
-	certManager := NewCertManager()
-	installed, err := certManager.Installed()
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	if !installed {
-		result, err := r.reconcileComponment(ctx, certManager)
-		if err != nil || result.Requeue {
-			return result, err
-		}
-	}
+	//certManager := NewCertManager()
+	//installed, err := certManager.Installed()
+	//if err != nil {
+	//	return ctrl.Result{}, err
+	//}
+	//if !installed {
+	//	result, err := r.reconcileComponment(ctx, certManager)
+	//	if err != nil || result.Requeue {
+	//		return result, err
+	//	}
+	//}
 
 	// Object storage
 
-	objectStore := NewObjectStorage()
-	installed, err = objectStore.Installed()
+	objectStore := NewObjectStorage(*modela.Spec.ObjectStore.MinioChartVersion)
+	installed, err := objectStore.Installed()
 	if err != nil {
+		logger.Error(err, "failed to check if object store is installed")
 		return ctrl.Result{}, err
 	}
 	if !installed {
-		result, err := r.reconcileComponment(ctx, objectStore)
+		result, err := r.reconcileComponment(ctx, objectStore, *modela)
 		if err != nil || result.Requeue {
 			return result, err
 		}
@@ -119,13 +123,13 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 
 	// Database
 
-	database := NewDatabase()
+	database := NewDatabase(*modela.Spec.SystemDatabase.PostgresChartVersion)
 	installed, err = database.Installed()
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 	if !installed {
-		result, err := r.reconcileComponment(ctx, database)
+		result, err := r.reconcileComponment(ctx, database, *modela)
 		if err != nil || result.Requeue {
 			return result, err
 		}
@@ -133,51 +137,51 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 
 	// Loki
 
-	loki := NewLoki()
+	loki := NewLoki(*modela.Spec.Observability.LokiVersion)
 	installed, err = loki.Installed()
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 	if !installed {
-		result, err := r.reconcileComponment(ctx, loki)
+		result, err := r.reconcileComponment(ctx, loki, *modela)
 		if err != nil || result.Requeue {
 			return result, err
 		}
 	}
 
-	prom := NewPrometheus()
+	prom := NewPrometheus(*modela.Spec.Observability.PrometheusVersion)
 	installed, err = prom.Installed()
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 	if !installed {
-		result, err := r.reconcileComponment(ctx, prom)
+		result, err := r.reconcileComponment(ctx, prom, *modela)
 		if err != nil || result.Requeue {
 			return result, err
 		}
 	}
 
-	modelaSystem := NewModelaSystem(*modela.Spec.Version)
+	modelaSystem := NewModelaSystem(*modela.Spec.ModelaChart.ChartVersion)
 	installed, err = modelaSystem.Installed()
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 	if !installed {
 		// reconcile modela system, make sure that all the items are as defined
-		result, err := r.reconcileComponment(ctx, modelaSystem)
+		result, err := r.reconcileComponment(ctx, modelaSystem, *modela)
 		if err != nil || result.Requeue {
 			return result, err
 		}
 	}
 
-	defaultTenant := NewDefaultTenant(*modela.Spec.Version)
+	defaultTenant := NewDefaultTenant(*modela.Spec.DefaultTenantChart.ChartVersion)
 	installed, err = defaultTenant.Installed()
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 	if !installed {
 		// reconcile default tenant, make sure that all the items are as defined.
-		result, err := r.reconcileComponment(ctx, defaultTenant)
+		result, err := r.reconcileComponment(ctx, defaultTenant, *modela)
 		if err != nil || result.Requeue {
 			return result, err
 		}
@@ -195,16 +199,16 @@ func (r *ModelaReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 // Define the interface for modela components that can be reconciled
 type ModelaComponent interface {
-	IsEnabled() true
+	IsEnabled(modela managementv1.Modela) bool
 	Installed() (bool, error)
-	Install() error
+	Install(ctx context.Context, modela managementv1.Modela) error
 	Installing() (bool, error)
 	Ready() (bool, error)
 	Uninstall() error
 }
 
-func (r *ModelaReconciler) reconcileComponment(ctx context.Context, component ModelaComponent) (ctrl.Result, error) {
-	if !component.IsEnabled() {
+func (r *ModelaReconciler) reconcileComponment(ctx context.Context, component ModelaComponent, modela managementv1.Modela) (ctrl.Result, error) {
+	if !component.IsEnabled(modela) {
 		return ctrl.Result{}, nil
 	}
 	logger := log.FromContext(ctx)
@@ -220,7 +224,7 @@ func (r *ModelaReconciler) reconcileComponment(ctx context.Context, component Mo
 			return ctrl.Result{}, err
 		}
 		if !installing {
-			err := component.Install()
+			err := component.Install(ctx, modela)
 			if err != nil {
 				logger.Error(err, "failed to check if database installed")
 				return ctrl.Result{}, err

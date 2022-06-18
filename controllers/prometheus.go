@@ -1,7 +1,10 @@
 package controllers
 
 import (
-	"fmt"
+	"context"
+
+	managementv1 "github.com/metaprov/modela-operator/api/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // Modela system represent the model core system
@@ -16,10 +19,11 @@ type Prometheus struct {
 	Dryrun        bool
 }
 
-func NewPrometheus() *Prometheus {
+func NewPrometheus(version string) *Prometheus {
 	return &Prometheus{
-		Namespace:     "prometheus-community",
-		Version:       "2.8.4",
+		Namespace: "prometheus-community",
+		//Version:       "2.8.4",
+		Version:       version,
 		ReleaseName:   "kube-prometheus-stack",
 		RepoName:      "prometheus-community",
 		Name:          "kube-prometheus-stack",
@@ -27,6 +31,10 @@ func NewPrometheus() *Prometheus {
 		RepoUrl:       "https://prometheus-community.github.io/helm-charts",
 		Dryrun:        false,
 	}
+}
+
+func (m Prometheus) IsEnabled(modela managementv1.Modela) bool {
+	return *modela.Spec.Observability.Prometheus
 }
 
 // Check if the database installed
@@ -41,17 +49,20 @@ func (m Prometheus) Installed() (bool, error) {
 	)
 }
 
-func (m Prometheus) Install() error {
+func (m Prometheus) Install(ctx context.Context, modela managementv1.Modela) error {
+	logger := log.FromContext(ctx)
 
 	if err := AddRepo(m.RepoName, m.RepoUrl, m.Dryrun); err != nil {
+		logger.Error(err, "failed to add repo "+m.RepoName)
 		return err
 	}
-	fmt.Println("\u2713 added repo " + m.RepoName)
+	logger.Info("added repo " + m.RepoName)
 	// install namespace modela-system
 	if err := CreateNamespace(m.Namespace); err != nil {
+		logger.Error(err, "failed to create namespace "+m.Namespace)
 		return err
 	}
-	fmt.Println("\u2713 created namespace " + m.Namespace)
+	logger.Info("created namespace " + m.Namespace)
 
 	return InstallChart(
 		m.RepoName,

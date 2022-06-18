@@ -1,8 +1,11 @@
 package controllers
 
 import (
-	"fmt"
+	"context"
+
+	managementv1 "github.com/metaprov/modela-operator/api/v1alpha1"
 	"github.com/pkg/errors"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // Modela system represent the model core system
@@ -17,16 +20,22 @@ type ObjectStorage struct {
 	Dryrun        bool
 }
 
-func NewObjectStorage() *ObjectStorage {
+func NewObjectStorage(version string) *ObjectStorage {
 	return &ObjectStorage{
-		Namespace:   "modela-system",
-		Version:     "9.2.9",
+		Namespace: "modela-system",
+		//Version:     "9.2.9",
+		Version:     version,
 		ReleaseName: "modela-storage",
 		RepoName:    "bitnami",
 		Name:        "minio",
 		RepoUrl:     "https://charts.bitnami.com/bitnami",
 		Dryrun:      false,
 	}
+}
+
+func (os ObjectStorage) IsEnabled(modela managementv1.Modela) bool {
+	return *modela.Spec.ObjectStore.Installed
+
 }
 
 // Check if the database installed
@@ -42,17 +51,20 @@ func (os ObjectStorage) Installed() (bool, error) {
 	)
 }
 
-func (os ObjectStorage) Install() error {
+func (os ObjectStorage) Install(ctx context.Context, modela managementv1.Modela) error {
+	logger := log.FromContext(ctx)
 
 	if err := AddRepo(os.RepoName, os.RepoUrl, os.Dryrun); err != nil {
+		logger.Error(err, "failed to add repo "+os.RepoName)
 		return err
 	}
-	fmt.Println("\u2713 added repo " + os.RepoName)
+	logger.Info("added repo " + os.RepoName)
 	// install namespace modela-system
 	if err := CreateNamespace(os.Namespace); err != nil {
+		logger.Error(err, "failed to create namespace "+os.Namespace)
 		return err
 	}
-	fmt.Println("\u2713 created namespace " + os.Namespace)
+	logger.Info("created namespace " + os.Namespace)
 
 	return InstallChart(
 		os.RepoName,

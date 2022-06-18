@@ -1,5 +1,11 @@
 package controllers
 
+import (
+	"context"
+
+	managementv1 "github.com/metaprov/modela-operator/api/v1alpha1"
+)
+
 type DefaultTenant struct {
 	Namespace     string
 	Version       string
@@ -24,6 +30,10 @@ func NewDefaultTenant(version string) *DefaultTenant {
 	}
 }
 
+func (m DefaultTenant) IsEnabled(modela managementv1.Modela) bool {
+	return *modela.Spec.DefaultTenantChart.Installed
+}
+
 // Check if the database installed
 func (dt DefaultTenant) Installed() (bool, error) {
 	return IsChartInstalled(
@@ -37,7 +47,7 @@ func (dt DefaultTenant) Installed() (bool, error) {
 
 }
 
-func (dt DefaultTenant) Install() error {
+func (dt DefaultTenant) Install(ctx context.Context, modela managementv1.Modela) error {
 	return InstallChart(
 		dt.RepoName,
 		dt.RepoUrl,
@@ -63,7 +73,7 @@ func (dt DefaultTenant) Installing() (bool, error) {
 
 // Check if the default tenant is installed and ready
 func (d DefaultTenant) Ready() (bool, error) {
-	return false, nil
+	return d.Installed()
 }
 
 func (d DefaultTenant) Uninstall() error {

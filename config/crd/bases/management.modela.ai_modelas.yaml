@@ -227,47 +227,13 @@ spec:
                     type: integer
                 type: object
               certManager:
-                description: If true, install cert manager if not exist
+                description: Desired state of object storage
                 properties:
-                  enabled:
+                  chartVersion:
+                    type: string
+                  installed:
                     default: true
                     type: boolean
-                  version:
-                    description: Desired cert manager version
-                    properties:
-                      apiVersion:
-                        description: API version of the referent.
-                        type: string
-                      fieldPath:
-                        description: 'If referring to a piece of an object instead
-                          of an entire object, this string should contain a valid
-                          JSON/Go field access statement, such as desiredState.manifest.containers[2].
-                          For example, if the object reference is to a container within
-                          a pod, this would take on a value like: "spec.containers{name}"
-                          (where "name" refers to the name of the container that triggered
-                          the event) or if no container name is specified "spec.containers[2]"
-                          (container with index 2 in this pod). This syntax is chosen
-                          only to have some well-defined way of referencing a part
-                          of an object. TODO: this design is not final and this field
-                          is subject to change in the future.'
-                        type: string
-                      kind:
-                        description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-                        type: string
-                      name:
-                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
-                        type: string
-                      namespace:
-                        description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
-                        type: string
-                      resourceVersion:
-                        description: 'Specific resourceVersion to which this reference
-                          is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
-                        type: string
-                      uid:
-                        description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
-                        type: string
-                    type: object
                 type: object
               controlPlane:
                 description: Setting of the control plane
@@ -454,16 +420,26 @@ spec:
                     description: StorageClass to use for data plane data
                     type: string
                 type: object
-              defaultTenant:
-                default: true
+              defaultTenantChart:
                 description: If true install the default tenant.
-                type: boolean
-              installed:
-                default: true
-                description: If true, install the modela cluster is not installed
-                type: boolean
+                properties:
+                  chartVersion:
+                    type: string
+                  installed:
+                    default: true
+                    type: boolean
+                type: object
               license:
                 description: Desired state of modela licensing
+                type: object
+              modelaChart:
+                description: If true install the default tenant.
+                properties:
+                  chartVersion:
+                    type: string
+                  installed:
+                    default: true
+                    type: boolean
                 type: object
               objectStore:
                 description: Desired state of object storage
@@ -504,25 +480,31 @@ spec:
                         description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                         type: string
                     type: object
-                  enabled:
+                  installed:
                     default: true
                     type: boolean
+                  minioChartVersion:
+                    type: string
                 type: object
               observability:
                 description: If true, configure monitoring.
                 properties:
-                  enabled:
-                    default: false
-                    type: boolean
                   loki:
                     default: false
                     description: If true install the loki helm chart (if not installed)
                     type: boolean
+                  lokiChartVersion:
+                    description: Loki Chart version.
+                    type: string
                   prometheus:
                     default: false
                     description: If true install the Prometheus helm chart (if not
                       installed)
                     type: boolean
+                  prometheusChartVersion:
+                    default: 2.8.4
+                    description: Prometheus Chart version.
+                    type: string
                 type: object
               podTemplate:
                 description: PodTemplate describes a template for creating copies
@@ -8021,10 +8003,10 @@ spec:
                   enabled:
                     default: true
                     type: boolean
+                  postgresChartVersion:
+                    default: 10.9.2
+                    type: string
                 type: object
-              version:
-                description: The current version of modela cluster
-                type: string
             type: object
           status:
             description: ModelaStatus defines the observed state of Modela
