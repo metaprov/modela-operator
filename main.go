@@ -72,7 +72,7 @@ func main() {
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "3b7dc84c.modela.ai",
-		Namespace:              "modela-system",
+		Namespace:              "",
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
 		// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly
@@ -90,17 +90,24 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.ModelaReconciler{
+	modelaReconciler := controllers.ModelaReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+	}
+
+	if err = modelaReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Modela")
 		os.Exit(1)
 	}
-	if err = (&managementv1alpha1.ModelaBackupRun{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "ModelaBackupRun")
-		os.Exit(1)
+
+	setupLog.Info("ENABLE_WEBHOOKS setting", "ENABLE_WEBHOOKS", os.Getenv("ENABLE_WEBHOOKS"))
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = (&managementv1alpha1.Modela{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Modela")
+			os.Exit(1)
+		}
 	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

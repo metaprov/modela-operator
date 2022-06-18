@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/metaprov/modela-operator/internal/pkg/util"
 )
 
 // Modela system represent the model core system
@@ -30,21 +29,23 @@ func NewCertManager() *CertManager {
 	}
 }
 
+func (cm CertManager) IsEnabled() (bool, error) {
+
 func (cm CertManager) Installed() (bool, error) {
-	return util.IsPodRunning(cm.Namespace, cm.PodNamePrefix)
+	return IsPodRunning(cm.Namespace, cm.PodNamePrefix)
 }
 
 func (cm CertManager) Install() error {
-	if err := util.AddRepo(cm.RepoName, cm.RepoUrl, false); err != nil {
+	if err := AddRepo(cm.RepoName, cm.RepoUrl, false); err != nil {
 		return err
 	}
 	fmt.Println("\u2713 added repo " + cm.RepoName)
 	// install namespace modela-system
-	if err := util.CreateNamespace(cm.Namespace); err != nil {
+	if err := CreateNamespace(cm.Namespace); err != nil {
 		return err
 	}
 	fmt.Println("\u2713 created namespace " + cm.Namespace)
-	return util.InstallCrd("https://github.com/cert-manager/cert-manager/releases/download/v1.7.1/cert-manager.yaml")
+	return InstallCrd("https://github.com/cert-manager/cert-manager/releases/download/v1.7.1/cert-manager.yaml")
 
 }
 
@@ -53,7 +54,7 @@ func (cm CertManager) Installing() (bool, error) {
 	if !installed {
 		return installed, err
 	}
-	running, err := util.IsPodRunning(cm.Namespace, cm.PodNamePrefix)
+	running, err := IsPodRunning(cm.Namespace, cm.PodNamePrefix)
 	if err != nil {
 		return false, err
 	}
@@ -66,7 +67,7 @@ func (cm CertManager) Ready() (bool, error) {
 	if !installed {
 		return installed, err
 	}
-	running, err := util.IsPodRunning(cm.Namespace, cm.PodNamePrefix)
+	running, err := IsPodRunning(cm.Namespace, cm.PodNamePrefix)
 	if err != nil {
 		return false, err
 	}
@@ -74,7 +75,7 @@ func (cm CertManager) Ready() (bool, error) {
 }
 
 func (cm CertManager) Uninstall() error {
-	return util.UninstallChart(
+	return UninstallChart(
 		cm.RepoName,
 		cm.RepoUrl,
 		"",

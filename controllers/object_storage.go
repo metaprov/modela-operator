@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/metaprov/modela-operator/internal/pkg/util"
 	"github.com/pkg/errors"
 )
 
@@ -33,7 +32,7 @@ func NewObjectStorage() *ObjectStorage {
 // Check if the database installed
 func (os ObjectStorage) Installed() (bool, error) {
 	//repoName, repoUrl string, url string, ns string, releaseName string, versionName string
-	return util.IsChartInstalled(
+	return IsChartInstalled(
 		os.RepoName,
 		os.RepoUrl,
 		os.Name,
@@ -45,17 +44,17 @@ func (os ObjectStorage) Installed() (bool, error) {
 
 func (os ObjectStorage) Install() error {
 
-	if err := util.AddRepo(os.RepoName, os.RepoUrl, os.Dryrun); err != nil {
+	if err := AddRepo(os.RepoName, os.RepoUrl, os.Dryrun); err != nil {
 		return err
 	}
 	fmt.Println("\u2713 added repo " + os.RepoName)
 	// install namespace modela-system
-	if err := util.CreateNamespace(os.Namespace); err != nil {
+	if err := CreateNamespace(os.Namespace); err != nil {
 		return err
 	}
 	fmt.Println("\u2713 created namespace " + os.Namespace)
 
-	return util.InstallChart(
+	return InstallChart(
 		os.RepoName,
 		os.RepoUrl,
 		os.Name,
@@ -71,7 +70,7 @@ func (os ObjectStorage) Installing() (bool, error) {
 	if !installed {
 		return installed, err
 	}
-	running, err := util.IsPodRunning(os.Namespace, os.PodNamePrefix)
+	running, err := IsPodRunning(os.Namespace, os.PodNamePrefix)
 	if err != nil {
 		return false, err
 	}
@@ -84,7 +83,7 @@ func (os ObjectStorage) Ready() (bool, error) {
 	if !installed {
 		return installed, err
 	}
-	running, err := util.IsPodRunning(os.Namespace, os.PodNamePrefix)
+	running, err := IsPodRunning(os.Namespace, os.PodNamePrefix)
 	if err != nil {
 		return false, err
 	}
@@ -92,7 +91,7 @@ func (os ObjectStorage) Ready() (bool, error) {
 }
 
 func (os ObjectStorage) Uninstall() error {
-	return util.UninstallChart(
+	return UninstallChart(
 		os.RepoName,
 		os.RepoUrl,
 		"",
@@ -104,7 +103,7 @@ func (os ObjectStorage) Uninstall() error {
 
 func (os ObjectStorage) PostInstall() error {
 
-	values, err := util.GetSecretValuesAsString("modela-system", "modela-storage-minio")
+	values, err := GetSecretValuesAsString("modela-system", "modela-storage-minio")
 
 	// build the minio url
 	accessKey, ok := values["root-user"]
@@ -116,24 +115,24 @@ func (os ObjectStorage) PostInstall() error {
 		return errors.New("key root-password is missing in the minio secret")
 	}
 	// create a connection and update the fields.
-	connection, err := util.GetConnection("default-tenant", "default-minio")
+	connection, err := GetConnection("default-tenant", "default-minio")
 	if err != nil {
 		return err
 	}
 	host := "modela-storage-minio.modela-system.svc.cluster.local:9000"
 	connection.Spec.Minio.Host = &host
 	// save the connection
-	err = util.CreateOrUpdateConnection("default-tenant", connection.Name, connection)
+	err = CreateOrUpdateConnection("default-tenant", connection.Name, connection)
 	if err != nil {
 		return err
 	}
-	defaultSecret, err := util.GetSecret("default-tenant", "default-minio-secret")
+	defaultSecret, err := GetSecret("default-tenant", "default-minio-secret")
 	if err != nil {
 		return err
 	}
 	values = make(map[string]string)
 	values["accessKey"] = accessKey
 	values["secretKey"] = secertKey
-	err = util.CreateOrUpdateSecret(defaultSecret.Namespace, defaultSecret.Name, values)
+	err = CreateOrUpdateSecret(defaultSecret.Namespace, defaultSecret.Name, values)
 	return err
 }

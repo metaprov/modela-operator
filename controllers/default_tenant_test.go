@@ -6,6 +6,7 @@ import (
 )
 
 func TestDefaultTenant_Installed(t *testing.T) {
+	t.Skip("Run only on empty cluster")
 	tenant := NewDefaultTenant("v0.4.716")
 	installed, err := tenant.Installed()
 	assert.NoError(t, err)
@@ -15,6 +16,7 @@ func TestDefaultTenant_Installed(t *testing.T) {
 
 // run on an empty system
 func TestDefaultTenant_Install(t *testing.T) {
+	t.Skip("Run only on empty cluster")
 	tenant := NewDefaultTenant("v0.4.716")
 
 	err := tenant.Install()

@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/metaprov/modela-operator/internal/pkg/util"
 )
 
 type Database struct {
@@ -33,7 +32,7 @@ func NewDatabase() *Database {
 
 // Check if the database installed
 func (db Database) Installed() (bool, error) {
-	return util.IsChartInstalled(
+	return IsChartInstalled(
 		db.RepoName,
 		db.RepoUrl,
 		db.Url,
@@ -45,17 +44,17 @@ func (db Database) Installed() (bool, error) {
 
 func (db Database) Install() error {
 
-	if err := util.AddRepo(db.RepoName, db.RepoUrl, db.Dryrun); err != nil {
+	if err := AddRepo(db.RepoName, db.RepoUrl, db.Dryrun); err != nil {
 		return err
 	}
 	fmt.Println("\u2713 added repo " + db.RepoName)
 	// install namespace modela-system
-	if err := util.CreateNamespace(db.Namespace); err != nil {
+	if err := CreateNamespace(db.Namespace); err != nil {
 		return err
 	}
 	fmt.Println("\u2713 created namespace " + db.Namespace)
 
-	return util.InstallChart(
+	return InstallChart(
 		db.RepoName,
 		db.RepoUrl,
 		db.Name,
@@ -71,7 +70,7 @@ func (d Database) Installing() (bool, error) {
 	if !installed {
 		return installed, err
 	}
-	running, err := util.IsPodRunning(d.Namespace, d.PodNamePrefix)
+	running, err := IsPodRunning(d.Namespace, d.PodNamePrefix)
 	if err != nil {
 		return false, err
 	}
@@ -84,7 +83,7 @@ func (db Database) Ready() (bool, error) {
 	if !installed {
 		return installed, err
 	}
-	running, err := util.IsPodRunning(db.Namespace, db.PodNamePrefix)
+	running, err := IsPodRunning(db.Namespace, db.PodNamePrefix)
 	if err != nil {
 		return false, err
 	}
@@ -92,7 +91,7 @@ func (db Database) Ready() (bool, error) {
 }
 
 func (db Database) Uninstall() error {
-	return util.UninstallChart(
+	return UninstallChart(
 		db.RepoName,
 		db.RepoUrl,
 		"",

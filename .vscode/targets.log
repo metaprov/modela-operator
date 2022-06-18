@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Thu Jun 16 06:09:36 2022
+# Make data base, printed on Sat Jun 18 10:40:12 2022
 
 # Variables
 
@@ -15,7 +15,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # automatic
 ?F = $(notdir $?)
 # environment
-WSLENV = VSCODE_WSL_EXT_LOCATION/up:VSCODE_SERVER_TAR/up
+WSLENV = VSCODE_WSL_EXT_LOCATION/up
 # makefile (from 'Makefile', line 65)
 .SHELLFLAGS = -ec
 # environment
@@ -65,11 +65,9 @@ GOPATH = /home/tsagi/go
 # environment
 VSCODE_LOG_STACK = false
 # environment
-VSCODE_IPC_HOOK_CLI = /tmp/vscode-ipc-f649ace8-a08a-4f8a-8a87-44a403cb41c1.sock
+VSCODE_IPC_HOOK_CLI = /tmp/vscode-ipc-3e351129-7f37-4981-9fd9-e70fa3417680.sock
 # environment
 KUBECONFIG = :/home/tsagi/.kube/config:/home/tsagi/.kube/linode.yaml:/home/tsagi/.kube/linode1.yaml
-# environment
-VSCODE_SERVER_TAR = /mnt/c/Users/tmesh/AppData/Local/Temp/vscode-remote-wsl/30d9c6cd9483b2cc586687151bcbcd635f373630/vscode-server-stable-linux-x64.tar.gz
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver output-sync check-symlink load
 # makefile (from 'Makefile', line 159)
@@ -95,7 +93,7 @@ PWD = /home/tsagi/go/src/github.com/metaprov/modela-operator
 # default
 .LOADED := 
 # environment
-WSL_INTEROP = /run/WSL/22999_interop
+WSL_INTEROP = /run/WSL/2987_interop
 # environment
 MANPATH = /usr/share/man:/usr/local/man:/usr/local/local_dfs/man
 # environment
@@ -105,7 +103,7 @@ HOME = /home/tsagi
 # environment
 LOGNAME = tsagi
 # environment
-APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = 1
+APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = true
 # environment
 VSCODE_HANDLES_UNCAUGHT_ERRORS = true
 # automatic
@@ -143,7 +141,7 @@ KUSTOMIZE = $(LOCALBIN)/kustomize
 # automatic
 *F = $(notdir $*)
 # makefile (from 'Makefile', line 50)
-IMG = controller:latest
+IMG = $(IMAGE_TAG_BASE):v$(VERSION)
 # makefile (from 'Makefile', line 25)
 BUNDLE_METADATA_OPTS = $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 # makefile (from 'Makefile', line 164)
@@ -165,7 +163,7 @@ ENVTEST = $(LOCALBIN)/setup-envtest
 # environment
 VSCODE_HANDLES_SIGPIPE = true
 # 'override' directive
-.SHELLSTATUS := 1
+.SHELLSTATUS := 0
 # default
 MAKEFILES := 
 # automatic
@@ -195,7 +193,7 @@ SUFFIXES :=
 # default
 .INCLUDE_DIRS = /usr/include /usr/local/include /usr/include
 # makefile (from 'Makefile', line 32)
-IMAGE_TAG_BASE = modela.ai/modela-operator
+IMAGE_TAG_BASE = ghcr.io/metaprov/modela-operator
 # default
 .RECIPEPREFIX := 
 # makefile (from 'Makefile', line 130)
@@ -213,7 +211,7 @@ VSCODE_EXTHOST_WILL_SEND_SOCKET = true
 # environment
 WSL_DISTRO_NAME = Ubuntu
 # variable set hash-table stats:
-# Load=98/1024=10%, Rehash=0, Collisions=8/218=4%
+# Load=97/1024=9%, Rehash=0, Collisions=8/213=4%
 
 # Pattern-specific Variable Values
 
@@ -221,9 +219,9 @@ WSL_DISTRO_NAME = Ubuntu
 
 # Directories
 
-# . (device 2064, inode 3777937): 24 files, no impossibilities.
+# . (device 2064, inode 3777937): 27 files, no impossibilities.
 
-# 24 files, no impossibilities in 1 directories.
+# 27 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -280,20 +278,12 @@ opm:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 202):
-	@{ \
-	set -e ;\
-	mkdir -p $(dir $(OPM)) ;\
-	OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
-	curl -sSLo $(OPM) https://github.com/operator-framework/operator-registry/releases/download/v1.23.0/$${OS}-$${ARCH}-opm ;\
-	chmod +x $(OPM) ;\
- 
-	}
 
 bundle: manifests kustomize
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
 #  File does not exist.
+ 
 #  File has not been updated.
 #  recipe to execute (from 'Makefile', line 184):
 	operator-sdk generate kustomize manifests -q
@@ -318,7 +308,7 @@ uninstall: manifests kustomize
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-06-16 04:33:20.69
+#  Last modified 2022-06-17 18:42:27.86
 #  File has been updated.
 #  Successfully updated.
 
@@ -411,7 +401,7 @@ generate: controller-gen
 
 /home/tsagi/go/src/github.com/metaprov/modela-operator/bin:
 #  Implicit rule search has not been done.
-#  Last modified 2022-06-16 06:06:48.96
+#  Last modified 2022-06-18 06:41:58.53
 #  File has been updated.
 #  Successfully updated.
 #  recipe to execute (from 'Makefile', line 155):
@@ -449,7 +439,7 @@ run: manifests generate fmt vet
 
 /home/tsagi/go/src/github.com/metaprov/modela-operator/bin/controller-gen: /home/tsagi/go/src/github.com/metaprov/modela-operator/bin
 #  Implicit rule search has not been done.
-#  Last modified 2022-06-16 06:06:58.5355985
+#  Last modified 2022-06-18 07:10:53.7878671
 #  File has been updated.
 #  Successfully updated.
 #  recipe to execute (from 'Makefile', line 175):
@@ -518,12 +508,12 @@ install: manifests kustomize
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 56 / storage = 739 B / avg = 13 B
-# current buf: size = 8162 B / used = 739 B / count = 56 / avg = 13 B
+# strcache buffers: 1 (0) / strings = 59 / storage = 761 B / avg = 12 B
+# current buf: size = 8162 B / used = 761 B / count = 59 / avg = 12 B
 
-# strcache performance: lookups = 193 / hit rate = 70%
+# strcache performance: lookups = 196 / hit rate = 69%
 # hash-table stats:
-# Load=56/8192=1%, Rehash=0, Collisions=4/193=2%
-# Finished Make data base on Thu Jun 16 06:09:36 2022
+# Load=59/8192=1%, Rehash=0, Collisions=4/196=2%
+# Finished Make data base on Sat Jun 18 10:40:12 2022
 
  

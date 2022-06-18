@@ -18,7 +18,9 @@ package controllers
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/types"
 
+	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -59,52 +61,129 @@ func (r *ModelaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		// on deleted requests.
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+	// Perform the install phase
 
-	certManager := NewCertManager()
-	result, err := r.reconcileComponment(ctx, certManager)
+	result, err := r.Install(ctx, &modela)
+	if err != nil {
+		logger.Error(err, "failed to install modela Modela")
+	}
 	if err != nil || result.Requeue {
 		return result, err
 	}
 
-	objectStore := NewObjectStorage()
-	result, err = r.reconcileComponment(ctx, objectStore)
+	result, err = r.reconcileControlPlane(ctx, &modela)
 	if err != nil || result.Requeue {
 		return result, err
 	}
 
-	database := NewDatabase()
-	result, err = r.reconcileComponment(ctx, database)
+	result, err = r.reconcileDataPlane(ctx, &modela)
 	if err != nil || result.Requeue {
 		return result, err
 	}
 
-	loki := NewLoki()
-	result, err = r.reconcileComponment(ctx, loki)
-	if err != nil || result.Requeue {
-		return result, err
-	}
-
-	prom := NewPrometheus()
-	result, err = r.reconcileComponment(ctx, prom)
-	if err != nil || result.Requeue {
-		return result, err
-	}
-
-	modelaSystem := NewModelaSystem(*modela.Spec.Version)
-	// reconcile modela system, make sure that all the items are as defined
-	result, err = r.reconcileComponment(ctx, modelaSystem)
-	if err != nil || result.Requeue {
-		return result, err
-	}
-
-	defaultTenant := NewDefaultTenant(*modela.Spec.Version)
-	// reconcile default tenant, make sure that all the items are as defined.
-	result, err = r.reconcileComponment(ctx, defaultTenant)
+	result, err = r.reconcileApiGateway(ctx, &modela)
 	if err != nil || result.Requeue {
 		return result, err
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alpha1.Modela) (ctrl.Result, error) {
+	// try to install cert manager
+	certManager := NewCertManager()
+	installed, err := certManager.Installed()
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if !installed {
+		result, err := r.reconcileComponment(ctx, certManager)
+		if err != nil || result.Requeue {
+			return result, err
+		}
+	}
+
+	// Object storage
+
+	objectStore := NewObjectStorage()
+	installed, err = objectStore.Installed()
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if !installed {
+		result, err := r.reconcileComponment(ctx, objectStore)
+		if err != nil || result.Requeue {
+			return result, err
+		}
+	}
+
+	// Database
+
+	database := NewDatabase()
+	installed, err = database.Installed()
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if !installed {
+		result, err := r.reconcileComponment(ctx, database)
+		if err != nil || result.Requeue {
+			return result, err
+		}
+	}
+
+	// Loki
+
+	loki := NewLoki()
+	installed, err = loki.Installed()
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if !installed {
+		result, err := r.reconcileComponment(ctx, loki)
+		if err != nil || result.Requeue {
+			return result, err
+		}
+	}
+
+	prom := NewPrometheus()
+	installed, err = prom.Installed()
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if !installed {
+		result, err := r.reconcileComponment(ctx, prom)
+		if err != nil || result.Requeue {
+			return result, err
+		}
+	}
+
+	modelaSystem := NewModelaSystem(*modela.Spec.Version)
+	installed, err = modelaSystem.Installed()
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if !installed {
+		// reconcile modela system, make sure that all the items are as defined
+		result, err := r.reconcileComponment(ctx, modelaSystem)
+		if err != nil || result.Requeue {
+			return result, err
+		}
+	}
+
+	defaultTenant := NewDefaultTenant(*modela.Spec.Version)
+	installed, err = defaultTenant.Installed()
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if !installed {
+		// reconcile default tenant, make sure that all the items are as defined.
+		result, err := r.reconcileComponment(ctx, defaultTenant)
+		if err != nil || result.Requeue {
+			return result, err
+		}
+	}
+	return ctrl.Result{}, err
+
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -116,6 +195,7 @@ func (r *ModelaReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 // Define the interface for modela components that can be reconciled
 type ModelaComponent interface {
+	IsEnabled() true
 	Installed() (bool, error)
 	Install() error
 	Installing() (bool, error)
@@ -124,6 +204,9 @@ type ModelaComponent interface {
 }
 
 func (r *ModelaReconciler) reconcileComponment(ctx context.Context, component ModelaComponent) (ctrl.Result, error) {
+	if !component.IsEnabled() {
+		return ctrl.Result{}, nil
+	}
 	logger := log.FromContext(ctx)
 	installed, err := component.Installed()
 	if err != nil {
@@ -153,6 +236,69 @@ func (r *ModelaReconciler) reconcileComponment(ctx context.Context, component Mo
 	return ctrl.Result{}, nil
 }
 
-func (r *ModelaReconciler) updateSystemStatus(ctx context.Context, modela *managementv1alpha1.Modela) (ctrl.Result, error) {
+func (r *ModelaReconciler) reconcileApiGateway(ctx context.Context, modela *managementv1alpha1.Modela) (ctrl.Result, error) {
+	// get api gateway deployment
+	var deployment appsv1.Deployment
+
+	name := types.NamespacedName{
+		Namespace: "modela-system",
+		Name:      "modela-api-gateway",
+	}
+
+	if err := r.Get(ctx, name, &deployment); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if *deployment.Spec.Replicas != *modela.Spec.ApiGateway.Replicas {
+		err := r.Update(ctx, &deployment)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *ModelaReconciler) reconcileControlPlane(ctx context.Context, modela *managementv1alpha1.Modela) (ctrl.Result, error) {
+	var deployment appsv1.Deployment
+
+	name := types.NamespacedName{
+		Namespace: "modela-system",
+		Name:      "modela-control-plane",
+	}
+
+	if err := r.Get(ctx, name, &deployment); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if *deployment.Spec.Replicas != *modela.Spec.ControlPlane.Replicas {
+		err := r.Update(ctx, &deployment)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *ModelaReconciler) reconcileDataPlane(ctx context.Context, modela *managementv1alpha1.Modela) (ctrl.Result, error) {
+	var deployment appsv1.Deployment
+
+	name := types.NamespacedName{
+		Namespace: "modela-system",
+		Name:      "modela-data-plane",
+	}
+
+	if err := r.Get(ctx, name, &deployment); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if *deployment.Spec.Replicas != *modela.Spec.ControlPlane.Replicas {
+		err := r.Update(ctx, &deployment)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
 	return ctrl.Result{}, nil
 }

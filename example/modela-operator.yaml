@@ -1,0 +1,24 @@
+apiVersion: management.modela.ai/v1alpha1
+kind: Modela
+metadata:
+  name: modela-sample
+spec:
+  version: "v0.4.716"
+  installed: true
+  observability:
+    enabled: false
+  #access:
+  #license:
+  defaultTenant: true
+  objectStore:
+    enabled: true
+  certManager:
+    enabled: false
+  systemDatabase:
+    enabled: true
+  controlPlane:
+    replicas: 1
+  dataPlane:
+    replicas: 1
+  apiGateway:
+    replicas: 1

@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/metaprov/modela-operator/internal/pkg/util"
 )
 
 // Modela system represent the model core system
@@ -32,7 +31,7 @@ func NewLoki() *Loki {
 
 // Check if the database installed
 func (m Loki) Installed() (bool, error) {
-	return util.IsChartInstalled(
+	return IsChartInstalled(
 		m.RepoName,
 		m.RepoUrl,
 		m.ReleaseName,
@@ -44,17 +43,17 @@ func (m Loki) Installed() (bool, error) {
 
 func (m Loki) Install() error {
 
-	if err := util.AddRepo(m.RepoName, m.RepoUrl, m.Dryrun); err != nil {
+	if err := AddRepo(m.RepoName, m.RepoUrl, m.Dryrun); err != nil {
 		return err
 	}
 	fmt.Println("\u2713 added repo " + m.RepoName)
 	// install namespace modela-system
-	if err := util.CreateNamespace(m.Namespace); err != nil {
+	if err := CreateNamespace(m.Namespace); err != nil {
 		return err
 	}
 	fmt.Println("\u2713 created namespace " + m.Namespace)
 
-	return util.InstallChart(
+	return InstallChart(
 		m.RepoName,
 		m.RepoUrl,
 		m.ReleaseName,
@@ -70,7 +69,7 @@ func (m Loki) Installing() (bool, error) {
 	if !installed {
 		return installed, err
 	}
-	running, err := util.IsPodRunning(m.Namespace, m.PodNamePrefix)
+	running, err := IsPodRunning(m.Namespace, m.PodNamePrefix)
 	if err != nil {
 		return false, err
 	}
@@ -83,7 +82,7 @@ func (m Loki) Ready() (bool, error) {
 	if !installed {
 		return installed, err
 	}
-	running, err := util.IsPodRunning(m.Namespace, m.PodNamePrefix)
+	running, err := IsPodRunning(m.Namespace, m.PodNamePrefix)
 	if err != nil {
 		return false, err
 	}
@@ -91,7 +90,7 @@ func (m Loki) Ready() (bool, error) {
 }
 
 func (m Loki) Uninstall() error {
-	return util.UninstallChart(
+	return UninstallChart(
 		m.RepoName,
 		m.RepoUrl,
 		"",

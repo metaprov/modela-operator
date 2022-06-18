@@ -6,6 +6,7 @@ import (
 )
 
 func TestObjectStorage_Installed(t *testing.T) {
+	t.Skip("Run only on empty cluster")
 	prem := NewObjectStorage()
 	installed, err := prem.Installed()
 	assert.NoError(t, err)
@@ -14,6 +15,7 @@ func TestObjectStorage_Installed(t *testing.T) {
 
 // run on an empty system
 func TestObjectStorage_Install(t *testing.T) {
+	t.Skip("Run only on empty cluster")
 	prem := NewObjectStorage()
 
 	err := prem.Install()

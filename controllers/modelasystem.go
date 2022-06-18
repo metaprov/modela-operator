@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/metaprov/modela-operator/internal/pkg/util"
 )
 
 // Modela system represent the model core system
@@ -48,7 +47,7 @@ func NewModelaSystem(version string) *ModelaSystem {
 
 // Check if the database installed
 func (ms ModelaSystem) Installed() (bool, error) {
-	return util.IsChartInstalled(
+	return IsChartInstalled(
 		ms.RepoName,
 		ms.RepoUrl,
 		ms.Url,
@@ -59,18 +58,18 @@ func (ms ModelaSystem) Installed() (bool, error) {
 }
 
 func (d ModelaSystem) Install() error {
-	if err := util.CreateNamespace("modela-system"); err != nil {
+	if err := CreateNamespace("modela-system"); err != nil {
 		return err
 	}
 	fmt.Println("\u2713 created namespace modela-system")
 
 	// apply the crd
-	if err := util.CreateNamespace("modela-catalog"); err != nil {
+	if err := CreateNamespace("modela-catalog"); err != nil {
 		return err
 	}
 	fmt.Println("\u2713 created namespace modela-catalog")
 
-	if err := util.CreateNamespace("default-tenant"); err != nil {
+	if err := CreateNamespace("default-tenant"); err != nil {
 		return err
 	}
 
@@ -79,7 +78,7 @@ func (d ModelaSystem) Install() error {
 	// pull the images.
 	fmt.Println("\u2713 pulling modela images")
 
-	dockerClient := util.RealDockerClient{}
+	dockerClient := RealDockerClient{}
 	for _, v := range d.Images {
 		fmt.Println("\u2713 pulling image " + v)
 		err := dockerClient.Pull(v)
@@ -89,7 +88,7 @@ func (d ModelaSystem) Install() error {
 		}
 	}
 
-	return util.InstallChart(
+	return InstallChart(
 		d.RepoName,
 		d.RepoUrl,
 		d.Name,
@@ -105,7 +104,7 @@ func (ms ModelaSystem) Installing() (bool, error) {
 	if !installed {
 		return installed, err
 	}
-	running, err := util.IsPodRunning(ms.Namespace, ms.PodNamePrefix)
+	running, err := IsPodRunning(ms.Namespace, ms.PodNamePrefix)
 	if err != nil {
 		return false, err
 	}
@@ -118,7 +117,7 @@ func (ds ModelaSystem) Ready() (bool, error) {
 	if !installed {
 		return installed, err
 	}
-	running, err := util.IsPodRunning(ds.Namespace, ds.PodNamePrefix)
+	running, err := IsPodRunning(ds.Namespace, ds.PodNamePrefix)
 	if err != nil {
 		return false, err
 	}
@@ -126,7 +125,7 @@ func (ds ModelaSystem) Ready() (bool, error) {
 }
 
 func (dm ModelaSystem) Uninstall() error {
-	return util.UninstallChart(
+	return UninstallChart(
 		dm.RepoName,
 		dm.RepoUrl,
 		"",

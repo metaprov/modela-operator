@@ -24,6 +24,21 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+// The phases of modela cluster
+type ModelaPhase string
+
+const (
+	ModelaPhasePending                 = "Pending"
+	ModelaPhaseInstallingCertManager   = "InstallingCertManager"
+	ModelaPhaseInstallingPormetous     = "InstallingPormetous"
+	ModelaPhaseInstallingDatabase      = "InstallingSystemDatabase"
+	ModelaPhaseInstallingLoki          = "InstallingLoki"
+	ModelaPhaseInstallingModela        = "InstallingModela"
+	ModelaPhaseInstallingDefaultTenant = "InstallingDefaultTenant"
+	ModelaPhaseRunning                 = "Running"
+	ModelaPhaseFailed                  = "Failed"
+)
+
 // ConditionStatus defines conditions of resources
 type ConditionStatus string
 
@@ -56,6 +71,7 @@ type ModelaCondition struct {
 
 // Define how the modela cluster is exposed.
 type ModelaAccessSpec struct {
+	// +kubebuilder:default:=8080
 	Port *int `json:"port,omitempty"`
 
 	NodePort *int32 `json:"nodeport,omitempty"`
@@ -63,8 +79,9 @@ type ModelaAccessSpec struct {
 
 type ApiGatewaySpec struct {
 	// Define the number of api gateway replicas
+	// +kubebuilder:default:=1
 	//+kubebuilder:validation:Optional
-	Replicas *int `json:"replicas,omitempty"`
+	Replicas *int32 `json:"replicas,omitempty"`
 	// Template to be used to generate the Persistent Volume Claim for the api gateway
 	//+kubebuilder:validation:Optional
 	PersistentVolumeClaimTemplate *v1.PersistentVolumeClaimSpec `json:"pvcTemplate,omitempty"`
@@ -72,40 +89,71 @@ type ApiGatewaySpec struct {
 
 type ControlPlaneSpec struct {
 	// Define the control plane replicas
+	// +kubebuilder:default:=1
 	//+kubebuilder:validation:Optional
-	Replicas *int `json:"replicas,omitempty"`
+	Replicas *int32 `json:"replicas,omitempty"`
+}
+
+type ObjectStorageSpec struct {
+	// +kubebuilder:default:=true
+	//+kubebuilder:validation:Optional
+	Enabled *bool `json:"enabled"`
+
+	// Minio Connection Reference
+	//+kubebuilder:validation:Optional
+	ConnectionRef v1.ObjectReference `json:"connectionRef,omitempty"`
+}
+
+type SystemDatabaseSpec struct {
+	// +kubebuilder:default:=true
+	//+kubebuilder:validation:Optional
+	Enabled *bool `json:"enabled"`
+
+	// Minio Connection Reference
+	//+kubebuilder:validation:Optional
+	ConnectionRef v1.ObjectReference `json:"connectionRef,omitempty"`
+}
+
+type CertManagerSpec struct {
+	// +kubebuilder:default:=true
+	//+kubebuilder:validation:Optional
+	Enabled *bool `json:"enabled"`
+
+	// Desired cert manager version
+	//+kubebuilder:validation:Optional
+	Version v1.ObjectReference `json:"version,omitempty"`
 }
 
 type BackupSpec struct {
+	// +kubebuilder:default:=false
 	//+kubebuilder:validation:Optional
-	Enabled *bool `json:"suspended"`
+	Enabled *bool `json:"enabled"`
 	//+kubebuilder:validation:Optional
 	CronSchedule string `json:"schedule"`
+	// +kubebuilder:default:=false
 	//+kubebuilder:validation:Optional
 	Suspended *bool `json:"suspended"`
 }
 
 type ObservabilitySpec struct {
 	//+kubebuilder:validation:Optional
-	Enabled *bool `json:"suspended"`
+	// +kubebuilder:default:=false
+	Enabled *bool `json:"enabled"`
 	// If true install the Prometheus helm chart (if not installed)
+	// +kubebuilder:default:=false
 	//+kubebuilder:validation:Optional
 	Prometheus *bool `json:"prometheus"`
 	// If true install the loki helm chart (if not installed)
+	// +kubebuilder:default:=false
 	//+kubebuilder:validation:Optional
 	Loki *bool `json:"loki"`
 }
 
-type ControlPlaneStatus struct {
-	// The status of the control plane
-	DeploymentStatus string `json:"deploymentStatus,omitempty"`
-
-	ServiceStatus string `json:"serviceStatus,omitempty"`
-}
-
 type DataPlaneSpec struct {
+	// +kubebuilder:default:=1
 	//+kubebuilder:validation:Optional
 	Replicas *int `json:"replicas,omitempty"`
+
 	// StorageClass to use for data plane data
 	//+kubebuilder:validation:Optional
 	StorageClass *string `json:"storageClass,omitempty"`
@@ -113,6 +161,13 @@ type DataPlaneSpec struct {
 	// Template to be used to generate the Persistent Volume Claim for the api gateway
 	//+kubebuilder:validation:Optional
 	PersistentVolumeClaimTemplate *v1.PersistentVolumeClaimSpec `json:"pvcTemplate,omitempty"`
+}
+
+type ControlPlaneStatus struct {
+	// The status of the control plane
+	DeploymentStatus string `json:"deploymentStatus,omitempty"`
+
+	ServiceStatus string `json:"serviceStatus,omitempty"`
 }
 
 type DataPlaneStatus struct {
@@ -136,6 +191,7 @@ type ModelaLicenseSpec struct {
 // ModelaSpec defines the desired state of Modela
 type ModelaSpec struct {
 
+	// The current version of modela cluster
 	//+kubebuilder:validation:Optional
 	Version *string `json:"version,omitempty"`
 
@@ -145,14 +201,13 @@ type ModelaSpec struct {
 	Installed *bool `json:"installed,omitempty"`
 
 	// If true, configure monitoring.
-	// +kubebuilder:default:=true
 	//+kubebuilder:validation:Optional
 	Observability ObservabilitySpec `json:"observability,omitempty"`
 
 	// Define how to access modela cluster
 	Access ModelaAccessSpec `json:"access,omitempty"`
 
-	// Define the desired state for modela license desired state
+	// Desired state of modela licensing
 	License ModelaLicenseSpec `json:"license,omitempty"`
 
 	// If true install the default tenant.
@@ -160,32 +215,24 @@ type ModelaSpec struct {
 	//+kubebuilder:validation:Optional
 	DefaultTenant *bool `json:"defaultTenant,omitempty"`
 
-	// If true the system will use local object storage.
-	// By default the system uses minio
-	// +kubebuilder:default:=true
+	// Desired state of object storage
 	//+kubebuilder:validation:Optional
-	UseLocalObjectStore *bool `json:"useLocalObjectStore,omitempty"`
+	ObjectStore ObjectStorageSpec `json:"objectStore,omitempty"`
 
-	// Minio Connection Reference
-	LocalObjectStoreConnectionRef v1.ObjectReference `json:"localObjectStoreConnectionRef,omitempty"`
 	// If true, install cert manager if not exist
 	//+kubebuilder:validation:Optional
-	UseCertManager *bool `json:"UseCertManager,omitempty"`
-	// If True the system will install a database
-	// By default install postgress
-	//+kubebuilder:validation:Optional
-	UseLocalDatabase *bool `json:"UseLocalDatabase,omitempty"`
+	UseCertManager CertManagerSpec `json:"certManager,omitempty"`
 
-	// Connection reference to the db connection
-	DatabaseConnectionRef v1.ObjectReference `json:"databaseConnectionRef,omitempty"`
+	// Desired state of the system database
+	SystemDatabase SystemDatabaseSpec `json:"systemDatabase,omitempty"`
 
 	// Setting of the control plane
-	ControlPlane ControlPlaneSpec `json:"controlPlaneSpec,omitempty"`
+	ControlPlane ControlPlaneSpec `json:"controlPlane,omitempty"`
 
-	// Setting of the data plane
+	// Desired state of the data plane
 	DataPlane DataPlaneSpec `json:"dataPlane,omitempty"`
 
-	// Setting of the api gateway
+	// Desired state of the api gateway
 	ApiGateway ApiGatewaySpec `json:"apiGateway,omitempty"`
 
 	Pod *v1.PodTemplate `json:"podTemplate,omitempty"`
@@ -199,13 +246,15 @@ type ModelaStatus struct {
 	ActualModelaVersion string `json:"actualModelaVersion,omitempty"`
 
 	// Status of the control plane
-	ControlPlaneStatus `json:"control,omitempty"`
+	ControlPlane ControlPlaneStatus `json:"control,omitempty"`
 
 	// Status of data plane
-	DataPlaneStatus `json:"data,omitempty"`
+	DataPlane DataPlaneStatus `json:"data,omitempty"`
 
 	// Status of the api gateway
-	ApiGatewayStatus `json:"gateway,omitempty"`
+	Gateway ApiGatewayStatus `json:"gateway,omitempty"`
+
+	Phase ModelaPhase `json:"phase,omitempty"`
 
 	// ObservedGeneration is the last generation that was acted on
 	//+kubebuilder:validation:Optional

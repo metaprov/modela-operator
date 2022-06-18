@@ -6,6 +6,7 @@ import (
 )
 
 func TestPrometheus_Installed(t *testing.T) {
+	t.Skip("Run only on empty cluster")
 	prem := NewPrometheus()
 	installed, err := prem.Installed()
 	assert.NoError(t, err)
@@ -14,6 +15,7 @@ func TestPrometheus_Installed(t *testing.T) {
 
 // run on an empty system
 func TestPrometheus_Install(t *testing.T) {
+	t.Skip("Run only on empty cluster")
 	prem := NewPrometheus()
 
 	err := prem.Install()

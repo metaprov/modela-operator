@@ -6,6 +6,7 @@ import (
 )
 
 func TestDatabase_Installed(t *testing.T) {
+	t.Skip("Run only on empty cluster")
 	database := NewDatabase()
 	installed, err := database.Installed()
 	assert.NoError(t, err)
@@ -14,6 +15,7 @@ func TestDatabase_Installed(t *testing.T) {
 
 // run on an empty system
 func TestDatabase_Install(t *testing.T) {
+	t.Skip("Run only on empty cluster")
 	database := NewDatabase()
 
 	err := database.Install()

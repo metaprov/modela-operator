@@ -41,13 +41,6 @@ spec:
           spec:
             description: ModelaSpec defines the desired state of Modela
             properties:
-              UseCertManager:
-                description: If true, install cert manager if not exist
-                type: boolean
-              UseLocalDatabase:
-                description: If True the system will install a database By default
-                  install postgress
-                type: boolean
               access:
                 description: Define how to access modela cluster
                 properties:
@@ -55,10 +48,11 @@ spec:
                     format: int32
                     type: integer
                   port:
+                    default: 8080
                     type: integer
                 type: object
               apiGateway:
-                description: Setting of the api gateway
+                description: Desired state of the api gateway
                 properties:
                   pvcTemplate:
                     description: Template to be used to generate the Persistent Volume
@@ -227,18 +221,65 @@ spec:
                         type: string
                     type: object
                   replicas:
+                    default: 1
                     description: Define the number of api gateway replicas
+                    format: int32
                     type: integer
                 type: object
-              controlPlaneSpec:
+              certManager:
+                description: If true, install cert manager if not exist
+                properties:
+                  enabled:
+                    default: true
+                    type: boolean
+                  version:
+                    description: Desired cert manager version
+                    properties:
+                      apiVersion:
+                        description: API version of the referent.
+                        type: string
+                      fieldPath:
+                        description: 'If referring to a piece of an object instead
+                          of an entire object, this string should contain a valid
+                          JSON/Go field access statement, such as desiredState.manifest.containers[2].
+                          For example, if the object reference is to a container within
+                          a pod, this would take on a value like: "spec.containers{name}"
+                          (where "name" refers to the name of the container that triggered
+                          the event) or if no container name is specified "spec.containers[2]"
+                          (container with index 2 in this pod). This syntax is chosen
+                          only to have some well-defined way of referencing a part
+                          of an object. TODO: this design is not final and this field
+                          is subject to change in the future.'
+                        type: string
+                      kind:
+                        description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                        type: string
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                        type: string
+                      namespace:
+                        description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                        type: string
+                      resourceVersion:
+                        description: 'Specific resourceVersion to which this reference
+                          is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
+                        type: string
+                      uid:
+                        description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
+                        type: string
+                    type: object
+                type: object
+              controlPlane:
                 description: Setting of the control plane
                 properties:
                   replicas:
+                    default: 1
                     description: Define the control plane replicas
+                    format: int32
                     type: integer
                 type: object
               dataPlane:
-                description: Setting of the data plane
+                description: Desired state of the data plane
                 properties:
                   pvcTemplate:
                     description: Template to be used to generate the Persistent Volume
@@ -407,95 +448,82 @@ spec:
                         type: string
                     type: object
                   replicas:
+                    default: 1
                     type: integer
                   storageClass:
                     description: StorageClass to use for data plane data
                     type: string
                 type: object
-              databaseConnectionRef:
-                description: Connection reference to the db connection
-                properties:
-                  apiVersion:
-                    description: API version of the referent.
-                    type: string
-                  fieldPath:
-                    description: 'If referring to a piece of an object instead of
-                      an entire object, this string should contain a valid JSON/Go
-                      field access statement, such as desiredState.manifest.containers[2].
-                      For example, if the object reference is to a container within
-                      a pod, this would take on a value like: "spec.containers{name}"
-                      (where "name" refers to the name of the container that triggered
-                      the event) or if no container name is specified "spec.containers[2]"
-                      (container with index 2 in this pod). This syntax is chosen
-                      only to have some well-defined way of referencing a part of
-                      an object. TODO: this design is not final and this field is
-                      subject to change in the future.'
-                    type: string
-                  kind:
-                    description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-                    type: string
-                  name:
-                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
-                    type: string
-                  namespace:
-                    description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
-                    type: string
-                  resourceVersion:
-                    description: 'Specific resourceVersion to which this reference
-                      is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
-                    type: string
-                  uid:
-                    description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
-                    type: string
-                type: object
               defaultTenant:
+                default: true
                 description: If true install the default tenant.
                 type: boolean
               installed:
+                default: true
                 description: If true, install the modela cluster is not installed
                 type: boolean
               license:
-                description: Define the desired state for modela license desired state
+                description: Desired state of modela licensing
                 type: object
-              localObjectStoreConnectionRef:
-                description: Minio Connection Reference
+              objectStore:
+                description: Desired state of object storage
                 properties:
-                  apiVersion:
-                    description: API version of the referent.
-                    type: string
-                  fieldPath:
-                    description: 'If referring to a piece of an object instead of
-                      an entire object, this string should contain a valid JSON/Go
-                      field access statement, such as desiredState.manifest.containers[2].
-                      For example, if the object reference is to a container within
-                      a pod, this would take on a value like: "spec.containers{name}"
-                      (where "name" refers to the name of the container that triggered
-                      the event) or if no container name is specified "spec.containers[2]"
-                      (container with index 2 in this pod). This syntax is chosen
-                      only to have some well-defined way of referencing a part of
-                      an object. TODO: this design is not final and this field is
-                      subject to change in the future.'
-                    type: string
-                  kind:
-                    description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-                    type: string
-                  name:
-                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
-                    type: string
-                  namespace:
-                    description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
-                    type: string
-                  resourceVersion:
-                    description: 'Specific resourceVersion to which this reference
-                      is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
-                    type: string
-                  uid:
-                    description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
-                    type: string
+                  connectionRef:
+                    description: Minio Connection Reference
+                    properties:
+                      apiVersion:
+                        description: API version of the referent.
+                        type: string
+                      fieldPath:
+                        description: 'If referring to a piece of an object instead
+                          of an entire object, this string should contain a valid
+                          JSON/Go field access statement, such as desiredState.manifest.containers[2].
+                          For example, if the object reference is to a container within
+                          a pod, this would take on a value like: "spec.containers{name}"
+                          (where "name" refers to the name of the container that triggered
+                          the event) or if no container name is specified "spec.containers[2]"
+                          (container with index 2 in this pod). This syntax is chosen
+                          only to have some well-defined way of referencing a part
+                          of an object. TODO: this design is not final and this field
+                          is subject to change in the future.'
+                        type: string
+                      kind:
+                        description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                        type: string
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                        type: string
+                      namespace:
+                        description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                        type: string
+                      resourceVersion:
+                        description: 'Specific resourceVersion to which this reference
+                          is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
+                        type: string
+                      uid:
+                        description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
+                        type: string
+                    type: object
+                  enabled:
+                    default: true
+                    type: boolean
                 type: object
-              monitored:
+              observability:
                 description: If true, configure monitoring.
-                type: boolean
+                properties:
+                  enabled:
+                    default: false
+                    type: boolean
+                  loki:
+                    default: false
+                    description: If true install the loki helm chart (if not installed)
+                    type: boolean
+                  prometheus:
+                    default: false
+                    description: If true install the Prometheus helm chart (if not
+                      installed)
+                    type: boolean
+                type: object
               podTemplate:
                 description: PodTemplate describes a template for creating copies
                   of a predefined pod.
@@ -7951,11 +7979,51 @@ spec:
                         type: object
                     type: object
                 type: object
-              useLocalObjectStore:
-                description: If true the system will use local object storage. By
-                  default the system uses minio
-                type: boolean
+              systemDatabase:
+                description: Desired state of the system database
+                properties:
+                  connectionRef:
+                    description: Minio Connection Reference
+                    properties:
+                      apiVersion:
+                        description: API version of the referent.
+                        type: string
+                      fieldPath:
+                        description: 'If referring to a piece of an object instead
+                          of an entire object, this string should contain a valid
+                          JSON/Go field access statement, such as desiredState.manifest.containers[2].
+                          For example, if the object reference is to a container within
+                          a pod, this would take on a value like: "spec.containers{name}"
+                          (where "name" refers to the name of the container that triggered
+                          the event) or if no container name is specified "spec.containers[2]"
+                          (container with index 2 in this pod). This syntax is chosen
+                          only to have some well-defined way of referencing a part
+                          of an object. TODO: this design is not final and this field
+                          is subject to change in the future.'
+                        type: string
+                      kind:
+                        description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                        type: string
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                        type: string
+                      namespace:
+                        description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                        type: string
+                      resourceVersion:
+                        description: 'Specific resourceVersion to which this reference
+                          is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
+                        type: string
+                      uid:
+                        description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
+                        type: string
+                    type: object
+                  enabled:
+                    default: true
+                    type: boolean
+                type: object
               version:
+                description: The current version of modela cluster
                 type: string
             type: object
           status:
@@ -8031,6 +8099,9 @@ spec:
                   on
                 format: int64
                 type: integer
+              phase:
+                description: The phases of modela cluster
+                type: string
             type: object
         type: object
     served: true

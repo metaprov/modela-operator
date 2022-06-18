@@ -1,7 +1,5 @@
 package controllers
 
-import "github.com/metaprov/modela-operator/internal/pkg/util"
-
 type DefaultTenant struct {
 	Namespace     string
 	Version       string
@@ -28,7 +26,7 @@ func NewDefaultTenant(version string) *DefaultTenant {
 
 // Check if the database installed
 func (dt DefaultTenant) Installed() (bool, error) {
-	return util.IsChartInstalled(
+	return IsChartInstalled(
 		dt.RepoName,
 		dt.RepoUrl,
 		dt.Url,
@@ -40,7 +38,7 @@ func (dt DefaultTenant) Installed() (bool, error) {
 }
 
 func (dt DefaultTenant) Install() error {
-	return util.InstallChart(
+	return InstallChart(
 		dt.RepoName,
 		dt.RepoUrl,
 		dt.Name,
@@ -56,7 +54,7 @@ func (dt DefaultTenant) Installing() (bool, error) {
 	if !installed {
 		return installed, err
 	}
-	running, err := util.IsPodRunning(dt.Namespace, dt.PodNamePrefix)
+	running, err := IsPodRunning(dt.Namespace, dt.PodNamePrefix)
 	if err != nil {
 		return false, err
 	}
