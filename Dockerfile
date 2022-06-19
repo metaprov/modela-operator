@@ -9,6 +9,14 @@ COPY go.sum go.sum
 # and so that source changes don't invalidate our downloaded layer
 RUN go mod download
 
+
+ENV K8S_VERSION=v1.24.1
+ENV HELM_VERSION=v3.9.0
+ENV HELM_FILENAME=helm-${HELM_VERSION}-linux-amd64.tar.gz
+
+# install helm and kubectl
+RUN curl -L https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl 
+RUN curl -L https://get.helm.sh/${HELM_FILENAME} | tar xz && mv linux-amd64/helm /bin/helm && rm -rf linux-amd64
 # Copy the go source
 COPY main.go main.go
 COPY api/ api/
@@ -19,9 +27,12 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager main.go
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM gcr.io/distroless/static:nonroot
+FROM ghcr.io/metaprov/modela-base
 WORKDIR /
+
 COPY --from=builder /workspace/manager .
-USER 65532:65532
+COPY --from=builder /usr/local/bin/kubectl /usr/local/bin/
+COPY --from=builder /bin/helm /usr/local/bin/
+
 
 ENTRYPOINT ["/manager"]

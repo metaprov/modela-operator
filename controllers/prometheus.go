@@ -38,8 +38,9 @@ func (m Prometheus) IsEnabled(modela managementv1.Modela) bool {
 }
 
 // Check if the database installed
-func (m Prometheus) Installed() (bool, error) {
+func (m Prometheus) Installed(ctx context.Context) (bool, error) {
 	return IsChartInstalled(
+		ctx,
 		m.RepoName,
 		m.RepoUrl,
 		m.ReleaseName,
@@ -65,6 +66,7 @@ func (m Prometheus) Install(ctx context.Context, modela managementv1.Modela) err
 	logger.Info("created namespace " + m.Namespace)
 
 	return InstallChart(
+		ctx,
 		m.RepoName,
 		m.RepoUrl,
 		m.ReleaseName,
@@ -75,8 +77,8 @@ func (m Prometheus) Install(ctx context.Context, modela managementv1.Modela) err
 }
 
 // Check if we are still installing the database
-func (m Prometheus) Installing() (bool, error) {
-	installed, err := m.Installed()
+func (m Prometheus) Installing(ctx context.Context) (bool, error) {
+	installed, err := m.Installed(ctx)
 	if !installed {
 		return installed, err
 	}
@@ -88,8 +90,8 @@ func (m Prometheus) Installing() (bool, error) {
 }
 
 // Check if the database is ready
-func (m Prometheus) Ready() (bool, error) {
-	installed, err := m.Installed()
+func (m Prometheus) Ready(ctx context.Context) (bool, error) {
+	installed, err := m.Installed(ctx)
 	if !installed {
 		return installed, err
 	}
@@ -100,8 +102,9 @@ func (m Prometheus) Ready() (bool, error) {
 	return running, nil
 }
 
-func (m Prometheus) Uninstall() error {
+func (m Prometheus) Uninstall(ctx context.Context) error {
 	return UninstallChart(
+		ctx,
 		m.RepoName,
 		m.RepoUrl,
 		"",

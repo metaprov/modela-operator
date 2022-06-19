@@ -39,9 +39,10 @@ func (os ObjectStorage) IsEnabled(modela managementv1.Modela) bool {
 }
 
 // Check if the database installed
-func (os ObjectStorage) Installed() (bool, error) {
+func (os ObjectStorage) Installed(ctx context.Context) (bool, error) {
 	//repoName, repoUrl string, url string, ns string, releaseName string, versionName string
 	return IsChartInstalled(
+		ctx,
 		os.RepoName,
 		os.RepoUrl,
 		os.Name,
@@ -67,6 +68,7 @@ func (os ObjectStorage) Install(ctx context.Context, modela managementv1.Modela)
 	logger.Info("created namespace " + os.Namespace)
 
 	return InstallChart(
+		ctx,
 		os.RepoName,
 		os.RepoUrl,
 		os.Name,
@@ -77,8 +79,8 @@ func (os ObjectStorage) Install(ctx context.Context, modela managementv1.Modela)
 }
 
 // Check if we are still installing the database
-func (os ObjectStorage) Installing() (bool, error) {
-	installed, err := os.Installed()
+func (os ObjectStorage) Installing(ctx context.Context) (bool, error) {
+	installed, err := os.Installed(ctx)
 	if !installed {
 		return installed, err
 	}
@@ -90,8 +92,8 @@ func (os ObjectStorage) Installing() (bool, error) {
 }
 
 // Check if the database is ready
-func (os ObjectStorage) Ready() (bool, error) {
-	installed, err := os.Installed()
+func (os ObjectStorage) Ready(ctx context.Context) (bool, error) {
+	installed, err := os.Installed(ctx)
 	if !installed {
 		return installed, err
 	}
@@ -102,8 +104,9 @@ func (os ObjectStorage) Ready() (bool, error) {
 	return running, nil
 }
 
-func (os ObjectStorage) Uninstall() error {
+func (os ObjectStorage) Uninstall(ctx context.Context) error {
 	return UninstallChart(
+		ctx,
 		os.RepoName,
 		os.RepoUrl,
 		"",

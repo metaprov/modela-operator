@@ -35,8 +35,9 @@ func (m DefaultTenant) IsEnabled(modela managementv1.Modela) bool {
 }
 
 // Check if the database installed
-func (dt DefaultTenant) Installed() (bool, error) {
+func (dt DefaultTenant) Installed(ctx context.Context) (bool, error) {
 	return IsChartInstalled(
+		ctx,
 		dt.RepoName,
 		dt.RepoUrl,
 		dt.Url,
@@ -49,6 +50,7 @@ func (dt DefaultTenant) Installed() (bool, error) {
 
 func (dt DefaultTenant) Install(ctx context.Context, modela managementv1.Modela) error {
 	return InstallChart(
+		ctx,
 		dt.RepoName,
 		dt.RepoUrl,
 		dt.Name,
@@ -59,8 +61,8 @@ func (dt DefaultTenant) Install(ctx context.Context, modela managementv1.Modela)
 }
 
 // Check if we are still installing the default tenant
-func (dt DefaultTenant) Installing() (bool, error) {
-	installed, err := dt.Installed()
+func (dt DefaultTenant) Installing(ctx context.Context) (bool, error) {
+	installed, err := dt.Installed(ctx)
 	if !installed {
 		return installed, err
 	}
@@ -72,10 +74,10 @@ func (dt DefaultTenant) Installing() (bool, error) {
 }
 
 // Check if the default tenant is installed and ready
-func (d DefaultTenant) Ready() (bool, error) {
-	return d.Installed()
+func (d DefaultTenant) Ready(ctx context.Context) (bool, error) {
+	return d.Installed(ctx)
 }
 
-func (d DefaultTenant) Uninstall() error {
+func (d DefaultTenant) Uninstall(ctx context.Context) error {
 	return nil
 }

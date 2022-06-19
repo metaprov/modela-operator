@@ -13,7 +13,7 @@ const PostgresVersion = "1.1.1"
 func TestDatabase_Installed(t *testing.T) {
 	t.Skip("Run only on empty cluster")
 	database := NewDatabase(PostgresVersion)
-	installed, err := database.Installed()
+	installed, err := database.Installed(context.Background())
 	assert.NoError(t, err)
 	assert.True(t, installed)
 }

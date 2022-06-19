@@ -53,8 +53,9 @@ func NewModelaSystem(version string) *ModelaSystem {
 }
 
 // Check if the database installed
-func (ms ModelaSystem) Installed() (bool, error) {
+func (ms ModelaSystem) Installed(ctx context.Context) (bool, error) {
 	return IsChartInstalled(
+		ctx,
 		ms.RepoName,
 		ms.RepoUrl,
 		ms.Url,
@@ -88,18 +89,19 @@ func (d ModelaSystem) Install(ctx context.Context, modela managementv1.Modela) e
 	logger.Info("created namespace default-tenant")
 
 	// pull the images.
-	logger.Info("pulling modela images")
+	//logger.Info("pulling modela images")
 
-	dockerClient := RealDockerClient{}
-	for _, v := range d.Images {
-		logger.Info("pulling image " + v)
-		err := dockerClient.Pull(v)
-		if err != nil {
-			logger.Error(err, "failed to pull image "+v)
-		}
-	}
+	//dockerClient := RealDockerClient{}
+	//for _, v := range d.Images {
+	//	logger.Info("pulling image " + v)
+	//	err := dockerClient.Pull(v)
+	//	if err != nil {
+	//		logger.Error(err, "failed to pull image "+v)
+	//	}
+	//}
 
 	return InstallChart(
+		ctx,
 		d.RepoName,
 		d.RepoUrl,
 		d.Name,
@@ -110,8 +112,8 @@ func (d ModelaSystem) Install(ctx context.Context, modela managementv1.Modela) e
 }
 
 // Check if we are still installing the database
-func (ms ModelaSystem) Installing() (bool, error) {
-	installed, err := ms.Installed()
+func (ms ModelaSystem) Installing(ctx context.Context) (bool, error) {
+	installed, err := ms.Installed(ctx)
 	if !installed {
 		return installed, err
 	}
@@ -123,8 +125,8 @@ func (ms ModelaSystem) Installing() (bool, error) {
 }
 
 // Check if the database is ready
-func (ds ModelaSystem) Ready() (bool, error) {
-	installed, err := ds.Installed()
+func (ds ModelaSystem) Ready(ctx context.Context) (bool, error) {
+	installed, err := ds.Installed(ctx)
 	if !installed {
 		return installed, err
 	}
@@ -135,8 +137,9 @@ func (ds ModelaSystem) Ready() (bool, error) {
 	return running, nil
 }
 
-func (dm ModelaSystem) Uninstall() error {
+func (dm ModelaSystem) Uninstall(ctx context.Context) error {
 	return UninstallChart(
+		ctx,
 		dm.RepoName,
 		dm.RepoUrl,
 		"",

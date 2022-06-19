@@ -6,23 +6,29 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - app
+  - ""
   resources:
-  - deployment/status
+  - '*'
   verbs:
-  - get
+  - '*'
 - apiGroups:
-  - app
+  - apps
   resources:
-  - deployments
+  - '*'
   verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
+  - '*'
+- apiGroups:
+  - batch
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- apiGroups:
+  - extensions
+  resources:
+  - '*'
+  verbs:
+  - '*'
 - apiGroups:
   - management.modela.ai
   resources:

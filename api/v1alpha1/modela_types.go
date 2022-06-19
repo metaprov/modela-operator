@@ -119,7 +119,7 @@ type ObjectStorageSpec struct {
 type SystemDatabaseSpec struct {
 	// +kubebuilder:default:=true
 	//+kubebuilder:validation:Optional
-	Installed *bool `json:"enabled"`
+	Installed *bool `json:"installed"`
 	// +kubebuilder:default:="10.9.2"
 	//+kubebuilder:validation:Optional
 	PostgresChartVersion *string `json:"postgresChartVersion,omitempty"`

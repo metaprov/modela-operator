@@ -11,7 +11,7 @@ import (
 func TestModela_Installed(t *testing.T) {
 	t.Skip("Run only on empty cluster")
 	modela := NewModelaSystem("v0.4.716")
-	installed, err := modela.Installed()
+	installed, err := modela.Installed(context.Background())
 	assert.NoError(t, err)
 	assert.False(t, installed)
 

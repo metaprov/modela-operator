@@ -4,10 +4,10 @@ metadata:
   name: modela-sample
 spec:
   observability:
-    prometheus: true
-	  prometheusChartVersion: "0.57.0"
-    loki: true
-	  lokiChartVersion: "2.8.4"
+    prometheus: false
+    prometheusChartVersion: "0.57.0"
+    loki: false
+    lokiChartVersion: "2.8.4"
   modelaChart:
     installed: true
     chartVersion: "v0.4.866"  
@@ -15,13 +15,13 @@ spec:
     installed : true
     chartVersion: "v0.4.866"
   objectStore:
-    installed: true
+    installed: false
     minioChartVersion: "9.2.9"
   certManager:
     installed: false
     chartVersion: "v1.7.1"
   systemDatabase:
-    installed: true
+    installed: false
     postgresChartVersion: "10.9.2"
   controlPlane:
     replicas: 1

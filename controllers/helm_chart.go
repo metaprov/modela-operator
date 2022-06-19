@@ -7,10 +7,13 @@
 package controllers
 
 import (
+	"context"
 	"fmt"
-	"k8s.io/klog/v2"
 	"os"
 	"regexp"
+
+	"k8s.io/klog/v2"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/pkg/errors"
 	helmaction "helm.sh/helm/v3/pkg/action"
@@ -62,9 +65,11 @@ func (chart *HelmChart) GetConfig() (*helmaction.Configuration, error) {
 }
 
 // Load the chart, and assign it to the crt field
-func (chart *HelmChart) Load() error {
+func (chart *HelmChart) Load(ctx context.Context) error {
+	logger := log.FromContext(ctx)
 	config, err := chart.GetConfig()
 	if err != nil {
+		logger.Error(err, "failed to get config")
 		return err
 	}
 	client := helmaction.NewInstall(config)
@@ -75,10 +80,12 @@ func (chart *HelmChart) Load() error {
 
 	chartFullPath, err := client.ChartPathOptions.LocateChart(name, settings)
 	if err != nil {
+		logger.Error(err, "failed to locate chart")
 		return fmt.Errorf("failed to locate resources at '%s' due to %s", chart.Name, err)
 	}
 	result, err := helmloader.Load(chartFullPath)
 	if err != nil {
+		logger.Error(err, "failed to load full path")
 		return fmt.Errorf("failed to load resources from '%s' due to %s", chartFullPath, err)
 	}
 	chart.crt = result
@@ -109,8 +116,8 @@ func (chart *HelmChart) parsePackageName() []string {
 	return parsedOutput
 }
 
-func (chart *HelmChart) CanInstall() (bool, error) {
-	err := chart.Load()
+func (chart *HelmChart) CanInstall(ctx context.Context) (bool, error) {
+	err := chart.Load(ctx)
 	if err != nil {
 		return false, err
 	}
@@ -121,9 +128,12 @@ func (chart *HelmChart) CanInstall() (bool, error) {
 	return false, err
 }
 
-func (chart *HelmChart) Get() (*helmrelease.Release, error) {
+func (chart *HelmChart) Get(ctx context.Context) (*helmrelease.Release, error) {
+	logger := log.FromContext(ctx)
+
 	config, err := chart.GetConfig()
 	if err != nil {
+		logger.Error(err, "failed to get config")
 		return nil, err
 	}
 	// Check if the Release Exists
@@ -131,6 +141,7 @@ func (chart *HelmChart) Get() (*helmrelease.Release, error) {
 	aList.All = true
 	charts, err := aList.Run()
 	if err != nil {
+		logger.Error(err, "failed to get config")
 		return nil, errors.Wrap(err, "failed to run get")
 	}
 	for _, release := range charts {
@@ -142,24 +153,31 @@ func (chart *HelmChart) Get() (*helmrelease.Release, error) {
 }
 
 // check if the chart is already installed
-func (chart *HelmChart) IsInstalled() (bool, error) {
-	err := chart.Load()
+func (chart *HelmChart) IsInstalled(ctx context.Context) (bool, error) {
+	logger := log.FromContext(ctx)
+	err := chart.Load(ctx)
 	if err != nil {
+		logger.Error(err, "failed to load chart")
 		return false, errors.Wrapf(err, "failed to load chart")
 	}
-	existingRelease, err := chart.Get()
+	existingRelease, err := chart.Get(ctx)
+	if err != nil {
+		logger.Error(err, "failed to get chart")
+		return false, err
+	}
 	if existingRelease != nil {
 		return true, nil
 	}
 	return false, nil
 }
 
-func (chart *HelmChart) GetStatus() (helmrelease.Status, error) {
-	err := chart.Load()
+func (chart *HelmChart) GetStatus(ctx context.Context) (helmrelease.Status, error) {
+
+	err := chart.Load(ctx)
 	if err != nil {
 		return helmrelease.StatusUnknown, errors.Wrapf(err, "failed to load chart")
 	}
-	existingRelease, err := chart.Get()
+	existingRelease, err := chart.Get(ctx)
 	if err != nil {
 		return helmrelease.StatusUnknown, errors.Wrapf(err, "chart does not exist")
 	}
@@ -167,19 +185,26 @@ func (chart *HelmChart) GetStatus() (helmrelease.Status, error) {
 
 }
 
-func (chart *HelmChart) Install() error {
-	err := chart.Load()
+func (chart *HelmChart) Install(ctx context.Context) error {
+	logger := log.FromContext(ctx)
+	logger.Info("helmchart install", "release", chart.ReleaseName, "name", chart.Name)
+	err := chart.Load(ctx)
 	if err != nil {
+		logger.Error(err, "failed to load chart")
 		return errors.Wrapf(err, "failed to load chart")
 	}
 	// Check if resource already exists
-	existingRelease, _ := chart.Get()
+	existingRelease, err := chart.Get(ctx)
+	if err != nil {
+		logger.Error(err, "failed to get chart")
+	}
 	if existingRelease != nil {
 		return errors.Wrapf(err, "release '%s' already exists in namespace '%s'", existingRelease.Name, existingRelease.Namespace)
 	}
 
-	can, err := chart.CanInstall()
+	can, err := chart.CanInstall(ctx)
 	if err != nil {
+		logger.Error(err, "failed to check can install")
 		return errors.Wrapf(err, "failed to check if chart is installed '%s'", existingRelease.Namespace)
 	}
 	if !can {
@@ -188,6 +213,7 @@ func (chart *HelmChart) Install() error {
 
 	config, err := chart.GetConfig()
 	if err != nil {
+		logger.Error(err, "failed to get config")
 		return errors.Wrap(err, "failed to get config")
 	}
 
@@ -204,25 +230,30 @@ func (chart *HelmChart) Install() error {
 
 	_, err = inst.Run(chart.crt, chart.Values)
 	if err != nil {
+		logger.Error(err, "failed to install")
 		return fmt.Errorf("failed to run install due to %s", err)
 	}
 	return nil
 
 }
 
-func (chart *HelmChart) Upgrade() error {
+func (chart *HelmChart) Upgrade(ctx context.Context) error {
+	logger := log.FromContext(ctx)
 
-	err := chart.Load()
+	logger.Info("Enter upgrade")
+
+	err := chart.Load(ctx)
 	if err != nil {
+		logger.Error(err, "failed to load chart")
 		return errors.Wrapf(err, "failed to load chart")
 	}
 	// Check if resource already exists
-	existingRelease, _ := chart.Get()
+	existingRelease, err := chart.Get(ctx)
 	if existingRelease != nil {
 		return errors.Wrapf(err, "release '%s' already exists in namespace '%s'", existingRelease.Name, existingRelease.Namespace)
 	}
 
-	can, err := chart.CanInstall()
+	can, err := chart.CanInstall(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "failed to check if chart is installed '%s'", existingRelease.Namespace)
 	}
@@ -235,7 +266,7 @@ func (chart *HelmChart) Upgrade() error {
 		return errors.Wrap(err, "failed to get config")
 	}
 
-	isInstalled, err := chart.IsInstalled()
+	isInstalled, err := chart.IsInstalled(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get installed state %s", err)
 	}
@@ -273,14 +304,17 @@ func (chart *HelmChart) Upgrade() error {
 
 }
 
-func (chart *HelmChart) Uninstall() error {
+func (chart *HelmChart) Uninstall(ctx context.Context) error {
+	logger := log.FromContext(ctx)
 
-	err := chart.Load()
+	logger.Info("enter uninstall")
+
+	err := chart.Load(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "failed to load chart")
 	}
 	// Check if resource already exists
-	existingRelease, _ := chart.Get()
+	existingRelease, _ := chart.Get(ctx)
 	if existingRelease == nil {
 		return nil
 	}

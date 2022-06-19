@@ -40,8 +40,10 @@ type ModelaReconciler struct {
 //+kubebuilder:rbac:groups=management.modela.ai,resources=modelas,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=management.modela.ai,resources=modelas/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=management.modela.ai,resources=modelas/finalizers,verbs=update
-//+kubebuilder:rbac:groups=app,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=app,resources=deployment/status,verbs=get
+//+kubebuilder:rbac:groups="",resources=*,verbs=*
+//+kubebuilder:rbac:groups="batch",resources=*,verbs=*
+//+kubebuilder:rbac:groups="extensions",resources=*,verbs=*
+//+kubebuilder:rbac:groups="apps",resources=*,verbs=*
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -109,7 +111,7 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 	// Object storage
 
 	objectStore := NewObjectStorage(*modela.Spec.ObjectStore.MinioChartVersion)
-	installed, err := objectStore.Installed()
+	installed, err := objectStore.Installed(ctx)
 	if err != nil {
 		logger.Error(err, "failed to check if object store is installed")
 		return ctrl.Result{}, err
@@ -119,12 +121,13 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 		if err != nil || result.Requeue {
 			return result, err
 		}
+		logger.Info("installed model object")
 	}
 
 	// Database
 
 	database := NewDatabase(*modela.Spec.SystemDatabase.PostgresChartVersion)
-	installed, err = database.Installed()
+	installed, err = database.Installed(ctx)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -138,7 +141,7 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 	// Loki
 
 	loki := NewLoki(*modela.Spec.Observability.LokiVersion)
-	installed, err = loki.Installed()
+	installed, err = loki.Installed(ctx)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -150,7 +153,7 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 	}
 
 	prom := NewPrometheus(*modela.Spec.Observability.PrometheusVersion)
-	installed, err = prom.Installed()
+	installed, err = prom.Installed(ctx)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -162,7 +165,7 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 	}
 
 	modelaSystem := NewModelaSystem(*modela.Spec.ModelaChart.ChartVersion)
-	installed, err = modelaSystem.Installed()
+	installed, err = modelaSystem.Installed(ctx)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -175,7 +178,7 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 	}
 
 	defaultTenant := NewDefaultTenant(*modela.Spec.DefaultTenantChart.ChartVersion)
-	installed, err = defaultTenant.Installed()
+	installed, err = defaultTenant.Installed(ctx)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -200,11 +203,11 @@ func (r *ModelaReconciler) SetupWithManager(mgr ctrl.Manager) error {
 // Define the interface for modela components that can be reconciled
 type ModelaComponent interface {
 	IsEnabled(modela managementv1.Modela) bool
-	Installed() (bool, error)
+	Installed(ctx context.Context) (bool, error)
 	Install(ctx context.Context, modela managementv1.Modela) error
-	Installing() (bool, error)
-	Ready() (bool, error)
-	Uninstall() error
+	Installing(ctx context.Context) (bool, error)
+	Ready(ctx context.Context) (bool, error)
+	Uninstall(ctx context.Context) error
 }
 
 func (r *ModelaReconciler) reconcileComponment(ctx context.Context, component ModelaComponent, modela managementv1.Modela) (ctrl.Result, error) {
@@ -212,21 +215,21 @@ func (r *ModelaReconciler) reconcileComponment(ctx context.Context, component Mo
 		return ctrl.Result{}, nil
 	}
 	logger := log.FromContext(ctx)
-	installed, err := component.Installed()
+	installed, err := component.Installed(ctx)
 	if err != nil {
-		logger.Error(err, "failed to check if database installed")
+		logger.Error(err, "failed to check if installed")
 		return ctrl.Result{}, err
 	}
 	if !installed {
-		installing, err := component.Installing()
+		installing, err := component.Installing(ctx)
 		if err != nil {
-			logger.Error(err, "failed to check if database installed")
+			logger.Error(err, "failed to check if installed")
 			return ctrl.Result{}, err
 		}
 		if !installing {
 			err := component.Install(ctx, modela)
 			if err != nil {
-				logger.Error(err, "failed to check if database installed")
+				logger.Error(err, "failed to check if installed")
 				return ctrl.Result{}, err
 			}
 		} else {

@@ -24,8 +24,8 @@ spec:
       labels:
         control-plane: controller-manager
     spec:
-      securityContext:
-        runAsNonRoot: true
+      #securityContext:
+      #  runAsNonRoot: true
         # TODO(user): For common cases that do not require escalating privileges
         # it is recommended to ensure that all your Pods/Containers are restrictive.
         # More info: https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted
@@ -43,8 +43,8 @@ spec:
           - name: ENABLE_WEBHOOKS
             value: "True"
         name: manager
-        securityContext:
-          allowPrivilegeEscalation: false
+        # Tomer securityContext:
+        #  allowPrivilegeEscalation: true
         # TODO(user): uncomment for common cases that do not require escalating privileges
         # capabilities:
         #   drop:

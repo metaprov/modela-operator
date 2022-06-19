@@ -39,8 +39,9 @@ func (db Database) IsEnabled(modela managementv1.Modela) bool {
 }
 
 // Check if the database installed
-func (db Database) Installed() (bool, error) {
+func (db Database) Installed(ctx context.Context) (bool, error) {
 	return IsChartInstalled(
+		ctx,
 		db.RepoName,
 		db.RepoUrl,
 		db.Url,
@@ -65,6 +66,7 @@ func (db Database) Install(ctx context.Context, modela managementv1.Modela) erro
 	logger.Info("created namespace " + db.Namespace)
 
 	return InstallChart(
+		ctx,
 		db.RepoName,
 		db.RepoUrl,
 		db.Name,
@@ -75,8 +77,8 @@ func (db Database) Install(ctx context.Context, modela managementv1.Modela) erro
 }
 
 // Check if we are still installing the database
-func (d Database) Installing() (bool, error) {
-	installed, err := d.Installed()
+func (d Database) Installing(ctx context.Context) (bool, error) {
+	installed, err := d.Installed(ctx)
 	if !installed {
 		return installed, err
 	}
@@ -88,8 +90,8 @@ func (d Database) Installing() (bool, error) {
 }
 
 // Check if the database is ready
-func (db Database) Ready() (bool, error) {
-	installed, err := db.Installed()
+func (db Database) Ready(ctx context.Context) (bool, error) {
+	installed, err := db.Installed(ctx)
 	if !installed {
 		return installed, err
 	}
@@ -100,8 +102,8 @@ func (db Database) Ready() (bool, error) {
 	return running, nil
 }
 
-func (db Database) Uninstall() error {
-	return UninstallChart(
+func (db Database) Uninstall(ctx context.Context) error {
+	return UninstallChart(ctx,
 		db.RepoName,
 		db.RepoUrl,
 		"",

@@ -3,6 +3,9 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
 	infra "github.com/metaprov/modelaapi/pkg/apis/infra/v1alpha1"
 	"github.com/pkg/errors"
 	helmrelease "helm.sh/helm/v3/pkg/release"
@@ -12,21 +15,19 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"strings"
-	"time"
 )
 
-func InstallChart(repoName, repoUrl, name string, ns string, releaseName string, versionName string) error {
+func InstallChart(ctx context.Context, repoName, repoUrl, name string, ns string, releaseName string, versionName string) error {
 	chart := NewHelmChart(repoName, repoUrl, name, ns, releaseName, versionName, false)
 	chart.ChartVersion = versionName
 	chart.ReleaseName = releaseName
 	chart.Namespace = ns
-	canInstall, err := chart.CanInstall()
+	canInstall, err := chart.CanInstall(ctx)
 	if err != nil {
 		return errors.Errorf("Failed to check if chart is installed ,err: %s", err)
 	}
 	if canInstall {
-		err = chart.Install()
+		err = chart.Install(ctx)
 		if err != nil {
 			return errors.Errorf("Error installing chart %s, err: %s", name, err)
 		}
@@ -34,18 +35,18 @@ func InstallChart(repoName, repoUrl, name string, ns string, releaseName string,
 	return nil
 }
 
-func InstallChartWithValues(repoName, repoUrl, name string, ns string, releaseName string, versionName string, values map[string]interface{}) error {
+func InstallChartWithValues(ctx context.Context, repoName, repoUrl, name string, ns string, releaseName string, versionName string, values map[string]interface{}) error {
 	chart := NewHelmChart(repoName, repoUrl, name, ns, releaseName, versionName, false)
 	chart.ChartVersion = versionName
 	chart.ReleaseName = releaseName
 	chart.Namespace = ns
 	chart.Values = values
-	canInstall, err := chart.CanInstall()
+	canInstall, err := chart.CanInstall(ctx)
 	if err != nil {
 		return errors.Errorf("Failed to check if chart is installed ,err: %s", err)
 	}
 	if canInstall {
-		err = chart.Install()
+		err = chart.Install(ctx)
 		if err != nil {
 			return errors.Errorf("Error installing chart %s, err: %s", name, err)
 		}
@@ -53,25 +54,25 @@ func InstallChartWithValues(repoName, repoUrl, name string, ns string, releaseNa
 	return nil
 }
 
-func UninstallChart(repoName string, repoUrl string, url string, ns string, releaseName string, versionName string) error {
+func UninstallChart(ctx context.Context, repoName string, repoUrl string, url string, ns string, releaseName string, versionName string) error {
 
 	chart := NewHelmChart(repoName, repoUrl, url, ns, releaseName, versionName, false)
-	installed, err := chart.IsInstalled()
+	installed, err := chart.IsInstalled(ctx)
 	if err != nil {
 		if !installed {
 			return nil
 		}
 	}
-	err = chart.Uninstall()
+	err = chart.Uninstall(ctx)
 	if err != nil {
 		return errors.Errorf("Error uninstalling chart %s, err: %s", url, err)
 	}
 	return nil
 }
 
-func IsChartInstalled(repoName, repoUrl string, url string, ns string, releaseName string, versionName string) (bool, error) {
+func IsChartInstalled(ctx context.Context, repoName, repoUrl string, url string, ns string, releaseName string, versionName string) (bool, error) {
 	chart := NewHelmChart(repoName, repoUrl, url, ns, releaseName, versionName, false)
-	chartStatus, _ := chart.GetStatus()
+	chartStatus, _ := chart.GetStatus(ctx)
 	if chartStatus == helmrelease.StatusUnknown {
 		return false, nil
 	}
@@ -287,7 +288,7 @@ func WaitForPod(ns string, name string) error {
 }
 
 func InstallCrd(url string) error {
-	runner := NewRealRunner("kubectl", ".", false)
+	runner := NewRealRunner("kubectl", ".", true)
 	_, _, err := runner.Run([]string{"apply", "-f", url})
 	if err != nil {
 		return err
@@ -296,7 +297,7 @@ func InstallCrd(url string) error {
 }
 
 func AddRepo(name string, url string, dryrun bool) error {
-	repo := NewHelmRepo(name, url, dryrun, false)
+	repo := NewHelmRepo(name, url, dryrun, true)
 	_, _, err := repo.Add()
 	if err != nil {
 		return err

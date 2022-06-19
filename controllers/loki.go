@@ -37,8 +37,9 @@ func (m Loki) IsEnabled(modela managementv1.Modela) bool {
 }
 
 // Check if the database installed
-func (m Loki) Installed() (bool, error) {
+func (m Loki) Installed(ctx context.Context) (bool, error) {
 	return IsChartInstalled(
+		ctx,
 		m.RepoName,
 		m.RepoUrl,
 		m.ReleaseName,
@@ -64,6 +65,7 @@ func (m Loki) Install(ctx context.Context, modela managementv1.Modela) error {
 	logger.Info("created namespace " + m.Namespace)
 
 	return InstallChart(
+		ctx,
 		m.RepoName,
 		m.RepoUrl,
 		m.ReleaseName,
@@ -74,8 +76,8 @@ func (m Loki) Install(ctx context.Context, modela managementv1.Modela) error {
 }
 
 // Check if we are still installing the database
-func (m Loki) Installing() (bool, error) {
-	installed, err := m.Installed()
+func (m Loki) Installing(ctx context.Context) (bool, error) {
+	installed, err := m.Installed(ctx)
 	if !installed {
 		return installed, err
 	}
@@ -87,8 +89,8 @@ func (m Loki) Installing() (bool, error) {
 }
 
 // Check if the database is ready
-func (m Loki) Ready() (bool, error) {
-	installed, err := m.Installed()
+func (m Loki) Ready(ctx context.Context) (bool, error) {
+	installed, err := m.Installed(ctx)
 	if !installed {
 		return installed, err
 	}
@@ -99,8 +101,9 @@ func (m Loki) Ready() (bool, error) {
 	return running, nil
 }
 
-func (m Loki) Uninstall() error {
+func (m Loki) Uninstall(ctx context.Context) error {
 	return UninstallChart(
+		ctx,
 		m.RepoName,
 		m.RepoUrl,
 		"",

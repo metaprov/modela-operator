@@ -13,7 +13,7 @@ const ObjectVersion = "1.1.1"
 func TestObjectStorage_Installed(t *testing.T) {
 	t.Skip("Run only on empty cluster")
 	prem := NewObjectStorage(ObjectVersion)
-	installed, err := prem.Installed()
+	installed, err := prem.Installed(context.Background())
 	assert.NoError(t, err)
 	assert.False(t, installed)
 }

@@ -8000,7 +8000,7 @@ spec:
                         description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                         type: string
                     type: object
-                  enabled:
+                  installed:
                     default: true
                     type: boolean
                   postgresChartVersion:

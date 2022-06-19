@@ -85,8 +85,9 @@ func (cm CertManager) Ready() (bool, error) {
 	return running, nil
 }
 
-func (cm CertManager) Uninstall() error {
+func (cm CertManager) Uninstall(ctx context.Context) error {
 	return UninstallChart(
+		ctx,
 		cm.RepoName,
 		cm.RepoUrl,
 		"",

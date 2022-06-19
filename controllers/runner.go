@@ -3,9 +3,11 @@ package controllers
 import (
 	"bufio"
 	"fmt"
-	"k8s.io/klog/v2"
+	"log"
 	"os/exec"
 	"runtime"
+
+	"k8s.io/klog/v2"
 )
 
 type RealRunner struct {
@@ -59,11 +61,16 @@ func (r RealRunner) Run(subcmd []string) (string, string, error) {
 
 	errPipe, err := cmd.StderrPipe()
 	if err != nil {
-		klog.Fatal("Couldn't connect to command's stderr")
+		klog.Error(err, "Couldn't connect to command's stderr")
 	}
 	outPipe, err := cmd.StdoutPipe()
 	if err != nil {
-		klog.Fatal("Couldn't connect to command's stdout")
+		klog.Error(err, "Couldn't connect to command's stdout")
+	}
+
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		log.Fatal(err)
 	}
 	_ = bufio.NewReader(errPipe)
 	outReader := bufio.NewReader(outPipe)
@@ -74,8 +81,10 @@ func (r RealRunner) Run(subcmd []string) (string, string, error) {
 
 	// start the command and filter the output
 	if err = cmd.Start(); err != nil {
+		klog.Error(err, "failed to start command")
 		return "", "", err
 	}
+	fmt.Printf("--> started command: %s\n", cmdString)
 	outScanner := bufio.NewScanner(outReader)
 	for outScanner.Scan() {
 		outStr += outScanner.Text() + "\n"
@@ -83,7 +92,13 @@ func (r RealRunner) Run(subcmd []string) (string, string, error) {
 			fmt.Println(outScanner.Text())
 		}
 	}
+	fmt.Printf("--> scanned output: %s\n", cmdString)
+
+	stdin.Close()
 	err = cmd.Wait()
+	if err != nil {
+		klog.Error(err, "failed to start command")
+	}
 	return outStr, "", err
 
 }
