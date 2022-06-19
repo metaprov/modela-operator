@@ -3,19 +3,26 @@ kind: Modela
 metadata:
   name: modela-sample
 spec:
-  version: "v0.4.716"
-  installed: true
   observability:
-    enabled: false
-  #access:
-  #license:
-  defaultTenant: true
+    prometheus: true
+	  prometheusChartVersion: "0.57.0"
+    loki: true
+	  lokiChartVersion: "2.8.4"
+  modelaChart:
+    installed: true
+    chartVersion: "v0.4.866"  
+  defaultTenantChart: 
+    installed : true
+    chartVersion: "v0.4.866"
   objectStore:
-    enabled: true
+    installed: true
+    minioChartVersion: "9.2.9"
   certManager:
-    enabled: false
+    installed: false
+    chartVersion: "v1.7.1"
   systemDatabase:
-    enabled: true
+    installed: true
+    postgresChartVersion: "10.9.2"
   controlPlane:
     replicas: 1
   dataPlane:
