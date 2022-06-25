@@ -9,6 +9,9 @@ package controllers
 import (
 	"context"
 	"fmt"
+	helmkube "helm.sh/helm/v3/pkg/kube"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"k8s.io/client-go/rest"
 	"os"
 	"regexp"
 
@@ -20,7 +23,6 @@ import (
 	helmchart "helm.sh/helm/v3/pkg/chart"
 	helmloader "helm.sh/helm/v3/pkg/chart/loader"
 	helmcli "helm.sh/helm/v3/pkg/cli"
-	helmkube "helm.sh/helm/v3/pkg/kube"
 	helmrelease "helm.sh/helm/v3/pkg/release"
 )
 
@@ -54,11 +56,24 @@ func NewHelmChart(repoName, repoUrl, name, namespace, releaseName, versionName s
 }
 
 func (chart *HelmChart) GetConfig() (*helmaction.Configuration, error) {
-	actionConfig := new(helmaction.Configuration)
-	clientConfig := helmkube.GetConfig(settings.KubeConfig, settings.KubeContext, chart.Namespace)
-	err := actionConfig.Init(clientConfig, chart.Namespace, os.Getenv("HELM_DRIVER"), klog.Infof)
+	var kubeConfig *genericclioptions.ConfigFlags
+	config, err := rest.InClusterConfig()
 	if err != nil {
-		klog.Errorf("%+v", err)
+		if err == rest.ErrNotInCluster {
+			kubeConfig = helmkube.GetConfig(settings.KubeConfig, settings.KubeContext, chart.Namespace)
+		} else {
+			klog.Errorf("%+v", err)
+		}
+	} else {
+		kubeConfig = genericclioptions.NewConfigFlags(false)
+		kubeConfig.APIServer = &config.Host
+		kubeConfig.BearerToken = &config.BearerToken
+		kubeConfig.CAFile = &config.CAFile
+		kubeConfig.Namespace = &chart.Namespace
+	}
+	actionConfig := new(helmaction.Configuration)
+	if err := actionConfig.Init(kubeConfig, chart.Namespace, os.Getenv("HELM_DRIVER"), klog.Infof); err != nil {
+		klog.Error(err, "Unable to initialize Helm")
 		return nil, err
 	}
 	return actionConfig, nil
@@ -69,9 +84,10 @@ func (chart *HelmChart) Load(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	config, err := chart.GetConfig()
 	if err != nil {
-		logger.Error(err, "failed to get config")
+		logger.Error(err, "Failed to get config")
 		return err
 	}
+
 	client := helmaction.NewInstall(config)
 	//client.ChartPathOptions.RepoURL = chart.RepoUrl
 	client.Namespace = chart.Namespace
@@ -80,13 +96,13 @@ func (chart *HelmChart) Load(ctx context.Context) error {
 
 	chartFullPath, err := client.ChartPathOptions.LocateChart(name, settings)
 	if err != nil {
-		logger.Error(err, "failed to locate chart")
-		return fmt.Errorf("failed to locate resources at '%s' due to %s", chart.Name, err)
+		logger.Error(err, "Failed to locate Helm Chart", "name", chart.Name)
+		return fmt.Errorf("Failed to locate Helm Chart '%s' due to %s", chart.Name, err)
 	}
 	result, err := helmloader.Load(chartFullPath)
 	if err != nil {
-		logger.Error(err, "failed to load full path")
-		return fmt.Errorf("failed to load resources from '%s' due to %s", chartFullPath, err)
+		logger.Error(err, "Failed to load Helm Chart")
+		return errors.Wrapf(err, "Failed to load resources from %s", chartFullPath)
 	}
 	chart.crt = result
 	return nil
@@ -187,25 +203,27 @@ func (chart *HelmChart) GetStatus(ctx context.Context) (helmrelease.Status, erro
 
 func (chart *HelmChart) Install(ctx context.Context) error {
 	logger := log.FromContext(ctx)
-	logger.Info("helmchart install", "release", chart.ReleaseName, "name", chart.Name)
+	logger.Info("Installing Helm Chart", "release", chart.ReleaseName, "namespace", chart.Namespace, "name", chart.Name)
 	err := chart.Load(ctx)
 	if err != nil {
-		logger.Error(err, "failed to load chart")
-		return errors.Wrapf(err, "failed to load chart")
+		logger.Error(err, "Failed to load chart")
+		return errors.Wrapf(err, "Failed to load chart")
 	}
 	// Check if resource already exists
 	existingRelease, err := chart.Get(ctx)
 	if err != nil {
-		logger.Error(err, "failed to get chart")
+		logger.Error(err, "Failed to get chart")
 	}
+
 	if existingRelease != nil {
-		return errors.Wrapf(err, "release '%s' already exists in namespace '%s'", existingRelease.Name, existingRelease.Namespace)
+		logger.Error(err, fmt.Sprintf("Release \"%s\" already exists in namespace \"%s\"", existingRelease.Name, existingRelease.Namespace))
+		return errors.Wrapf(err, "Release '%s' already exists in namespace '%s'", existingRelease.Name, existingRelease.Namespace)
 	}
 
 	can, err := chart.CanInstall(ctx)
 	if err != nil {
-		logger.Error(err, "failed to check can install")
-		return errors.Wrapf(err, "failed to check if chart is installed '%s'", existingRelease.Namespace)
+		logger.Error(err, "Failed to check if Helm Chart is installed", "namespace", existingRelease.Namespace)
+		return errors.Wrapf(err, "Failed to check if Helm Chart is installed (namespace=%s)", existingRelease.Namespace)
 	}
 	if !can {
 		return errors.Wrapf(err, "release at '%s' is not installable", chart.Name)

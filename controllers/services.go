@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"context"
-	"fmt"
+	"k8s.io/klog/v2"
 	"strings"
 	"time"
 
@@ -29,6 +29,7 @@ func InstallChart(ctx context.Context, repoName, repoUrl, name string, ns string
 	if canInstall {
 		err = chart.Install(ctx)
 		if err != nil {
+
 			return errors.Errorf("Error installing chart %s, err: %s", name, err)
 		}
 	}
@@ -298,22 +299,9 @@ func InstallCrd(url string) error {
 
 func AddRepo(name string, url string, dryrun bool) error {
 	repo := NewHelmRepo(name, url, dryrun, true)
-	_, _, err := repo.Add()
-	if err != nil {
+	if err := repo.DownloadIndex(); err != nil {
 		return err
 	}
-	fmt.Println("added repo " + name)
-	_, _, err = repo.Update()
-	if err != nil {
-		return err
-	}
-	fmt.Println("repo updated " + name)
-	fmt.Println("downloading index for repo  " + name)
-	//err = repo.DownloadIndex()
-	//if err != nil {
-	//	return err
-	//}
-	fmt.Println("index updated for repo" + name)
 
 	return nil
 }
@@ -340,17 +328,23 @@ func IsPodRunningWithWait(ns string, name string) (bool, error) {
 }
 
 func RestClient() (*rest.Config, error) {
-	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
-	// if you want to change the loading rules (which files in which order), you can do so here
-
-	configOverrides := &clientcmd.ConfigOverrides{}
-	// if you want to change override values or bind them to flags, there are methods to help you
-
-	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
-	config, err := kubeConfig.ClientConfig()
+	var config *rest.Config
+	config, err := rest.InClusterConfig()
 	if err != nil {
-		return nil, err
+		if err == rest.ErrNotInCluster {
+			loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+			configOverrides := &clientcmd.ConfigOverrides{}
+			kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
+			config, err = kubeConfig.ClientConfig()
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			klog.Errorf("%+v", err)
+			return nil, errors.Wrapf(err, "Unable to load in-cluster config")
+		}
 	}
+
 	return config, nil
 
 }

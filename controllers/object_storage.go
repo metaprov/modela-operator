@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-
 	managementv1 "github.com/metaprov/modela-operator/api/v1alpha1"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -54,15 +53,15 @@ func (os ObjectStorage) Installed(ctx context.Context) (bool, error) {
 
 func (os ObjectStorage) Install(ctx context.Context, modela managementv1.Modela) error {
 	logger := log.FromContext(ctx)
-
 	if err := AddRepo(os.RepoName, os.RepoUrl, os.Dryrun); err != nil {
-		logger.Error(err, "failed to add repo "+os.RepoName)
+		logger.Error(err, "Failed to add repo "+os.RepoName)
 		return err
 	}
+
 	logger.Info("added repo " + os.RepoName)
 	// install namespace modela-system
 	if err := CreateNamespace(os.Namespace); err != nil {
-		logger.Error(err, "failed to create namespace "+os.Namespace)
+		logger.Error(err, "Failed to create cert-manager namespace "+os.Namespace)
 		return err
 	}
 	logger.Info("created namespace " + os.Namespace)

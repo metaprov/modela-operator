@@ -18,7 +18,7 @@ func TestCertManager_Installed(t *testing.T) {
 
 // run on an empty system
 func TestCertManager_Install(t *testing.T) {
-	t.Skip("Run only on empty cluster")
+	//t.Skip("Run only on empty cluster")
 	database := NewCertManager("")
 
 	err := database.Install(context.Background(), v1alpha1.Modela{})

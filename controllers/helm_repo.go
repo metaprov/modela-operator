@@ -21,11 +21,10 @@ var (
 )
 
 type HelmRepo struct {
-	Name      string
-	Url       string
-	Namespace string
-	DryRun    bool
-	Debug     bool
+	Name   string
+	Url    string
+	DryRun bool
+	Debug  bool
 }
 
 func NewHelmRepo(name string, url string, dryRun bool, debug bool) *HelmRepo {
@@ -37,18 +36,8 @@ func NewHelmRepo(name string, url string, dryRun bool, debug bool) *HelmRepo {
 	}
 }
 
-func (r *HelmRepo) Add() (string, string, error) {
-	runner := NewRealRunner("helm", ".", r.Debug)
-	return runner.Run([]string{"repo", "add", r.Name, r.Url})
-}
-
-func (r *HelmRepo) Update() (string, string, error) {
-	runner := NewRealRunner("helm", ".", r.Debug)
-	return runner.Run([]string{"repo", "update"})
-}
-
 func (r *HelmRepo) DownloadIndex() error {
-	entry := &repo.Entry{URL: r.Url}
+	entry := &repo.Entry{Name: r.Name, URL: r.Url}
 	chartRepo, err := repo.NewChartRepository(entry, getters)
 	if err != nil {
 		return err
@@ -58,6 +47,9 @@ func (r *HelmRepo) DownloadIndex() error {
 	if err != nil {
 		return err
 	}
+	var f repo.File
+	f.Update(entry)
+
 	chartRepo.IndexFile.SortEntries()
 	return nil
 
