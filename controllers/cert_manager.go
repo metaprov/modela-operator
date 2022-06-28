@@ -2,9 +2,8 @@ package controllers
 
 import (
 	"context"
-	"fmt"
-
 	managementv1 "github.com/metaprov/modela-operator/api/v1alpha1"
+	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -34,7 +33,7 @@ func NewCertManager(version string) *CertManager {
 }
 
 func (cm CertManager) IsEnabled(modela managementv1.Modela) bool {
-	return *modela.Spec.CertManager.Installed
+	return *modela.Spec.CertManager.Install
 }
 
 func (cm CertManager) Installed() (bool, error) {
@@ -45,18 +44,28 @@ func (cm CertManager) Install(ctx context.Context, modela managementv1.Modela) e
 	logger := log.FromContext(ctx)
 
 	if err := AddRepo(cm.RepoName, cm.RepoUrl, false); err != nil {
-		logger.Error(err, "failed to add repo "+cm.RepoUrl)
+		logger.Error(err, "Failed to download Helm Repo")
 		return err
 	}
-	logger.Info("added repo " + cm.RepoName)
-	// install namespace modela-system
-	if err := CreateNamespace(cm.Namespace); err != nil {
-		logger.Error(err, "failed to create namespace "+cm.Namespace)
+	logger.Info("Added Helm Repo", "repo", cm.RepoName)
+	if err := CreateNamespace(cm.Namespace); err != nil && !k8serr.IsAlreadyExists(err) {
+		logger.Error(err, "failed to create namespace")
 		return err
 	}
-	logger.Info("created namespace " + cm.Namespace)
-	versionUrl := fmt.Sprintf("https://github.com/cert-manager/cert-manager/releases/download/%s/cert-manager.yaml", *modela.Spec.CertManager.ChartVersion)
-	return InstallCrd(versionUrl)
+
+	logger.Info("Applying Helm Chart", "version", cm.Version)
+	return InstallChartWithValues(
+		ctx,
+		cm.RepoName,
+		cm.RepoUrl,
+		cm.Name,
+		cm.Namespace,
+		cm.ReleaseName,
+		cm.Version,
+		map[string]interface{}{
+			"installCRDs": "true",
+		},
+	)
 
 }
 
@@ -86,11 +95,18 @@ func (cm CertManager) Ready() (bool, error) {
 }
 
 func (cm CertManager) Uninstall(ctx context.Context) error {
+	logger := log.FromContext(ctx)
+	if err := AddRepo(cm.RepoName, cm.RepoUrl, false); err != nil {
+		logger.Error(err, "Failed to download Helm Repo")
+		return err
+	}
+
+	logger.Info("Added Helm Repo", "repo", cm.RepoName)
 	return UninstallChart(
 		ctx,
 		cm.RepoName,
 		cm.RepoUrl,
-		"",
+		cm.Name,
 		cm.Namespace,
 		cm.ReleaseName,
 		cm.Version,

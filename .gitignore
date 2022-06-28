@@ -11,7 +11,7 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
-.vscode/
+./.vscode/
 .idea/
 .DS_Store
 dist/
@@ -43,7 +43,7 @@ lang/python/modelaapi.egg-info/
 gateway/
 
 vendor/
-bin/
+./bin/
 dist/
 *.iml
 # delve debug binaries

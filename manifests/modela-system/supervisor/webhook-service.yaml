@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: modela-control-plane-webhook
+    app.kubernetes.io/part-of: modela
+  name: modela-control-plane-webhook
+  namespace: modela-system
+spec:
+  ports:
+    - name: webhook
+      protocol: TCP
+      port: 443
+      targetPort: 9443
+  selector:
+    app.kubernetes.io/name: modela-control-plane

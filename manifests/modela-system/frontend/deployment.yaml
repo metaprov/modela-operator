@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: modela-frontend
+  name: modela-frontend
+  namespace: modela-system
+spec:
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: modela-frontend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: modela-frontend
+    spec:
+      containers:
+        - name: main
+          image: ghcr.io/metaprov/modela-frontend:develop
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+              name: http
+            - containerPort: 8008
+              name: profiling
+          resources:
+            limits:
+              cpu: "200m"
+              memory: "512Mi"
+            requests:
+              cpu: "100m"
+              memory: "256Mi"    
+

@@ -24,7 +24,7 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Modela is the Schema for the modelas API
+        description: Modela defines the configuration of the Modela operator
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -42,184 +42,35 @@ spec:
             description: ModelaSpec defines the desired state of Modela
             properties:
               access:
-                description: Define how to access modela cluster
+                description: Access specifies the configuration to install Ingress
+                  resources that will expose Modela externally
                 properties:
-                  nodeport:
-                    format: int32
-                    type: integer
-                  port:
-                    default: 8080
-                    type: integer
+                  hostname:
+                    default: vcap.me
+                    description: Hostname specifies the host domain which will be
+                      used as the hostname for rules in Ingress resources managed
+                      by the Modela operator. By default, the hostname will default
+                      to a localhost alias.
+                    type: string
+                  ingressClass:
+                    default: nginx
+                    description: IngressClass specifies the Ingress class which will
+                      be applied to Ingress resources managed by the Modela operator.
+                    type: string
+                  ingressEnabled:
+                    default: true
+                    description: IngressEnabled indicates if Ingress resources will
+                      be created to expose the Modela API gateway, proxy, and frontend.
+                    type: boolean
+                  installNginx:
+                    default: false
+                    description: InstallNginx indicates if the Nginx Ingress Controller
+                      will be installed. If enabled, Ingress resources created by
+                      the Modela operator will use Nginx as their Ingress class.
+                    type: boolean
                 type: object
               apiGateway:
-                description: Desired state of the api gateway
                 properties:
-                  pvcTemplate:
-                    description: Template to be used to generate the Persistent Volume
-                      Claim for the api gateway
-                    properties:
-                      accessModes:
-                        description: 'accessModes contains the desired access modes
-                          the volume should have. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1'
-                        items:
-                          type: string
-                        type: array
-                      dataSource:
-                        description: 'dataSource field can be used to specify either:
-                          * An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
-                          * An existing PVC (PersistentVolumeClaim) If the provisioner
-                          or an external controller can support the specified data
-                          source, it will create a new volume based on the contents
-                          of the specified data source. If the AnyVolumeDataSource
-                          feature gate is enabled, this field will always have the
-                          same contents as the DataSourceRef field.'
-                        properties:
-                          apiGroup:
-                            description: APIGroup is the group for the resource being
-                              referenced. If APIGroup is not specified, the specified
-                              Kind must be in the core API group. For any other third-party
-                              types, APIGroup is required.
-                            type: string
-                          kind:
-                            description: Kind is the type of resource being referenced
-                            type: string
-                          name:
-                            description: Name is the name of resource being referenced
-                            type: string
-                        required:
-                        - kind
-                        - name
-                        type: object
-                      dataSourceRef:
-                        description: 'dataSourceRef specifies the object from which
-                          to populate the volume with data, if a non-empty volume
-                          is desired. This may be any local object from a non-empty
-                          API group (non core object) or a PersistentVolumeClaim object.
-                          When this field is specified, volume binding will only succeed
-                          if the type of the specified object matches some installed
-                          volume populator or dynamic provisioner. This field will
-                          replace the functionality of the DataSource field and as
-                          such if both fields are non-empty, they must have the same
-                          value. For backwards compatibility, both fields (DataSource
-                          and DataSourceRef) will be set to the same value automatically
-                          if one of them is empty and the other is non-empty. There
-                          are two important differences between DataSource and DataSourceRef:
-                          * While DataSource only allows two specific types of objects,
-                          DataSourceRef allows any non-core object, as well as PersistentVolumeClaim
-                          objects. * While DataSource ignores disallowed values (dropping
-                          them), DataSourceRef preserves all values, and generates
-                          an error if a disallowed value is specified. (Beta) Using
-                          this field requires the AnyVolumeDataSource feature gate
-                          to be enabled.'
-                        properties:
-                          apiGroup:
-                            description: APIGroup is the group for the resource being
-                              referenced. If APIGroup is not specified, the specified
-                              Kind must be in the core API group. For any other third-party
-                              types, APIGroup is required.
-                            type: string
-                          kind:
-                            description: Kind is the type of resource being referenced
-                            type: string
-                          name:
-                            description: Name is the name of resource being referenced
-                            type: string
-                        required:
-                        - kind
-                        - name
-                        type: object
-                      resources:
-                        description: 'resources represents the minimum resources the
-                          volume should have. If RecoverVolumeExpansionFailure feature
-                          is enabled users are allowed to specify resource requirements
-                          that are lower than previous value but must still be higher
-                          than capacity recorded in the status field of the claim.
-                          More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
-                        properties:
-                          limits:
-                            additionalProperties:
-                              anyOf:
-                              - type: integer
-                              - type: string
-                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                              x-kubernetes-int-or-string: true
-                            description: 'Limits describes the maximum amount of compute
-                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
-                            type: object
-                          requests:
-                            additionalProperties:
-                              anyOf:
-                              - type: integer
-                              - type: string
-                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                              x-kubernetes-int-or-string: true
-                            description: 'Requests describes the minimum amount of
-                              compute resources required. If Requests is omitted for
-                              a container, it defaults to Limits if that is explicitly
-                              specified, otherwise to an implementation-defined value.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
-                            type: object
-                        type: object
-                      selector:
-                        description: selector is a label query over volumes to consider
-                          for binding.
-                        properties:
-                          matchExpressions:
-                            description: matchExpressions is a list of label selector
-                              requirements. The requirements are ANDed.
-                            items:
-                              description: A label selector requirement is a selector
-                                that contains values, a key, and an operator that
-                                relates the key and values.
-                              properties:
-                                key:
-                                  description: key is the label key that the selector
-                                    applies to.
-                                  type: string
-                                operator:
-                                  description: operator represents a key's relationship
-                                    to a set of values. Valid operators are In, NotIn,
-                                    Exists and DoesNotExist.
-                                  type: string
-                                values:
-                                  description: values is an array of string values.
-                                    If the operator is In or NotIn, the values array
-                                    must be non-empty. If the operator is Exists or
-                                    DoesNotExist, the values array must be empty.
-                                    This array is replaced during a strategic merge
-                                    patch.
-                                  items:
-                                    type: string
-                                  type: array
-                              required:
-                              - key
-                              - operator
-                              type: object
-                            type: array
-                          matchLabels:
-                            additionalProperties:
-                              type: string
-                            description: matchLabels is a map of {key,value} pairs.
-                              A single {key,value} in the matchLabels map is equivalent
-                              to an element of matchExpressions, whose key field is
-                              "key", the operator is "In", and the values array contains
-                              only "value". The requirements are ANDed.
-                            type: object
-                        type: object
-                      storageClassName:
-                        description: 'storageClassName is the name of the StorageClass
-                          required by the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1'
-                        type: string
-                      volumeMode:
-                        description: volumeMode defines what type of volume is required
-                          by the claim. Value of Filesystem is implied when not included
-                          in claim spec.
-                        type: string
-                      volumeName:
-                        description: volumeName is the binding reference to the PersistentVolume
-                          backing this claim.
-                        type: string
-                    type: object
                   replicas:
                     default: 1
                     description: Define the number of api gateway replicas
@@ -229,208 +80,53 @@ spec:
               certManager:
                 description: Desired state of object storage
                 properties:
-                  chartVersion:
+                  Version:
+                    default: v1.7.1
                     type: string
-                  installed:
+                  install:
                     default: true
                     type: boolean
                 type: object
               controlPlane:
-                description: Setting of the control plane
                 properties:
                   replicas:
                     default: 1
-                    description: Define the control plane replicas
+                    description: The number of control plane replicas
                     format: int32
                     type: integer
                 type: object
               dataPlane:
-                description: Desired state of the data plane
                 properties:
-                  pvcTemplate:
-                    description: Template to be used to generate the Persistent Volume
-                      Claim for the api gateway
-                    properties:
-                      accessModes:
-                        description: 'accessModes contains the desired access modes
-                          the volume should have. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1'
-                        items:
-                          type: string
-                        type: array
-                      dataSource:
-                        description: 'dataSource field can be used to specify either:
-                          * An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
-                          * An existing PVC (PersistentVolumeClaim) If the provisioner
-                          or an external controller can support the specified data
-                          source, it will create a new volume based on the contents
-                          of the specified data source. If the AnyVolumeDataSource
-                          feature gate is enabled, this field will always have the
-                          same contents as the DataSourceRef field.'
-                        properties:
-                          apiGroup:
-                            description: APIGroup is the group for the resource being
-                              referenced. If APIGroup is not specified, the specified
-                              Kind must be in the core API group. For any other third-party
-                              types, APIGroup is required.
-                            type: string
-                          kind:
-                            description: Kind is the type of resource being referenced
-                            type: string
-                          name:
-                            description: Name is the name of resource being referenced
-                            type: string
-                        required:
-                        - kind
-                        - name
-                        type: object
-                      dataSourceRef:
-                        description: 'dataSourceRef specifies the object from which
-                          to populate the volume with data, if a non-empty volume
-                          is desired. This may be any local object from a non-empty
-                          API group (non core object) or a PersistentVolumeClaim object.
-                          When this field is specified, volume binding will only succeed
-                          if the type of the specified object matches some installed
-                          volume populator or dynamic provisioner. This field will
-                          replace the functionality of the DataSource field and as
-                          such if both fields are non-empty, they must have the same
-                          value. For backwards compatibility, both fields (DataSource
-                          and DataSourceRef) will be set to the same value automatically
-                          if one of them is empty and the other is non-empty. There
-                          are two important differences between DataSource and DataSourceRef:
-                          * While DataSource only allows two specific types of objects,
-                          DataSourceRef allows any non-core object, as well as PersistentVolumeClaim
-                          objects. * While DataSource ignores disallowed values (dropping
-                          them), DataSourceRef preserves all values, and generates
-                          an error if a disallowed value is specified. (Beta) Using
-                          this field requires the AnyVolumeDataSource feature gate
-                          to be enabled.'
-                        properties:
-                          apiGroup:
-                            description: APIGroup is the group for the resource being
-                              referenced. If APIGroup is not specified, the specified
-                              Kind must be in the core API group. For any other third-party
-                              types, APIGroup is required.
-                            type: string
-                          kind:
-                            description: Kind is the type of resource being referenced
-                            type: string
-                          name:
-                            description: Name is the name of resource being referenced
-                            type: string
-                        required:
-                        - kind
-                        - name
-                        type: object
-                      resources:
-                        description: 'resources represents the minimum resources the
-                          volume should have. If RecoverVolumeExpansionFailure feature
-                          is enabled users are allowed to specify resource requirements
-                          that are lower than previous value but must still be higher
-                          than capacity recorded in the status field of the claim.
-                          More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
-                        properties:
-                          limits:
-                            additionalProperties:
-                              anyOf:
-                              - type: integer
-                              - type: string
-                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                              x-kubernetes-int-or-string: true
-                            description: 'Limits describes the maximum amount of compute
-                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
-                            type: object
-                          requests:
-                            additionalProperties:
-                              anyOf:
-                              - type: integer
-                              - type: string
-                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                              x-kubernetes-int-or-string: true
-                            description: 'Requests describes the minimum amount of
-                              compute resources required. If Requests is omitted for
-                              a container, it defaults to Limits if that is explicitly
-                              specified, otherwise to an implementation-defined value.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
-                            type: object
-                        type: object
-                      selector:
-                        description: selector is a label query over volumes to consider
-                          for binding.
-                        properties:
-                          matchExpressions:
-                            description: matchExpressions is a list of label selector
-                              requirements. The requirements are ANDed.
-                            items:
-                              description: A label selector requirement is a selector
-                                that contains values, a key, and an operator that
-                                relates the key and values.
-                              properties:
-                                key:
-                                  description: key is the label key that the selector
-                                    applies to.
-                                  type: string
-                                operator:
-                                  description: operator represents a key's relationship
-                                    to a set of values. Valid operators are In, NotIn,
-                                    Exists and DoesNotExist.
-                                  type: string
-                                values:
-                                  description: values is an array of string values.
-                                    If the operator is In or NotIn, the values array
-                                    must be non-empty. If the operator is Exists or
-                                    DoesNotExist, the values array must be empty.
-                                    This array is replaced during a strategic merge
-                                    patch.
-                                  items:
-                                    type: string
-                                  type: array
-                              required:
-                              - key
-                              - operator
-                              type: object
-                            type: array
-                          matchLabels:
-                            additionalProperties:
-                              type: string
-                            description: matchLabels is a map of {key,value} pairs.
-                              A single {key,value} in the matchLabels map is equivalent
-                              to an element of matchExpressions, whose key field is
-                              "key", the operator is "In", and the values array contains
-                              only "value". The requirements are ANDed.
-                            type: object
-                        type: object
-                      storageClassName:
-                        description: 'storageClassName is the name of the StorageClass
-                          required by the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1'
-                        type: string
-                      volumeMode:
-                        description: volumeMode defines what type of volume is required
-                          by the claim. Value of Filesystem is implied when not included
-                          in claim spec.
-                        type: string
-                      volumeName:
-                        description: volumeName is the binding reference to the PersistentVolume
-                          backing this claim.
-                        type: string
-                    type: object
                   replicas:
                     default: 1
+                    description: The number of data plane replicas
+                    format: int32
                     type: integer
-                  storageClass:
-                    description: StorageClass to use for data plane data
-                    type: string
                 type: object
               defaultTenantChart:
-                description: If true install the default tenant.
-                properties:
-                  chartVersion:
-                    type: string
-                  installed:
-                    default: true
-                    type: boolean
-                type: object
+                description: Tenants contains the collection of tenants that will
+                  be installed
+                items:
+                  properties:
+                    name:
+                      type: string
+                  required:
+                  - name
+                  type: object
+                type: array
               license:
-                description: Desired state of modela licensing
+                description: License specifies the license (or modela.ai account)
+                  information that will be applied to the installation of Modela
+                properties:
+                  licenseKey:
+                    type: string
+                  linkLicense:
+                    description: If LinkLicense is enabled, the Modela Operator will
+                      open a linking session through modela.ai which a system administrator
+                      can use to log in to their modela.ai account and link their
+                      license. The URL which must be opened by the administrator will
+                      be logged in the output of the operator's container.
+                    type: boolean
                 type: object
               modelaChart:
                 description: If true install the default tenant.
@@ -444,66 +140,29 @@ spec:
               objectStore:
                 description: Desired state of object storage
                 properties:
-                  connectionRef:
-                    description: Minio Connection Reference
-                    properties:
-                      apiVersion:
-                        description: API version of the referent.
-                        type: string
-                      fieldPath:
-                        description: 'If referring to a piece of an object instead
-                          of an entire object, this string should contain a valid
-                          JSON/Go field access statement, such as desiredState.manifest.containers[2].
-                          For example, if the object reference is to a container within
-                          a pod, this would take on a value like: "spec.containers{name}"
-                          (where "name" refers to the name of the container that triggered
-                          the event) or if no container name is specified "spec.containers[2]"
-                          (container with index 2 in this pod). This syntax is chosen
-                          only to have some well-defined way of referencing a part
-                          of an object. TODO: this design is not final and this field
-                          is subject to change in the future.'
-                        type: string
-                      kind:
-                        description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-                        type: string
-                      name:
-                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
-                        type: string
-                      namespace:
-                        description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
-                        type: string
-                      resourceVersion:
-                        description: 'Specific resourceVersion to which this reference
-                          is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
-                        type: string
-                      uid:
-                        description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
-                        type: string
-                    type: object
-                  installed:
+                  install:
                     default: true
                     type: boolean
                   minioChartVersion:
                     type: string
                 type: object
               observability:
-                description: If true, configure monitoring.
+                description: Observability specifies the configuration to install
+                  monitoring tools (Prometheus and Loki)
                 properties:
-                  loki:
+                  installLoki:
                     default: false
-                    description: If true install the loki helm chart (if not installed)
+                    description: Loki indicates if the Loki Helm Chart will be installed
+                    type: boolean
+                  installPrometheus:
+                    default: false
+                    description: Prometheus indicates if the Prometheus Helm Chart
+                      will be installed
                     type: boolean
                   lokiChartVersion:
-                    description: Loki Chart version.
                     type: string
-                  prometheus:
-                    default: false
-                    description: If true install the Prometheus helm chart (if not
-                      installed)
-                    type: boolean
                   prometheusChartVersion:
                     default: 2.8.4
-                    description: Prometheus Chart version.
                     type: string
                 type: object
               podTemplate:
@@ -7961,45 +7620,13 @@ spec:
                         type: object
                     type: object
                 type: object
+              releaseVersion:
+                description: ReleaseVersion denotes the desired version of Modela.
+                  This version will determine the Docker image tags for all Modela
+                  images provided by Metaprov
+                type: string
               systemDatabase:
-                description: Desired state of the system database
                 properties:
-                  connectionRef:
-                    description: Minio Connection Reference
-                    properties:
-                      apiVersion:
-                        description: API version of the referent.
-                        type: string
-                      fieldPath:
-                        description: 'If referring to a piece of an object instead
-                          of an entire object, this string should contain a valid
-                          JSON/Go field access statement, such as desiredState.manifest.containers[2].
-                          For example, if the object reference is to a container within
-                          a pod, this would take on a value like: "spec.containers{name}"
-                          (where "name" refers to the name of the container that triggered
-                          the event) or if no container name is specified "spec.containers[2]"
-                          (container with index 2 in this pod). This syntax is chosen
-                          only to have some well-defined way of referencing a part
-                          of an object. TODO: this design is not final and this field
-                          is subject to change in the future.'
-                        type: string
-                      kind:
-                        description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-                        type: string
-                      name:
-                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
-                        type: string
-                      namespace:
-                        description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
-                        type: string
-                      resourceVersion:
-                        description: 'Specific resourceVersion to which this reference
-                          is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
-                        type: string
-                      uid:
-                        description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
-                        type: string
-                    type: object
                   installed:
                     default: true
                     type: boolean
@@ -8007,15 +7634,12 @@ spec:
                     default: 10.9.2
                     type: string
                 type: object
+            required:
+            - releaseVersion
             type: object
           status:
             description: ModelaStatus defines the observed state of Modela
             properties:
-              actualModelaVersion:
-                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
-                  of cluster Important: Run "make" to regenerate code after modifying
-                  this file Actual Version is the actual modela version'
-                type: string
               conditions:
                 items:
                   description: ClusterCondition describes the state of a cluster object
@@ -8041,41 +7665,75 @@ spec:
                       type: string
                   type: object
                 type: array
-              control:
-                description: Status of the control plane
-                properties:
-                  deploymentStatus:
-                    description: The status of the control plane
-                    type: string
-                  serviceStatus:
-                    type: string
-                type: object
-              data:
-                description: Status of data plane
-                properties:
-                  deploymentStatus:
-                    description: The status of the control plane
-                    type: string
-                  serviceStatus:
-                    type: string
-                type: object
               failureMessage:
-                description: In the case of failure, the DataSource resource controller
-                  will set this field with a failure message
                 type: string
-              gateway:
-                description: Status of the api gateway
-                properties:
-                  deploymentStatus:
-                    description: The status of the control plane
-                    type: string
-                  serviceStatus:
-                    type: string
-                type: object
-              lastUpgraded:
+              installedVersion:
+                type: string
+              lastUpdated:
                 description: Last time the modela installation was upgraded
                 format: date-time
                 type: string
+              licenseTokenRef:
+                description: 'ObjectReference contains enough information to let you
+                  inspect or modify the referred object. --- New uses of this type
+                  are discouraged because of difficulty describing its usage when
+                  embedded in APIs. 1. Ignored fields.  It includes many fields which
+                  are not generally honored.  For instance, ResourceVersion and FieldPath
+                  are both very rarely valid in actual usage. 2. Invalid usage help.  It
+                  is impossible to add specific help for individual usage.  In most
+                  embedded usages, there are particular restrictions like, "must refer
+                  only to types A and B" or "UID not honored" or "name must be restricted".
+                  Those cannot be well described when embedded. 3. Inconsistent validation.  Because
+                  the usages are different, the validation rules are different by
+                  usage, which makes it hard for users to predict what will happen.
+                  4. The fields are both imprecise and overly precise.  Kind is not
+                  a precise mapping to a URL. This can produce ambiguity during interpretation
+                  and require a REST mapping.  In most cases, the dependency is on
+                  the group,resource tuple and the version of the actual struct is
+                  irrelevant. 5. We cannot easily change it.  Because this type is
+                  embedded in many locations, updates to this type will affect numerous
+                  schemas.  Don''t make new APIs embed an underspecified API type
+                  they do not control. Instead of using this type, create a locally
+                  provided and used type that is well-focused on your reference. For
+                  example, ServiceReferences for admission registration: https://github.com/kubernetes/api/blob/release-1.17/admissionregistration/v1/types.go#L533
+                  .'
+                properties:
+                  apiVersion:
+                    description: API version of the referent.
+                    type: string
+                  fieldPath:
+                    description: 'If referring to a piece of an object instead of
+                      an entire object, this string should contain a valid JSON/Go
+                      field access statement, such as desiredState.manifest.containers[2].
+                      For example, if the object reference is to a container within
+                      a pod, this would take on a value like: "spec.containers{name}"
+                      (where "name" refers to the name of the container that triggered
+                      the event) or if no container name is specified "spec.containers[2]"
+                      (container with index 2 in this pod). This syntax is chosen
+                      only to have some well-defined way of referencing a part of
+                      an object. TODO: this design is not final and this field is
+                      subject to change in the future.'
+                    type: string
+                  kind:
+                    description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                    type: string
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                    type: string
+                  namespace:
+                    description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                    type: string
+                  resourceVersion:
+                    description: 'Specific resourceVersion to which this reference
+                      is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
+                    type: string
+                  uid:
+                    description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
+                    type: string
+                type: object
+              modelaSystemInstalled:
+                description: Status of the control plane
+                type: boolean
               observedGeneration:
                 description: ObservedGeneration is the last generation that was acted
                   on
@@ -8084,6 +7742,19 @@ spec:
               phase:
                 description: The phases of modela cluster
                 type: string
+              tenants:
+                description: Status of data plane
+                items:
+                  properties:
+                    installed:
+                      type: boolean
+                    name:
+                      type: string
+                  required:
+                  - installed
+                  - name
+                  type: object
+                type: array
             type: object
         type: object
     served: true

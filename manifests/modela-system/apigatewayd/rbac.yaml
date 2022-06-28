@@ -1,0 +1,100 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: modela-apigateway
+    app.kubernetes.io/part-of: modela
+  name: modela-apigateway
+  namespace: modela-system
+rules:
+  - apiGroups:
+      - catalog.modela.ai
+    resources:
+      - algorithms
+      - mlframeworks
+      - workloadclasses
+      - userroleclasses
+      - publicdatasets
+      - managedimages
+    verbs:
+      - "*"
+  - apiGroups:
+      - data.modela.ai
+    resources:
+      - "*"
+    verbs:
+      - "*"
+  - apiGroups:
+      - inference.modela.ai
+    resources:
+      - "*"
+    verbs:
+      - "*"
+  - apiGroups:
+      - team.modela.ai
+    resources:
+      - "*"
+    verbs:
+      - "*"      
+  - apiGroups:
+    - infra.modela.ai
+    resources:
+      - "*"
+    verbs:
+      - "*"
+  - apiGroups:
+      - training.modela.ai
+    resources:
+      - "*"
+    verbs:
+      - "*"
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources:
+       - customresourcedefinitions
+    verbs:
+      - "*"
+  - apiGroups:
+      - batch
+    resources:
+      - "*"
+    verbs:
+      - "*"
+  - apiGroups:
+     - "extensions"
+     - "apps"
+    resources:
+     - deployments
+    verbs:
+      - "*"
+  - apiGroups: [""]
+    resources: ["*"]
+    verbs:
+      - "*"
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/name: modled-apigateway
+    app.kubernetes.io/part-of: modela
+  name: modela-apigateway
+  namespace: modela-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: modela-apigateway
+subjects:
+  - kind: ServiceAccount
+    name: modela-apigateway
+
+---
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/name: modela-apigateway
+    app.kubernetes.io/part-of: modela
+  name: modela-apigateway
+  namespace: modela-system

@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: modela-publisher
+    app.kubernetes.io/part-of: modela
+    app.kubernetes.io/component: operator
+  name: modela-publisher
+spec:
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: modela-publisher
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: modela-publisher
+    spec:
+      containers:
+        - name: main
+          image: gcr.io/modela/modela-publisher:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+        - name: sidecar
+          image: gcr.io/modela/clouds
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3001
+          volumeMounts:
+              - name: data
+                mountPath: /var/data
+          readinessProbe:
+              tcpSocket:
+                port: 3000
+              initialDelaySeconds: 5
+              periodSeconds: 10

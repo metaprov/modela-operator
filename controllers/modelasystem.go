@@ -21,8 +21,8 @@ type ModelaSystem struct {
 	Dryrun        bool
 }
 
-func (m ModelaSystem) IsEnabled(modela managementv1.Modela) bool {
-	return *modela.Spec.DefaultTenantChart.Installed
+func (m ModelaSystem) IsEnabled(_ managementv1.Modela) bool {
+	return true
 }
 
 func NewModelaSystem(version string) *ModelaSystem {
@@ -80,25 +80,6 @@ func (d ModelaSystem) Install(ctx context.Context, modela managementv1.Modela) e
 		return err
 	}
 	logger.Info("created namespace modela-catalog")
-
-	if err := CreateNamespace("default-tenant"); err != nil {
-		logger.Error(err, "failed to create default-tenant namespace")
-		return err
-	}
-
-	logger.Info("created namespace default-tenant")
-
-	// pull the images.
-	//logger.Info("pulling modela images")
-
-	//dockerClient := RealDockerClient{}
-	//for _, v := range d.Images {
-	//	logger.Info("pulling image " + v)
-	//	err := dockerClient.Pull(v)
-	//	if err != nil {
-	//		logger.Error(err, "failed to pull image "+v)
-	//	}
-	//}
 
 	return InstallChart(
 		ctx,

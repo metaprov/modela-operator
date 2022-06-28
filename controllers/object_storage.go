@@ -33,7 +33,7 @@ func NewObjectStorage(version string) *ObjectStorage {
 }
 
 func (os ObjectStorage) IsEnabled(modela managementv1.Modela) bool {
-	return *modela.Spec.ObjectStore.Installed
+	return *modela.Spec.ObjectStore.Install
 
 }
 

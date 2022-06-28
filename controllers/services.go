@@ -2,7 +2,15 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	managementv1alpha1 "github.com/metaprov/modela-operator/api/v1alpha1"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/discovery/cached/disk"
+	"k8s.io/client-go/restmapper"
+	"k8s.io/client-go/util/homedir"
 	"k8s.io/klog/v2"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -22,6 +30,7 @@ func InstallChart(ctx context.Context, repoName, repoUrl, name string, ns string
 	chart.ChartVersion = versionName
 	chart.ReleaseName = releaseName
 	chart.Namespace = ns
+
 	canInstall, err := chart.CanInstall(ctx)
 	if err != nil {
 		return errors.Errorf("Failed to check if chart is installed ,err: %s", err)
@@ -29,8 +38,7 @@ func InstallChart(ctx context.Context, repoName, repoUrl, name string, ns string
 	if canInstall {
 		err = chart.Install(ctx)
 		if err != nil {
-
-			return errors.Errorf("Error installing chart %s, err: %s", name, err)
+			return errors.Wrapf(err, "Error installing chart %s", name)
 		}
 	}
 	return nil
@@ -42,6 +50,7 @@ func InstallChartWithValues(ctx context.Context, repoName, repoUrl, name string,
 	chart.ReleaseName = releaseName
 	chart.Namespace = ns
 	chart.Values = values
+
 	canInstall, err := chart.CanInstall(ctx)
 	if err != nil {
 		return errors.Errorf("Failed to check if chart is installed ,err: %s", err)
@@ -49,15 +58,18 @@ func InstallChartWithValues(ctx context.Context, repoName, repoUrl, name string,
 	if canInstall {
 		err = chart.Install(ctx)
 		if err != nil {
-			return errors.Errorf("Error installing chart %s, err: %s", name, err)
+			return errors.Wrapf(err, "Error installing chart %s", name)
 		}
 	}
 	return nil
 }
 
-func UninstallChart(ctx context.Context, repoName string, repoUrl string, url string, ns string, releaseName string, versionName string) error {
+func UninstallChart(ctx context.Context, repoName, repoUrl, name string, ns string, releaseName string, versionName string) error {
+	chart := NewHelmChart(repoName, repoUrl, name, ns, releaseName, versionName, false)
+	chart.ChartVersion = versionName
+	chart.ReleaseName = releaseName
+	chart.Namespace = ns
 
-	chart := NewHelmChart(repoName, repoUrl, url, ns, releaseName, versionName, false)
 	installed, err := chart.IsInstalled(ctx)
 	if err != nil {
 		if !installed {
@@ -66,7 +78,7 @@ func UninstallChart(ctx context.Context, repoName string, repoUrl string, url st
 	}
 	err = chart.Uninstall(ctx)
 	if err != nil {
-		return errors.Errorf("Error uninstalling chart %s, err: %s", url, err)
+		return errors.Wrapf(err, "Error uninstalling chart %s", name)
 	}
 	return nil
 }
@@ -125,10 +137,21 @@ func CreateNamespace(name string) error {
 		if err != nil {
 			return errors.Errorf("Failed to create namespace %s, err: %s", name, err)
 		}
-	} else if err != nil {
-		return errors.Errorf("Error getting namespace %s, err: %s", name, err)
+	} else {
+		return err
 	}
 	return nil
+}
+
+func IsNamespaceCreated(name string) (bool, error) {
+	conf, err := RestClient()
+	if err != nil {
+		return false, err
+	}
+	// Get v1 interface to our cluster. Do or die trying
+	clientSet := kubernetes.NewForConfigOrDie(conf)
+	_, err = clientSet.CoreV1().Namespaces().Get(context.Background(), name, metav1.GetOptions{})
+	return !k8serr.IsNotFound(err), nil
 }
 
 func DeleteNamespace(name string) error {
@@ -327,6 +350,10 @@ func IsPodRunningWithWait(ns string, name string) (bool, error) {
 
 }
 
+func UpdateModelaStatus(ctx context.Context, modela managementv1alpha1.Modela) {
+
+}
+
 func RestClient() (*rest.Config, error) {
 	var config *rest.Config
 	config, err := rest.InClusterConfig()
@@ -336,6 +363,7 @@ func RestClient() (*rest.Config, error) {
 			configOverrides := &clientcmd.ConfigOverrides{}
 			kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
 			config, err = kubeConfig.ClientConfig()
+
 			if err != nil {
 				return nil, err
 			}
@@ -346,5 +374,34 @@ func RestClient() (*rest.Config, error) {
 	}
 
 	return config, nil
+}
 
+type RESTClientGetter struct {
+	RestConfig *rest.Config
+}
+
+func (p RESTClientGetter) ToRawKubeConfigLoader() clientcmd.ClientConfig {
+	return nil
+}
+
+func (p RESTClientGetter) ToRESTConfig() (*rest.Config, error) {
+	return p.RestConfig, nil
+}
+
+func (p RESTClientGetter) ToDiscoveryClient() (discovery.CachedDiscoveryInterface, error) {
+	home := homedir.HomeDir()
+	var httpCacheDir = filepath.Join(home, ".kube", "http-cache")
+	discoveryCacheDir := filepath.Join(home, ".kube", "cache", "discovery")
+	return disk.NewCachedDiscoveryClientForConfig(p.RestConfig, discoveryCacheDir, httpCacheDir, 10*time.Minute)
+}
+
+func (p RESTClientGetter) ToRESTMapper() (meta.RESTMapper, error) {
+	discoveryClient, _ := p.ToDiscoveryClient()
+	if discoveryClient != nil {
+		mapper := restmapper.NewDeferredDiscoveryRESTMapper(discoveryClient)
+		expander := restmapper.NewShortcutExpander(mapper, discoveryClient)
+		return expander, nil
+	}
+
+	return nil, fmt.Errorf("no restmapper")
 }

@@ -1,0 +1,140 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: modela-api-gateway
+    app.kubernetes.io/part-of: modela
+    app.kubernetes.io/component: infra
+  name: modela-api-gateway
+  namespace: modela-system
+spec:
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: modela-api-gateway
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: modela-api-gateway
+    spec:
+      serviceAccountName: modela-apigateway
+      containers:
+        - name: main
+          image: ghcr.io/metaprov/modela-api-gateway:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: grpc
+            - containerPort: 9090
+              name: metrics
+            - containerPort: 8008
+              name: profiling
+          volumeMounts:
+            - name: data
+              mountPath: /var/opt/modela/data
+          resources:
+              requests:
+                memory: "100Mi"
+                cpu: "128m"
+              limits:
+                memory: "200Mi"
+                cpu: "256m"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 9090
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 9090
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          env:
+            - name: AUTH_HOST
+              value: "modela-auth"
+            - name: AUTH_PORT
+              value: "8080"
+            - name: FAKE
+              value: "false"
+            - name: HOST
+              value:  "0.0.0.0"
+            - name: PORT
+              value: "8080"
+            - name: DEBUG
+              value: "true"
+            - name: ENV
+              value: "dev"
+            - name: CLOUDPROXY_HOST
+              value: "127.0.0.1"
+            - name: CLOUDPROXY_PORT
+              value: "8090"
+            - name: CACHE_PATH
+              value: "/var/opt/modela/data"
+            - name: DS_HOST
+              value: modela-data-plane
+            - name: DS_PORT
+              value: "8080"
+            - name: PRIVATE_KEY
+              value: "mnfFeWDLKHwDOgJyCwh7n0acGLqZXgdl"  
+            #- name: GRPC_TRACE
+            #  value: "all"
+            #- name:  GRPC_VERBOSITY
+            #  value: "DEBUG"
+            #- name:  GRPC_GO_LOG_VERBOSITY_LEVEL
+            #  value: "99"
+            #- name:  GRPC_GO_LOG_SEVERITY_LEVEL
+            #  value: "info"  
+
+        - name: cloudproxy
+          image: ghcr.io/metaprov/modela-cloud-proxy
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8090
+              name: http
+            - containerPort: 9090
+              name: metrics
+            - containerPort: 8008
+              name: profiling
+          volumeMounts:
+              - name: data
+                mountPath: /var/opt/modela/data
+          resources:
+            limits:
+              cpu: "1000m"
+              memory: 512Mi
+            requests:
+              cpu: "500m"
+              memory: 256Mi
+          readinessProbe:
+            exec:
+              command: ["/bin/grpc_health_probe", "-addr=:8090"]
+            initialDelaySeconds: 5
+          livenessProbe:
+              exec:
+                command: ["/bin/grpc_health_probe", "-addr=:8090"]
+              initialDelaySeconds: 10
+          env:
+             - name: GRPC_TRACE
+               value: "all"
+             - name:  GRPC_VERBOSITY
+               value: "DEBUG"
+             - name:  GRPC_GO_LOG_VERBOSITY_LEVEL
+               value: "99"
+             - name:  GRPC_GO_LOG_SEVERITY_LEVEL
+               value: "info"
+             - name:   HOST
+               value:  "0.0.0.0"
+             - name:   PORT
+               value: "8090"
+             - name:   DEBUG
+               value: "false"
+             - name: ENV
+               value: "dev"
+             - name: CACHE_PATH
+               value: "/var/opt/modela/data"
+      volumes:
+       - name : data
+         emptyDir: {}

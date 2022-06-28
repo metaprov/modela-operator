@@ -7,6 +7,8 @@
 package controllers
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"fmt"
 	helmkube "helm.sh/helm/v3/pkg/kube"
@@ -14,6 +16,7 @@ import (
 	"k8s.io/client-go/rest"
 	"os"
 	"regexp"
+	"sigs.k8s.io/kustomize/kyaml/kio"
 
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -27,6 +30,32 @@ import (
 )
 
 var settings = helmcli.New()
+
+type LabelPostRenderer struct {
+	Labels map[string]string
+}
+
+func (lb LabelPostRenderer) Run(renderedManifests *bytes.Buffer) (modifiedManifests *bytes.Buffer, err error) {
+	var output bytes.Buffer
+	var writer = bufio.NewWriter(&output)
+	rw := &kio.ByteReadWriter{
+		Reader:                bytes.NewReader(renderedManifests.Bytes()),
+		Writer:                writer,
+		OmitReaderAnnotations: true,
+		KeepReaderAnnotations: true,
+	}
+	p := kio.Pipeline{
+		Inputs:  []kio.Reader{rw}, // read the inputs into a slice
+		Filters: []kio.Filter{LabelFilter{lb.Labels}},
+		Outputs: []kio.Writer{rw}, // copy the inputs to the output
+	}
+	if err := p.Execute(); err != nil {
+		return nil, err
+	}
+
+	_ = writer.Flush()
+	return bytes.NewBuffer(output.Bytes()), nil
+}
 
 type HelmChart struct {
 	RepoName        string
@@ -176,11 +205,11 @@ func (chart *HelmChart) IsInstalled(ctx context.Context) (bool, error) {
 		logger.Error(err, "failed to load chart")
 		return false, errors.Wrapf(err, "failed to load chart")
 	}
-	existingRelease, err := chart.Get(ctx)
-	if err != nil {
+	existingRelease, _ := chart.Get(ctx)
+	/*if err != nil {
 		logger.Error(err, "failed to get chart")
 		return false, err
-	}
+	}*/
 	if existingRelease != nil {
 		return true, nil
 	}
@@ -210,11 +239,7 @@ func (chart *HelmChart) Install(ctx context.Context) error {
 		return errors.Wrapf(err, "Failed to load chart")
 	}
 	// Check if resource already exists
-	existingRelease, err := chart.Get(ctx)
-	if err != nil {
-		logger.Error(err, "Failed to get chart")
-	}
-
+	existingRelease, _ := chart.Get(ctx)
 	if existingRelease != nil {
 		logger.Error(err, fmt.Sprintf("Release \"%s\" already exists in namespace \"%s\"", existingRelease.Name, existingRelease.Namespace))
 		return errors.Wrapf(err, "Release '%s' already exists in namespace '%s'", existingRelease.Name, existingRelease.Namespace)
@@ -244,6 +269,7 @@ func (chart *HelmChart) Install(ctx context.Context) error {
 	inst.DryRun = chart.DryRun
 	inst.CreateNamespace = chart.CreateNamespace
 	inst.Version = chart.ChartVersion
+	inst.PostRenderer = LabelPostRenderer{map[string]string{"app.kubernetes.io/created-by": "modela-operator"}}
 	inst.Replace = true
 
 	_, err = inst.Run(chart.crt, chart.Values)
@@ -323,10 +349,6 @@ func (chart *HelmChart) Upgrade(ctx context.Context) error {
 }
 
 func (chart *HelmChart) Uninstall(ctx context.Context) error {
-	logger := log.FromContext(ctx)
-
-	logger.Info("enter uninstall")
-
 	err := chart.Load(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "failed to load chart")
@@ -350,5 +372,4 @@ func (chart *HelmChart) Uninstall(ctx context.Context) error {
 		return fmt.Errorf("failed to run uninstall due to %s", err)
 	}
 	return nil
-
 }

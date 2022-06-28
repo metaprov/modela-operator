@@ -1,0 +1,20 @@
+apiVersion: infra.modela.ai/v1alpha1
+kind: Tenant
+metadata:
+  name: default-tenant
+  namespace: modela-system
+spec:
+  defaultLabRef:
+      name: default-lab
+      namespace: default-tenant
+  defaultServingSiteRef:
+      name: default-serving-site
+      namespace: default-tenant
+  permissions:
+    stakeholders:
+      - account: admin
+        roles:
+          - name: administrator
+            namespace: default-tenant
+
+  

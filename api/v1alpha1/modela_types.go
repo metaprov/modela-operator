@@ -119,7 +119,7 @@ type CertManagerSpec struct {
 	Install *bool `json:"install"`
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:="v1.7.1"
-	Version *string `json:"Version,omitempty"`
+	Version *string `json:"chartVersion,omitempty"`
 }
 
 type ObjectStorageSpec struct {
@@ -128,7 +128,7 @@ type ObjectStorageSpec struct {
 	Install *bool `json:"install"`
 
 	//+kubebuilder:validation:Optional
-	MinioChartVersion *string `json:"minioChartVersion,omitempty"`
+	MinioChartVersion *string `json:"chartVersion,omitempty"`
 }
 
 type SystemDatabaseSpec struct {
@@ -137,7 +137,7 @@ type SystemDatabaseSpec struct {
 	Install *bool `json:"installed"`
 	// +kubebuilder:default:="10.9.2"
 	//+kubebuilder:validation:Optional
-	PostgresChartVersion *string `json:"postgresChartVersion,omitempty"`
+	PostgresChartVersion *string `json:"chartVersion,omitempty"`
 }
 
 type BackupSpec struct {
@@ -159,7 +159,7 @@ type ObservabilitySpec struct {
 	Prometheus *bool `json:"installPrometheus"`
 	// +kubebuilder:default:="2.8.4"
 	//+kubebuilder:validation:Optional
-	PrometheusVersion *string `json:"prometheusChartVersion"`
+	PrometheusVersion *string `json:"chartVersion"`
 	// Loki indicates if the Loki Helm Chart will be installed
 	// +kubebuilder:default:=false
 	//+kubebuilder:validation:Optional
@@ -171,6 +171,11 @@ type ObservabilitySpec struct {
 type ModelaLicenseSpec struct {
 	//+kubebuilder:validation:Optional
 	LicenseKey *string `json:"licenseKey,omitempty"`
+
+	// If LinkLicense is enabled, the Modela Operator will open a linking session through modela.ai which a
+	// system administrator can use to log in to their modela.ai account and link their license. The URL which
+	// must be opened by the administrator will be logged in the output of the operator's container.
+	LinkLicense *bool `json:"linkLicense,omitempty"`
 }
 
 type TenantSpec struct {
@@ -204,8 +209,8 @@ type ModelaSpec struct {
 	// Access specifies the configuration to install Ingress resources that will expose Modela externally
 	Access ModelaAccessSpec `json:"access,omitempty"`
 
-	// License specifies the license (or modela.ai account) information that will be applied to
-	// the installation of Modela
+	// License specifies the license (or modela.ai account) information
+	// that will be applied to the installation of Modela
 	License ModelaLicenseSpec `json:"license,omitempty"`
 
 	// If true install the default tenant.
@@ -224,16 +229,12 @@ type ModelaSpec struct {
 	//+kubebuilder:validation:Optional
 	ObjectStore ObjectStorageSpec `json:"objectStore,omitempty"`
 
-	// Desired state of the system database
 	SystemDatabase SystemDatabaseSpec `json:"systemDatabase,omitempty"`
 
-	// Setting of the control plane
 	ControlPlane ControlPlaneSpec `json:"controlPlane,omitempty"`
 
-	// Desired state of the data plane
 	DataPlane DataPlaneSpec `json:"dataPlane,omitempty"`
 
-	// Desired state of the api gateway
 	ApiGateway ApiGatewaySpec `json:"apiGateway,omitempty"`
 
 	Pod *v1.PodTemplate `json:"podTemplate,omitempty"`
@@ -257,13 +258,11 @@ type ModelaStatus struct {
 	//+kubebuilder:validation:Optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 
+	FailureMessage *string `json:"failureMessage,omitempty"`
+
 	// Last time the modela installation was upgraded
 	//+kubebuilder:validation:Optional
-	LastUpgraded *metav1.Time `json:"lastUpgraded,omitempty"`
-
-	// In the case of failure, the DataSource resource controller will set this field with a failure message
-	//+kubebuilder:validation:Optional
-	FailureMessage *string `json:"failureMessage,omitempty"`
+	LastUpdated *metav1.Time `json:"lastUpdated,omitempty"`
 
 	// +patchMergeKey=type
 	// +patchStrategy=merge

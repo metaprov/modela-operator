@@ -18,10 +18,14 @@ package controllers
 
 import (
 	"context"
+	"github.com/metaprov/modelaapi/pkg/util"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"reflect"
 
 	"k8s.io/apimachinery/pkg/types"
 
 	appsv1 "k8s.io/api/apps/v1"
+	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -65,32 +69,69 @@ func (r *ModelaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		// on deleted requests.
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	// Perform the install phase
+	oldStatus := *modela.Status.DeepCopy()
 
 	result, err := r.Install(ctx, &modela)
 	if err != nil {
-		logger.Error(err, "failed to install modela Modela")
+		modela.Status.FailureMessage = util.StrPtr(err.Error())
+		logger.Error(err, "failed to install Modela")
+		goto updateStatus
 	}
 	if err != nil || result.Requeue {
-		return result, err
+		goto updateStatus
 	}
 
 	result, err = r.reconcileControlPlane(ctx, &modela)
 	if err != nil || result.Requeue {
-		return result, err
+		goto updateStatus
 	}
 
 	result, err = r.reconcileDataPlane(ctx, &modela)
 	if err != nil || result.Requeue {
-		return result, err
+		goto updateStatus
 	}
 
 	result, err = r.reconcileApiGateway(ctx, &modela)
 	if err != nil || result.Requeue {
-		return result, err
+		goto updateStatus
 	}
 
+updateStatus:
+	statusResult, statusErr := r.UpdateStatus(ctx, oldStatus, modela)
+	if statusResult.Requeue {
+		return statusResult, statusErr
+	}
+	return result, err
+}
+
+func (r ModelaReconciler) UpdateStatus(ctx context.Context, oldStatus managementv1alpha1.ModelaStatus, modela managementv1alpha1.Modela) (ctrl.Result, error) {
+	logger := log.FromContext(ctx)
+	if !r.isStateEqual(modela.Status, oldStatus) || modela.Generation > modela.Status.ObservedGeneration {
+		modela.Status.ObservedGeneration = modela.Generation
+		now := metav1.Now()
+		modela.Status.LastUpdated = &now
+
+		if err := r.Update(ctx, &modela); err != nil {
+			if k8serr.IsConflict(err) || k8serr.IsNotFound(err) {
+				// Modela has been updated since we read it.
+				// Requeue Modela to try to reconciliate again.
+				return ctrl.Result{Requeue: true}, nil
+			}
+			logger.Error(err, "unable to update Modela status")
+			return ctrl.Result{}, err
+		}
+		logger.Info("Updated Modela status")
+	}
 	return ctrl.Result{}, nil
+}
+
+func (r ModelaReconciler) isStateEqual(old managementv1alpha1.ModelaStatus, new managementv1alpha1.ModelaStatus) bool {
+	return old.InstalledVersion == new.InstalledVersion &&
+		old.ModelaSystemInstalled == new.ModelaSystemInstalled &&
+		reflect.DeepEqual(old.LicenseToken, new.LicenseToken) &&
+		reflect.DeepEqual(old.Conditions, new.Conditions) &&
+		reflect.DeepEqual(old.Tenants, new.Tenants)
+
 }
 
 func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alpha1.Modela) (ctrl.Result, error) {
@@ -125,7 +166,6 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 	}
 
 	// Database
-
 	database := NewDatabase(*modela.Spec.SystemDatabase.PostgresChartVersion)
 	installed, err = database.Installed(ctx)
 	if err != nil {
@@ -139,7 +179,6 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 	}
 
 	// Loki
-
 	loki := NewLoki(*modela.Spec.Observability.LokiVersion)
 	installed, err = loki.Installed(ctx)
 	if err != nil {
@@ -177,7 +216,7 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 		}
 	}
 
-	defaultTenant := NewDefaultTenant(*modela.Spec.DefaultTenantChart.ChartVersion)
+	/*defaultTenant := NewDefaultTenant(*modela.Spec.DefaultTenantChart.ChartVersion)
 	installed, err = defaultTenant.Installed(ctx)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -188,7 +227,7 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 		if err != nil || result.Requeue {
 			return result, err
 		}
-	}
+	}*/
 	return ctrl.Result{}, err
 
 }

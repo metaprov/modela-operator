@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	k8serr "k8s.io/apimachinery/pkg/api/errors"
 
 	managementv1 "github.com/metaprov/modela-operator/api/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -16,7 +17,6 @@ type Database struct {
 	RepoName      string
 	Name          string
 	PodNamePrefix string
-	Dryrun        bool
 }
 
 func NewDatabase(version string) *Database {
@@ -29,12 +29,11 @@ func NewDatabase(version string) *Database {
 		Url:           "postgresql",
 		RepoName:      "bitnami",
 		PodNamePrefix: "cert-manager",
-		Dryrun:        false,
 	}
 }
 
 func (db Database) IsEnabled(modela managementv1.Modela) bool {
-	return *modela.Spec.SystemDatabase.Installed
+	return *modela.Spec.SystemDatabase.Install
 
 }
 
@@ -54,16 +53,15 @@ func (db Database) Installed(ctx context.Context) (bool, error) {
 func (db Database) Install(ctx context.Context, modela managementv1.Modela) error {
 	logger := log.FromContext(ctx)
 
-	if err := AddRepo(db.RepoName, db.RepoUrl, db.Dryrun); err != nil {
+	if err := AddRepo(db.RepoName, db.RepoUrl, false); err != nil {
+		logger.Error(err, "Failed to download Helm Repo")
 		return err
 	}
-	logger.Info("added repo " + db.RepoName)
-	// install namespace modela-system
-	if err := CreateNamespace(db.Namespace); err != nil {
-		logger.Error(err, "failed to create namespace")
+	logger.Info("Added Helm Repo", "repo", db.RepoName)
+	if err := CreateNamespace(db.Namespace); err != nil && !k8serr.IsAlreadyExists(err) {
+		logger.Error(err, "Failed to create namespace")
 		return err
 	}
-	logger.Info("created namespace " + db.Namespace)
 
 	return InstallChart(
 		ctx,

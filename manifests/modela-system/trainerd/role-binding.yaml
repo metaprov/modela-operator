@@ -1,0 +1,16 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/name: modela-trainer
+    app.kubernetes.io/part-of: modela
+  name: modela-trainer
+  namespace: modela-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: modela-trainer
+subjects:
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: system:serviceaccount:modela-system:modela-trainer

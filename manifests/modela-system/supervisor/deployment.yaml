@@ -1,0 +1,129 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: modela-control-plane
+    app.kubernetes.io/part-of: modela
+  name: modela-control-plane
+  namespace: modela-system
+spec:
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: modela-control-plane
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: modela-control-plane
+    spec:
+      serviceAccountName: modela-controlplane
+      containers:
+        - name: main
+          image: ghcr.io/metaprov/modela-control-plane:latest
+          imagePullPolicy: Never
+          volumeMounts:
+            - name: data
+              mountPath: /var/opt/modela/data
+            - name: webhook-server-cert
+              mountPath: /tmp/k8s-webhook-server/serving-certs
+              readOnly: true
+          ports:
+            - containerPort: 8080
+              name: http
+            - containerPort: 9090
+              name: metrics
+            - containerPort: 8008
+              name: profiling
+            - containerPort: 9443
+              name: webhook-server
+              protocol: TCP
+          env:
+            - name: CACHE_PATH
+              valueFrom:
+                configMapKeyRef:
+                    name: controlplane-configmap
+                    key: cache-path
+          resources:
+            limits:
+              cpu: 20m
+              memory: 256Mi
+            requests:
+              cpu: 20m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 9090
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+        - name: cloud-proxy
+          image: ghcr.io/metaprov/modela-cloud-proxy
+          imagePullPolicy: IfNotPresent
+          ports:
+                  - containerPort: 8090
+                    name: http
+                  - containerPort: 9090
+                    name: metrics
+                  - containerPort: 8008
+                    name: profiling
+          volumeMounts:
+                  - name: data
+                    mountPath: /var/opt/modela/data
+          livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: 9090
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+          env:
+            - name: CACHE_PATH
+              valueFrom:
+                  configMapKeyRef:
+                    name: controlplane-configmap
+                    key: cache-path
+
+        - name: db-proxy
+          image: ghcr.io/metaprov/modela-database-proxy
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8091
+              name: http
+            - containerPort: 9090
+              name: metrics
+            - containerPort: 8008
+              name: profiling
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 9090
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: controlplane-configmap
+                  key: db-host
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: controlplane-configmap
+                  key: db-port
+            - name: DB_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: controlplane-configmap
+                  key: db-username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: modela-postgresql
+                  key: postgres-password
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: webhook-server-cert
+          secret:
+            secretName: webhook-server-cert

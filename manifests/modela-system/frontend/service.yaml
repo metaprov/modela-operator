@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: modela-frontend
+    app.kubernetes.io/part-of: modela
+  name: modela-frontend
+  namespace: modela-system
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+  selector:
+    app.kubernetes.io/name: modela-frontend
