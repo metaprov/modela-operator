@@ -32,6 +32,10 @@ func NewObjectStorage(version string) *ObjectStorage {
 	}
 }
 
+func (os ObjectStorage) GetInstallPhase() managementv1.ModelaPhase {
+	return managementv1.ModelaPhaseInstallingObjectStorage
+}
+
 func (os ObjectStorage) IsEnabled(modela managementv1.Modela) bool {
 	return *modela.Spec.ObjectStore.Install
 
@@ -51,7 +55,7 @@ func (os ObjectStorage) Installed(ctx context.Context) (bool, error) {
 	)
 }
 
-func (os ObjectStorage) Install(ctx context.Context, modela managementv1.Modela) error {
+func (os ObjectStorage) Install(ctx context.Context, modela *managementv1.Modela) error {
 	logger := log.FromContext(ctx)
 	if err := AddRepo(os.RepoName, os.RepoUrl, os.Dryrun); err != nil {
 		logger.Error(err, "Failed to add repo "+os.RepoName)

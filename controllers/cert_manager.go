@@ -7,7 +7,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// Modela system represent the model core system
 type CertManager struct {
 	Namespace     string
 	Version       string
@@ -32,15 +31,33 @@ func NewCertManager(version string) *CertManager {
 	}
 }
 
+func (cm CertManager) GetInstallPhase() managementv1.ModelaPhase {
+	return managementv1.ModelaPhaseInstallingCertManager
+}
+
 func (cm CertManager) IsEnabled(modela managementv1.Modela) bool {
 	return *modela.Spec.CertManager.Install
 }
 
-func (cm CertManager) Installed() (bool, error) {
-	return IsPodRunning(cm.Namespace, cm.PodNamePrefix)
+func (cm CertManager) Installed(ctx context.Context) (bool, error) {
+	if installed, err := IsChartInstalled(
+		ctx,
+		cm.RepoName,
+		cm.RepoUrl,
+		cm.Url,
+		cm.Namespace,
+		cm.ReleaseName,
+		cm.Version,
+	); !installed {
+		return false, err
+	}
+	if belonging, _ := IsDeploymentCreatedByModela(cm.Namespace, "cert-manager"); !belonging {
+		return true, ComponentNotInstalledByModelaError
+	}
+	return true, nil
 }
 
-func (cm CertManager) Install(ctx context.Context, modela managementv1.Modela) error {
+func (cm CertManager) Install(ctx context.Context, modela *managementv1.Modela) error {
 	logger := log.FromContext(ctx)
 
 	if err := AddRepo(cm.RepoName, cm.RepoUrl, false); err != nil {
@@ -69,8 +86,8 @@ func (cm CertManager) Install(ctx context.Context, modela managementv1.Modela) e
 
 }
 
-func (cm CertManager) Installing() (bool, error) {
-	installed, err := cm.Installed()
+func (cm CertManager) Installing(ctx context.Context) (bool, error) {
+	installed, err := cm.Installed(ctx)
 	if !installed {
 		return installed, err
 	}
@@ -82,16 +99,12 @@ func (cm CertManager) Installing() (bool, error) {
 
 }
 
-func (cm CertManager) Ready() (bool, error) {
-	installed, err := cm.Installed()
-	if !installed {
-		return installed, err
-	}
-	running, err := IsPodRunning(cm.Namespace, cm.PodNamePrefix)
+func (cm CertManager) Ready(ctx context.Context) (bool, error) {
+	installing, err := cm.Installed(ctx)
 	if err != nil {
 		return false, err
 	}
-	return running, nil
+	return !installing, nil
 }
 
 func (cm CertManager) Uninstall(ctx context.Context) error {

@@ -28,14 +28,15 @@ import (
 type ModelaPhase string
 
 const (
-	ModelaPhasePending                 = "Pending"
 	ModelaPhaseInstallingCertManager   = "InstallingCertManager"
+	ModelaPhaseInstallingObjectStorage = "InstallingObjectStorage"
 	ModelaPhaseInstallingPrometheus    = "InstallingPrometheus"
 	ModelaPhaseInstallingDatabase      = "InstallingSystemDatabase"
 	ModelaPhaseInstallingLoki          = "InstallingLoki"
 	ModelaPhaseInstallingModela        = "InstallingModela"
-	ModelaPhaseInstallingDefaultTenant = "InstallingDefaultTenant"
-	ModelaPhaseRunning                 = "Running"
+	ModelaPhaseInstallingTenant        = "InstallingTenant"
+	ModelaPhaseReady                   = "Ready"
+	ModelaPhaseUninstalling            = "UninstallingComponent"
 	ModelaPhaseFailed                  = "Failed"
 )
 
@@ -119,7 +120,7 @@ type CertManagerSpec struct {
 	Install *bool `json:"install"`
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:="v1.7.1"
-	Version *string `json:"chartVersion,omitempty"`
+	CertManagerChartVersion *string `json:"chartVersion,omitempty"`
 }
 
 type ObjectStorageSpec struct {

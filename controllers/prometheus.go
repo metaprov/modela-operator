@@ -33,6 +33,10 @@ func NewPrometheus(version string) *Prometheus {
 	}
 }
 
+func (m Prometheus) GetInstallPhase() managementv1.ModelaPhase {
+	return managementv1.ModelaPhaseInstallingPrometheus
+}
+
 func (m Prometheus) IsEnabled(modela managementv1.Modela) bool {
 	return *modela.Spec.Observability.Prometheus
 }
@@ -50,7 +54,7 @@ func (m Prometheus) Installed(ctx context.Context) (bool, error) {
 	)
 }
 
-func (m Prometheus) Install(ctx context.Context, modela managementv1.Modela) error {
+func (m Prometheus) Install(ctx context.Context, modela *managementv1.Modela) error {
 	logger := log.FromContext(ctx)
 
 	if err := AddRepo(m.RepoName, m.RepoUrl, m.Dryrun); err != nil {

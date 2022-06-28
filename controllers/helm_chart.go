@@ -49,6 +49,7 @@ func (lb LabelPostRenderer) Run(renderedManifests *bytes.Buffer) (modifiedManife
 		Filters: []kio.Filter{LabelFilter{lb.Labels}},
 		Outputs: []kio.Writer{rw}, // copy the inputs to the output
 	}
+
 	if err := p.Execute(); err != nil {
 		return nil, err
 	}

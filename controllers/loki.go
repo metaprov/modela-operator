@@ -32,6 +32,10 @@ func NewLoki(version string) *Loki {
 	}
 }
 
+func (m Loki) GetInstallPhase() managementv1.ModelaPhase {
+	return managementv1.ModelaPhaseInstallingLoki
+}
+
 func (m Loki) IsEnabled(modela managementv1.Modela) bool {
 	return *modela.Spec.Observability.Loki
 }
@@ -49,7 +53,7 @@ func (m Loki) Installed(ctx context.Context) (bool, error) {
 	)
 }
 
-func (m Loki) Install(ctx context.Context, modela managementv1.Modela) error {
+func (m Loki) Install(ctx context.Context, modela *managementv1.Modela) error {
 	logger := log.FromContext(ctx)
 
 	if err := AddRepo(m.RepoName, m.RepoUrl, m.Dryrun); err != nil {

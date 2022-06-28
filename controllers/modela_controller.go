@@ -18,9 +18,11 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"github.com/metaprov/modelaapi/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"reflect"
+	"time"
 
 	"k8s.io/apimachinery/pkg/types"
 
@@ -34,6 +36,8 @@ import (
 	managementv1 "github.com/metaprov/modela-operator/api/v1alpha1"
 	managementv1alpha1 "github.com/metaprov/modela-operator/api/v1alpha1"
 )
+
+var ComponentNotInstalledByModelaError = errors.New("component not installed by Modela")
 
 // ModelaReconciler reconciles a Modela object
 type ModelaReconciler struct {
@@ -74,7 +78,12 @@ func (r *ModelaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	result, err := r.Install(ctx, &modela)
 	if err != nil {
 		modela.Status.FailureMessage = util.StrPtr(err.Error())
+		modela.Status.Phase = managementv1alpha1.ModelaPhaseFailed
 		logger.Error(err, "failed to install Modela")
+		result = ctrl.Result{
+			Requeue:      true,
+			RequeueAfter: time.Second * 10,
+		}
 		goto updateStatus
 	}
 	if err != nil || result.Requeue {
@@ -111,7 +120,7 @@ func (r ModelaReconciler) UpdateStatus(ctx context.Context, oldStatus management
 		now := metav1.Now()
 		modela.Status.LastUpdated = &now
 
-		if err := r.Update(ctx, &modela); err != nil {
+		if err := r.Status().Update(ctx, &modela); err != nil {
 			if k8serr.IsConflict(err) || k8serr.IsNotFound(err) {
 				// Modela has been updated since we read it.
 				// Requeue Modela to try to reconciliate again.
@@ -125,6 +134,13 @@ func (r ModelaReconciler) UpdateStatus(ctx context.Context, oldStatus management
 	return ctrl.Result{}, nil
 }
 
+func (r ModelaReconciler) UpdatePhase(ctx context.Context, modela *managementv1alpha1.Modela, phase managementv1alpha1.ModelaPhase) {
+	now := metav1.Now()
+	modela.Status.LastUpdated = &now
+	modela.Status.Phase = phase
+	_ = r.Status().Update(ctx, modela)
+}
+
 func (r ModelaReconciler) isStateEqual(old managementv1alpha1.ModelaStatus, new managementv1alpha1.ModelaStatus) bool {
 	return old.InstalledVersion == new.InstalledVersion &&
 		old.ModelaSystemInstalled == new.ModelaSystemInstalled &&
@@ -135,85 +151,46 @@ func (r ModelaReconciler) isStateEqual(old managementv1alpha1.ModelaStatus, new 
 }
 
 func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alpha1.Modela) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
-	// try to install cert manager
-	//certManager := NewCertManager()
-	//installed, err := certManager.Installed()
-	//if err != nil {
-	//	return ctrl.Result{}, err
-	//}
-	//if !installed {
-	//	result, err := r.reconcileComponment(ctx, certManager)
-	//	if err != nil || result.Requeue {
-	//		return result, err
-	//	}
-	//}
+	// Cert Manager
+	certManager := NewCertManager(*modela.Spec.CertManager.CertManagerChartVersion)
+	result, err := r.reconcileComponent(ctx, certManager, modela)
+	if err != nil || result.Requeue {
+		return result, err
+	}
 
-	// Object storage
-
+	// Object Storage (Minio)
 	objectStore := NewObjectStorage(*modela.Spec.ObjectStore.MinioChartVersion)
-	installed, err := objectStore.Installed(ctx)
-	if err != nil {
-		logger.Error(err, "failed to check if object store is installed")
-		return ctrl.Result{}, err
-	}
-	if !installed {
-		result, err := r.reconcileComponment(ctx, objectStore, *modela)
-		if err != nil || result.Requeue {
-			return result, err
-		}
-		logger.Info("installed model object")
+	result, err = r.reconcileComponent(ctx, objectStore, modela)
+	if err != nil || result.Requeue {
+		return result, err
 	}
 
-	// Database
+	// PostgreSQL
 	database := NewDatabase(*modela.Spec.SystemDatabase.PostgresChartVersion)
-	installed, err = database.Installed(ctx)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	if !installed {
-		result, err := r.reconcileComponment(ctx, database, *modela)
-		if err != nil || result.Requeue {
-			return result, err
-		}
+	result, err = r.reconcileComponent(ctx, database, modela)
+	if err != nil || result.Requeue {
+		return result, err
 	}
 
 	// Loki
 	loki := NewLoki(*modela.Spec.Observability.LokiVersion)
-	installed, err = loki.Installed(ctx)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	if !installed {
-		result, err := r.reconcileComponment(ctx, loki, *modela)
-		if err != nil || result.Requeue {
-			return result, err
-		}
+	result, err = r.reconcileComponent(ctx, loki, modela)
+	if err != nil || result.Requeue {
+		return result, err
 	}
 
+	// Prometheus
 	prom := NewPrometheus(*modela.Spec.Observability.PrometheusVersion)
-	installed, err = prom.Installed(ctx)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	if !installed {
-		result, err := r.reconcileComponment(ctx, prom, *modela)
-		if err != nil || result.Requeue {
-			return result, err
-		}
+	result, err = r.reconcileComponent(ctx, prom, modela)
+	if err != nil || result.Requeue {
+		return result, err
 	}
 
+	// Modela System
 	modelaSystem := NewModelaSystem(*modela.Spec.ModelaChart.ChartVersion)
-	installed, err = modelaSystem.Installed(ctx)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	if !installed {
-		// reconcile modela system, make sure that all the items are as defined
-		result, err := r.reconcileComponment(ctx, modelaSystem, *modela)
-		if err != nil || result.Requeue {
-			return result, err
-		}
+	result, err = r.reconcileComponent(ctx, modelaSystem, modela)
+	if err != nil || result.Requeue {
+		return result, err
 	}
 
 	/*defaultTenant := NewDefaultTenant(*modela.Spec.DefaultTenantChart.ChartVersion)
@@ -223,11 +200,13 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 	}
 	if !installed {
 		// reconcile default tenant, make sure that all the items are as defined.
-		result, err := r.reconcileComponment(ctx, defaultTenant, *modela)
+		result, err := r.reconcileComponent(ctx, defaultTenant, *modela)
 		if err != nil || result.Requeue {
 			return result, err
 		}
 	}*/
+
+	modela.Status.Phase = managementv1alpha1.ModelaPhaseReady
 	return ctrl.Result{}, err
 
 }
@@ -243,43 +222,57 @@ func (r *ModelaReconciler) SetupWithManager(mgr ctrl.Manager) error {
 type ModelaComponent interface {
 	IsEnabled(modela managementv1.Modela) bool
 	Installed(ctx context.Context) (bool, error)
-	Install(ctx context.Context, modela managementv1.Modela) error
+	Install(ctx context.Context, modela *managementv1.Modela) error
 	Installing(ctx context.Context) (bool, error)
 	Ready(ctx context.Context) (bool, error)
 	Uninstall(ctx context.Context) error
+	GetInstallPhase() managementv1alpha1.ModelaPhase
 }
 
-func (r *ModelaReconciler) reconcileComponment(ctx context.Context, component ModelaComponent, modela managementv1.Modela) (ctrl.Result, error) {
-	if !component.IsEnabled(modela) {
-		return ctrl.Result{}, nil
-	}
+func (r *ModelaReconciler) reconcileComponent(ctx context.Context, component ModelaComponent, modela *managementv1.Modela) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	installed, err := component.Installed(ctx)
-	if err != nil {
-		logger.Error(err, "failed to check if installed")
+	if err != nil && err != ComponentNotInstalledByModelaError {
+		logger.Error(err, "Failed to check if component is installed", "component", reflect.TypeOf(component).Name())
 		return ctrl.Result{}, err
 	}
-	if !installed {
-		installing, err := component.Installing(ctx)
-		if err != nil {
-			logger.Error(err, "failed to check if installed")
-			return ctrl.Result{}, err
-		}
-		if !installing {
-			err := component.Install(ctx, modela)
+
+	if !component.IsEnabled(*modela) {
+		if err != ComponentNotInstalledByModelaError {
+			r.UpdatePhase(ctx, modela, managementv1alpha1.ModelaPhaseUninstalling)
+			err := component.Uninstall(ctx)
 			if err != nil {
-				logger.Error(err, "failed to check if installed")
+				logger.Error(err, "Failed to install component", "component", reflect.TypeOf(component).Name())
 				return ctrl.Result{}, err
 			}
-		} else {
-			// installing, dequeue the request
-			return ctrl.Result{
-				Requeue:      true,
-				RequeueAfter: 0,
-			}, nil
 		}
+		return ctrl.Result{}, nil
 	}
-	return ctrl.Result{}, nil
+
+	if installed {
+		return ctrl.Result{}, nil
+	}
+
+	installing, err := component.Installing(ctx)
+	if err != nil {
+		logger.Error(err, "Failed to check if component is installing", "component", reflect.TypeOf(component).Name())
+		return ctrl.Result{}, err
+	}
+
+	if installing {
+		return ctrl.Result{
+			Requeue:      true,
+			RequeueAfter: 0,
+		}, nil
+	} else {
+		r.UpdatePhase(ctx, modela, component.GetInstallPhase())
+		err := component.Install(ctx, modela)
+		if err != nil {
+			logger.Error(err, "Failed to install component", "component", reflect.TypeOf(component).Name())
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, nil
+	}
 }
 
 func (r *ModelaReconciler) reconcileApiGateway(ctx context.Context, modela *managementv1alpha1.Modela) (ctrl.Result, error) {

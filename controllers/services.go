@@ -99,9 +99,9 @@ func IsChartInstalled(ctx context.Context, repoName, repoUrl string, url string,
 func IsPodRunning(ns string, prefix string) (bool, error) {
 	conf, err := RestClient()
 	if err != nil {
-		return false, errors.Errorf("Error fetching rest client: %s", err)
+		return false, errors.Wrapf(err, "Unable to create REST client")
 	}
-	// Get v1 interface to our cluster. Do or die trying
+
 	clientSet := kubernetes.NewForConfigOrDie(conf)
 	pods, err := clientSet.CoreV1().Pods(ns).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
@@ -109,15 +109,29 @@ func IsPodRunning(ns string, prefix string) (bool, error) {
 	}
 	for _, v := range pods.Items {
 		if strings.Contains(v.Name, prefix) {
-			if v.Status.Phase != "Running" {
-				return false, nil
-			} else {
-				return true, nil
-			}
+			return v.Status.Phase == "Running", nil
 		}
 	}
 	return false, nil
+}
 
+func IsDeploymentCreatedByModela(ns string, name string) (bool, error) {
+	conf, err := RestClient()
+	if err != nil {
+		return false, errors.Wrapf(err, "Unable to create REST client")
+	}
+
+	clientSet := kubernetes.NewForConfigOrDie(conf)
+	deployment, err := clientSet.AppsV1().Deployments(ns).Get(context.Background(), name, metav1.GetOptions{})
+	if err != nil {
+		return false, err
+	}
+	if val, ok := deployment.GetLabels()["app.kubernetes.io/created-by"]; ok {
+		if val == "modela-operator" {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func CreateNamespace(name string) error {

@@ -21,6 +21,10 @@ type ModelaSystem struct {
 	Dryrun        bool
 }
 
+func (m ModelaSystem) GetInstallPhase() managementv1.ModelaPhase {
+	return managementv1.ModelaPhaseInstallingModela
+}
+
 func (m ModelaSystem) IsEnabled(_ managementv1.Modela) bool {
 	return true
 }
@@ -65,7 +69,7 @@ func (ms ModelaSystem) Installed(ctx context.Context) (bool, error) {
 	)
 }
 
-func (d ModelaSystem) Install(ctx context.Context, modela managementv1.Modela) error {
+func (d ModelaSystem) Install(ctx context.Context, modela *managementv1.Modela) error {
 	logger := log.FromContext(ctx)
 
 	if err := CreateNamespace("modela-system"); err != nil {
@@ -92,7 +96,6 @@ func (d ModelaSystem) Install(ctx context.Context, modela managementv1.Modela) e
 	)
 }
 
-// Check if we are still installing the database
 func (ms ModelaSystem) Installing(ctx context.Context) (bool, error) {
 	installed, err := ms.Installed(ctx)
 	if !installed {
@@ -105,7 +108,6 @@ func (ms ModelaSystem) Installing(ctx context.Context) (bool, error) {
 	return !running, nil
 }
 
-// Check if the database is ready
 func (ds ModelaSystem) Ready(ctx context.Context) (bool, error) {
 	installed, err := ds.Installed(ctx)
 	if !installed {

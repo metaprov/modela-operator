@@ -32,6 +32,10 @@ func NewDatabase(version string) *Database {
 	}
 }
 
+func (db Database) GetInstallPhase() managementv1.ModelaPhase {
+	return managementv1.ModelaPhaseInstallingDatabase
+}
+
 func (db Database) IsEnabled(modela managementv1.Modela) bool {
 	return *modela.Spec.SystemDatabase.Install
 
@@ -50,7 +54,7 @@ func (db Database) Installed(ctx context.Context) (bool, error) {
 	)
 }
 
-func (db Database) Install(ctx context.Context, modela managementv1.Modela) error {
+func (db Database) Install(ctx context.Context, modela *managementv1.Modela) error {
 	logger := log.FromContext(ctx)
 
 	if err := AddRepo(db.RepoName, db.RepoUrl, false); err != nil {
