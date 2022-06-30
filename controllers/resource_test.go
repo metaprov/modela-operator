@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"sigs.k8s.io/kustomize/kyaml/kio"
 	"testing"
 )
 
@@ -13,8 +14,8 @@ metadata:
   name: test-yaml2
 `
 
-func TestResources_LoadResources(t *testing.T) {
-	output, err := LoadResources("modela-system", nil)
+func TestResources_LoadModelaSystem(t *testing.T) {
+	output, err := LoadResources("modela-system", []kio.Filter{ContainerVersionFilter{"1.0.0"}})
 	assert.Nil(t, err)
 	fmt.Println(string(output))
 }

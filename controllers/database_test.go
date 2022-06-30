@@ -8,22 +8,28 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const PostgresVersion = "1.1.1"
+const PostgresVersion = ""
 
 func TestDatabase_Installed(t *testing.T) {
-	t.Skip("Run only on empty cluster")
 	database := NewDatabase(PostgresVersion)
 	installed, err := database.Installed(context.Background())
 	assert.NoError(t, err)
-	assert.True(t, installed)
+	assert.False(t, installed)
 }
 
-// run on an empty system
 func TestDatabase_Install(t *testing.T) {
-	t.Skip("Run only on empty cluster")
 	database := NewDatabase(PostgresVersion)
 
-	err := database.Install(context.Background(), v1alpha1.Modela{})
+	err := database.Install(context.Background(), &v1alpha1.Modela{})
 	assert.NoError(t, err)
+}
 
+func TestDatabase_Uninstall(t *testing.T) {
+	database := NewDatabase(PostgresVersion)
+
+	err := database.Uninstall(context.Background())
+	assert.NoError(t, err)
+	installed, err := database.Installed(context.Background())
+	assert.NoError(t, err)
+	assert.False(t, installed)
 }

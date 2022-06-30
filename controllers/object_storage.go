@@ -4,6 +4,7 @@ import (
 	"context"
 	managementv1 "github.com/metaprov/modela-operator/api/v1alpha1"
 	"github.com/pkg/errors"
+	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -21,8 +22,7 @@ type ObjectStorage struct {
 
 func NewObjectStorage(version string) *ObjectStorage {
 	return &ObjectStorage{
-		Namespace: "modela-system",
-		//Version:     "9.2.9",
+		Namespace:   "modela-system",
 		Version:     version,
 		ReleaseName: "modela-storage",
 		RepoName:    "bitnami",
@@ -38,13 +38,12 @@ func (os ObjectStorage) GetInstallPhase() managementv1.ModelaPhase {
 
 func (os ObjectStorage) IsEnabled(modela managementv1.Modela) bool {
 	return *modela.Spec.ObjectStore.Install
-
 }
 
 // Check if the database installed
 func (os ObjectStorage) Installed(ctx context.Context) (bool, error) {
 	//repoName, repoUrl string, url string, ns string, releaseName string, versionName string
-	return IsChartInstalled(
+	if installed, err := IsChartInstalled(
 		ctx,
 		os.RepoName,
 		os.RepoUrl,
@@ -52,24 +51,29 @@ func (os ObjectStorage) Installed(ctx context.Context) (bool, error) {
 		os.Namespace,
 		os.ReleaseName,
 		os.Version,
-	)
+	); !installed {
+		return false, err
+	}
+	if belonging, _ := IsDeploymentCreatedByModela(os.Namespace, "modela-storage-minio"); !belonging {
+		return true, ComponentNotInstalledByModelaError
+	}
+	return true, nil
 }
 
 func (os ObjectStorage) Install(ctx context.Context, modela *managementv1.Modela) error {
 	logger := log.FromContext(ctx)
-	if err := AddRepo(os.RepoName, os.RepoUrl, os.Dryrun); err != nil {
-		logger.Error(err, "Failed to add repo "+os.RepoName)
+
+	if err := AddRepo(os.RepoName, os.RepoUrl, false); err != nil {
+		logger.Error(err, "Failed to download Helm Repo", "repo", os.RepoUrl)
+		return err
+	}
+	logger.Info("Added Helm Repo", "repo", os.RepoName)
+	if err := CreateNamespace(os.Namespace); err != nil && !k8serr.IsAlreadyExists(err) {
+		logger.Error(err, "failed to create namespace")
 		return err
 	}
 
-	logger.Info("added repo " + os.RepoName)
-	// install namespace modela-system
-	if err := CreateNamespace(os.Namespace); err != nil {
-		logger.Error(err, "Failed to create cert-manager namespace "+os.Namespace)
-		return err
-	}
-	logger.Info("created namespace " + os.Namespace)
-
+	logger.Info("Applying Helm Chart", "version", os.Version)
 	return InstallChart(
 		ctx,
 		os.RepoName,
@@ -94,17 +98,12 @@ func (os ObjectStorage) Installing(ctx context.Context) (bool, error) {
 	return !running, nil
 }
 
-// Check if the database is ready
 func (os ObjectStorage) Ready(ctx context.Context) (bool, error) {
-	installed, err := os.Installed(ctx)
-	if !installed {
-		return installed, err
-	}
-	running, err := IsPodRunning(os.Namespace, os.PodNamePrefix)
-	if err != nil {
+	installing, err := os.Installed(ctx)
+	if err != nil && err != ComponentNotInstalledByModelaError {
 		return false, err
 	}
-	return running, nil
+	return !installing, nil
 }
 
 func (os ObjectStorage) Uninstall(ctx context.Context) error {
@@ -112,7 +111,7 @@ func (os ObjectStorage) Uninstall(ctx context.Context) error {
 		ctx,
 		os.RepoName,
 		os.RepoUrl,
-		"",
+		os.Name,
 		os.Namespace,
 		os.ReleaseName,
 		os.Version,

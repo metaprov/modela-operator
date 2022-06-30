@@ -9,7 +9,6 @@ import (
 )
 
 func TestModela_Installed(t *testing.T) {
-	t.Skip("Run only on empty cluster")
 	modela := NewModelaSystem("v0.4.716")
 	installed, err := modela.Installed(context.Background())
 	assert.NoError(t, err)
@@ -18,11 +17,16 @@ func TestModela_Installed(t *testing.T) {
 }
 
 // run on an empty system
+func TestModela_InstallAPI(t *testing.T) {
+	modela := NewModelaSystem("v0.4.716")
+	err := modela.InstallCRD(context.Background(), &v1alpha1.Modela{})
+	assert.NoError(t, err)
+}
+
+// run on an empty system
 func TestModela_Install(t *testing.T) {
-	t.Skip("Run only on empty cluster")
 	modela := NewModelaSystem("v0.4.716")
 
-	err := modela.Install(context.Background(), v1alpha1.Modela{})
+	err := modela.Install(context.Background(), &v1alpha1.Modela{})
 	assert.NoError(t, err)
-
 }

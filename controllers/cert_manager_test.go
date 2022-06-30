@@ -9,28 +9,25 @@ import (
 )
 
 func TestCertManager_Installed(t *testing.T) {
-	t.Skip("Run only on empty cluster")
-	certmanager := NewCertManager("")
-	installed, err := certmanager.Installed()
+	certmanager := NewCertManager("v1.7.1")
+	installed, err := certmanager.Installed(context.Background())
 	assert.NoError(t, err)
 	assert.True(t, installed)
 }
 
-// run on an empty system
 func TestCertManager_Install(t *testing.T) {
-	//t.Skip("Run only on empty cluster")
 	certmanager := NewCertManager("v1.7.1")
 
-	err := certmanager.Install(context.Background(), v1alpha1.Modela{})
+	err := certmanager.Install(context.Background(), &v1alpha1.Modela{})
 	assert.NoError(t, err)
-
 }
 
 func TestCertManager_Uninstall(t *testing.T) {
-	//t.Skip("Run only on empty cluster")
 	certmanager := NewCertManager("v1.7.1")
 
 	err := certmanager.Uninstall(context.Background())
 	assert.NoError(t, err)
-
+	installed, err := certmanager.Installed(context.Background())
+	assert.NoError(t, err)
+	assert.False(t, installed)
 }

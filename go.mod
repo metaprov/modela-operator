@@ -9,6 +9,7 @@ require (
 	github.com/onsi/gomega v1.19.0
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.7.1
+	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3
 	helm.sh/helm/v3 v3.9.0
 	k8s.io/api v0.24.2
 	k8s.io/apimachinery v0.24.2

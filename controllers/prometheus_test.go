@@ -21,7 +21,7 @@ func TestPrometheus_Install(t *testing.T) {
 	t.Skip("Run only on empty cluster")
 	prem := NewPrometheus("")
 
-	err := prem.Install(context.Background(), v1alpha1.Modela{})
+	err := prem.Install(context.Background(), &v1alpha1.Modela{})
 	assert.NoError(t, err)
 
 }

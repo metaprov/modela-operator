@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-	managementv1alpha1 "github.com/metaprov/modela-operator/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/discovery/cached/disk"
@@ -134,6 +133,25 @@ func IsDeploymentCreatedByModela(ns string, name string) (bool, error) {
 	return false, nil
 }
 
+func IsStatefulSetCreatedByModela(ns string, name string) (bool, error) {
+	conf, err := RestClient()
+	if err != nil {
+		return false, errors.Wrapf(err, "Unable to create REST client")
+	}
+
+	clientSet := kubernetes.NewForConfigOrDie(conf)
+	statefulSet, err := clientSet.AppsV1().StatefulSets(ns).Get(context.Background(), name, metav1.GetOptions{})
+	if err != nil {
+		return false, err
+	}
+	if val, ok := statefulSet.GetLabels()["app.kubernetes.io/created-by"]; ok {
+		if val == "modela-operator" {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func CreateNamespace(name string) error {
 	conf, err := RestClient()
 	if err != nil {
@@ -245,7 +263,7 @@ func GetSecretValuesAsString(ns string, name string) (map[string]string, error) 
 	if err != nil {
 		return nil, errors.Errorf("Error fetching rest client: %s", err)
 	}
-	// Get v1 interface to our cluster. Do or die trying
+
 	clientSet := kubernetes.NewForConfigOrDie(conf)
 	s, err := clientSet.CoreV1().Secrets(ns).Get(context.Background(), name, metav1.GetOptions{})
 	if err != nil {
@@ -325,15 +343,6 @@ func WaitForPod(ns string, name string) error {
 	return nil
 }
 
-func InstallCrd(url string) error {
-	runner := NewRealRunner("kubectl", ".", true)
-	_, _, err := runner.Run([]string{"apply", "-f", url})
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func AddRepo(name string, url string, dryrun bool) error {
 	repo := NewHelmRepo(name, url, dryrun, true)
 	if err := repo.DownloadIndex(); err != nil {
@@ -361,10 +370,6 @@ func IsPodRunningWithWait(ns string, name string) (bool, error) {
 		return false, err
 	}
 	return true, nil
-
-}
-
-func UpdateModelaStatus(ctx context.Context, modela managementv1alpha1.Modela) {
 
 }
 

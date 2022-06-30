@@ -2,23 +2,24 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"golang.org/x/mod/semver"
+	"io/ioutil"
+	"net/http"
 
 	managementv1 "github.com/metaprov/modela-operator/api/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// Modela system represent the model core system
+// ModelaSystem represents an installation of the Modela core system (control plane, API gateway, etc.)
 type ModelaSystem struct {
-	Namespace     string
-	Version       string
-	Url           string
-	ReleaseName   string
-	RepoUrl       string
-	RepoName      string
-	Name          string
-	PodNamePrefix string
-	Images        []string
-	Dryrun        bool
+	ModelaVersion    string
+	Namespace        string
+	ManifestPath     string
+	CrdUrl           string
+	VersionMatrixUrl string
+	PodNamePrefix    string
 }
 
 func (m ModelaSystem) GetInstallPhase() managementv1.ModelaPhase {
@@ -31,69 +32,63 @@ func (m ModelaSystem) IsEnabled(_ managementv1.Modela) bool {
 
 func NewModelaSystem(version string) *ModelaSystem {
 	return &ModelaSystem{
-		Namespace:   "modela-system",
-		Version:     version,
-		ReleaseName: "modela",
-		RepoName:    "modela-charts",
-		Name:        "modela",
-		RepoUrl:     "https://metaprov.github.io/helm-charts",
-		Dryrun:      false,
-		Images: []string{
-			"ghcr.io/metaprov/modela-supervisor:" + version,
-			"ghcr.io/metaprov/modela-frontend:" + version,
-			"ghcr.io/metaprov/modela-prediction-router:" + version,
-			"ghcr.io/metaprov/modela-database-proxy:" + version,
-			"ghcr.io/metaprov/modela-batch-predictor:" + version,
-			"ghcr.io/metaprov/modela-trainer:" + version,
-			"ghcr.io/metaprov/modela-publisher:" + version,
-			"ghcr.io/metaprov/modela-workload:" + version,
-			"ghcr.io/metaprov/modela-data-dock:" + version,
-			"ghcr.io/metaprov/modela-data-plane:" + version,
-			"ghcr.io/metaprov/modela-control-plane:" + version,
-			"ghcr.io/metaprov/modela-cloud-proxy:" + version,
-			"ghcr.io/metaprov/modela-api-gateway:" + version,
-		},
+		ModelaVersion:    version,
+		Namespace:        "modela-system",
+		ManifestPath:     "manifests/modela-system",
+		CrdUrl:           "github.com/metaprov/modelaapi/manifests/%s/base/crd",
+		VersionMatrixUrl: "https://raw.githubusercontent.com/metaprov/modelaapi/main/version_matrix.json",
+		PodNamePrefix:    "modela-control-plane",
 	}
 }
 
 // Check if the database installed
 func (ms ModelaSystem) Installed(ctx context.Context) (bool, error) {
-	return IsChartInstalled(
-		ctx,
-		ms.RepoName,
-		ms.RepoUrl,
-		ms.Url,
-		ms.Namespace,
-		ms.ReleaseName,
-		ms.Version,
-	)
+	return false, nil
 }
 
-func (d ModelaSystem) Install(ctx context.Context, modela *managementv1.Modela) error {
+func (ms ModelaSystem) InstallCRD(ctx context.Context, modela *managementv1.Modela) error {
 	logger := log.FromContext(ctx)
 
-	if err := CreateNamespace("modela-system"); err != nil {
-		logger.Error(err, "failed to create modela-system namespace")
+	// Download the version matrix, which associates a minimum Modela version for each API version
+	resp, err := http.Get(ms.VersionMatrixUrl)
+	if err != nil {
 		return err
 	}
-	logger.Info("created namespace modela-system")
+	defer resp.Body.Close()
+	data, _ := ioutil.ReadAll(resp.Body)
 
-	// apply the crd
-	if err := CreateNamespace("modela-catalog"); err != nil {
-		logger.Error(err, "failed to create modela-catalog namespace")
+	var jsonData interface{}
+	if err := json.Unmarshal(data, &jsonData); err != nil {
 		return err
 	}
-	logger.Info("created namespace modela-catalog")
 
-	return InstallChart(
-		ctx,
-		d.RepoName,
-		d.RepoUrl,
-		d.Name,
-		d.Namespace,
-		d.ReleaseName,
-		d.Version,
-	)
+	// Determine the required version based on the version closest to the Modela version
+	versionData := jsonData.(map[string]interface{})
+	var finalVersion string
+	var versions []string
+	for version, _ := range versionData {
+		versions = append(versions, version)
+	}
+	semver.Sort(versions)
+
+	for _, version := range versions {
+		if semver.Compare(ms.ModelaVersion, version) >= 0 {
+			finalVersion = versionData[version].(string)
+		}
+	}
+
+	if ms.ModelaVersion == "develop" {
+		finalVersion = "v1alpha1"
+	}
+
+	// Install the determined CRD version using Kustomize
+	logger.Info(fmt.Sprintf("Installing CRD version %s", finalVersion))
+	return ApplyUrlKustomize(fmt.Sprintf(ms.CrdUrl, finalVersion))
+}
+
+func (ms ModelaSystem) Install(ctx context.Context, modela *managementv1.Modela) error {
+	//logger := log.FromContext(ctx)
+	return nil
 }
 
 func (ms ModelaSystem) Installing(ctx context.Context) (bool, error) {
@@ -121,13 +116,5 @@ func (ds ModelaSystem) Ready(ctx context.Context) (bool, error) {
 }
 
 func (dm ModelaSystem) Uninstall(ctx context.Context) error {
-	return UninstallChart(
-		ctx,
-		dm.RepoName,
-		dm.RepoUrl,
-		"",
-		dm.Namespace,
-		dm.ReleaseName,
-		dm.Version,
-	)
+	return nil
 }

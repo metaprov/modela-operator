@@ -3,6 +3,11 @@ kind: Kustomization
 
 resources:
   - ./apigatewayd
+  - ./apiproxyd
   - ./controlplane
   - ./dataplane
+  - ./datadockd
+  - ./frontend
+  - ./license
+
   

@@ -61,7 +61,7 @@ func (cm CertManager) Install(ctx context.Context, modela *managementv1.Modela) 
 	logger := log.FromContext(ctx)
 
 	if err := AddRepo(cm.RepoName, cm.RepoUrl, false); err != nil {
-		logger.Error(err, "Failed to download Helm Repo")
+		logger.Error(err, "Failed to download Helm Repo", "repo", cm.RepoUrl)
 		return err
 	}
 	logger.Info("Added Helm Repo", "repo", cm.RepoName)
@@ -101,7 +101,7 @@ func (cm CertManager) Installing(ctx context.Context) (bool, error) {
 
 func (cm CertManager) Ready(ctx context.Context) (bool, error) {
 	installing, err := cm.Installed(ctx)
-	if err != nil {
+	if err != nil && err != ComponentNotInstalledByModelaError {
 		return false, err
 	}
 	return !installing, nil

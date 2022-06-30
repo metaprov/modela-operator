@@ -69,10 +69,8 @@ func ApplyYaml(yaml string) error {
 		OpenAPISchema: openAPISchema,
 		Recorder:      genericclioptions.NoopRecorder{},
 		ToPrinter: func(string) (printers.ResourcePrinter, error) {
-			return printers.NewTablePrinter(printers.PrintOptions{
-				WithNamespace: true,
-				WithKind:      true,
-			}), nil
+			return &printers.NamePrinter{Operation: "serverside-applied"}, nil
+
 		},
 		DeleteOptions: &k8sdelete.DeleteOptions{
 			FilenameOptions: resource.FilenameOptions{
@@ -85,6 +83,8 @@ func ApplyYaml(yaml string) error {
 		VisitedNamespaces: sets.NewString(),
 		PrintFlags:        genericclioptions.NewPrintFlags("created").WithTypeSetter(scheme.Scheme),
 		Overwrite:         true,
+		ServerSideApply:   true,
+		FieldManager:      "kubectl",
 	}
 
 	err = applyOptions.Run()
@@ -96,7 +96,7 @@ func ApplyYaml(yaml string) error {
 
 }
 
-func ApplyUrl(url string) error {
+func ApplyUrlKustomize(url string) error {
 	restClient, err := RestClient()
 	if err != nil {
 		return err
@@ -112,20 +112,21 @@ func ApplyUrl(url string) error {
 	}
 	openAPISchema, _ := f.OpenAPISchema()
 	applyOptions := &apply.ApplyOptions{
+		IOStreams: genericclioptions.IOStreams{
+			Out:    log.Writer(),
+			ErrOut: log.Writer(),
+		},
 		Builder:       f.NewBuilder(),
 		DynamicClient: dynamicClient,
 		Mapper:        mapper,
 		OpenAPISchema: openAPISchema,
 		Recorder:      genericclioptions.NoopRecorder{},
 		ToPrinter: func(string) (printers.ResourcePrinter, error) {
-			return printers.NewTablePrinter(printers.PrintOptions{
-				WithNamespace: true,
-				WithKind:      true,
-			}), nil
+			return &printers.NamePrinter{Operation: "serverside-applied"}, nil
 		},
 		DeleteOptions: &k8sdelete.DeleteOptions{
 			FilenameOptions: resource.FilenameOptions{
-				Filenames: []string{url},
+				Kustomize: url,
 			},
 		},
 		EnforceNamespace: false,
@@ -134,6 +135,8 @@ func ApplyUrl(url string) error {
 		VisitedNamespaces: sets.NewString(),
 		PrintFlags:        genericclioptions.NewPrintFlags("created").WithTypeSetter(scheme.Scheme),
 		Overwrite:         true,
+		ServerSideApply:   true,
+		FieldManager:      "kubectl",
 	}
 
 	err = applyOptions.Run()

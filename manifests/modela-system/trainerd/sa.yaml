@@ -1,8 +1,0 @@
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  labels:
-    app.kubernetes.io/name: modela-trainer
-    app.kubernetes.io/part-of: modela
-  name: modela-trainer
-  namespace: modela-system
