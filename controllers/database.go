@@ -36,7 +36,7 @@ func (db Database) GetInstallPhase() managementv1.ModelaPhase {
 }
 
 func (db Database) IsEnabled(modela managementv1.Modela) bool {
-	return *modela.Spec.SystemDatabase.Install
+	return true
 }
 
 func (db Database) Installed(ctx context.Context) (bool, error) {

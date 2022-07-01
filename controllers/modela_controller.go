@@ -106,14 +106,14 @@ func (r *ModelaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 updateStatus:
-	statusResult, statusErr := r.UpdateStatus(ctx, oldStatus, modela)
+	statusResult, statusErr := r.updateStatus(ctx, oldStatus, modela)
 	if statusResult.Requeue {
 		return statusResult, statusErr
 	}
 	return result, err
 }
 
-func (r ModelaReconciler) UpdateStatus(ctx context.Context, oldStatus managementv1alpha1.ModelaStatus, modela managementv1alpha1.Modela) (ctrl.Result, error) {
+func (r ModelaReconciler) updateStatus(ctx context.Context, oldStatus managementv1alpha1.ModelaStatus, modela managementv1alpha1.Modela) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	if !r.isStateEqual(modela.Status, oldStatus) || modela.Generation > modela.Status.ObservedGeneration {
 		modela.Status.ObservedGeneration = modela.Generation
@@ -134,7 +134,7 @@ func (r ModelaReconciler) UpdateStatus(ctx context.Context, oldStatus management
 	return ctrl.Result{}, nil
 }
 
-func (r ModelaReconciler) UpdatePhase(ctx context.Context, modela *managementv1alpha1.Modela, phase managementv1alpha1.ModelaPhase) {
+func (r ModelaReconciler) updatePhase(ctx context.Context, modela *managementv1alpha1.Modela, phase managementv1alpha1.ModelaPhase) {
 	now := metav1.Now()
 	modela.Status.LastUpdated = &now
 	modela.Status.Phase = phase
@@ -187,7 +187,7 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 	}
 
 	// Modela System
-	modelaSystem := NewModelaSystem(*modela.Spec.ModelaChart.ChartVersion)
+	modelaSystem := NewModelaSystem(modela.Spec.Distribution)
 	result, err = r.reconcileComponent(ctx, modelaSystem, modela)
 	if err != nil || result.Requeue {
 		return result, err
@@ -218,6 +218,50 @@ func (r *ModelaReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
+func (r *ModelaReconciler) reconcileTenants(ctx context.Context, modela *managementv1.Modela) (ctrl.Result, error) {
+	logger := log.FromContext(ctx)
+
+	var tenants = make(map[string]bool)
+	for _, tenant := range modela.Spec.Tenants {
+		tenants[tenant.Name] = true
+		tenant := NewTenant(tenant.Name)
+		if installed, err := tenant.Installed(ctx); err != nil {
+			return ctrl.Result{}, err
+		} else if !installed {
+			r.updatePhase(ctx, modela, managementv1alpha1.ModelaPhaseInstallingTenant)
+			if err := tenant.Install(ctx, modela); err != nil {
+				logger.Error(err, "Failed to install tenant", "name", tenant.Name)
+				return ctrl.Result{
+					Requeue:      true,
+					RequeueAfter: 5 * time.Minute,
+				}, err
+			}
+			modela.Status.Tenants = append(modela.Status.Tenants, tenant.Name)
+		}
+	}
+
+	// Uninstall inactive tenants
+	for index, tenant := range modela.Status.Tenants {
+		if _, ok := tenants[tenant]; !ok {
+			// The tenant no longer exists in the spec, uninstall
+			tenant := NewTenant(tenant)
+			r.updatePhase(ctx, modela, managementv1alpha1.ModelaPhaseUninstalling)
+			err := tenant.Uninstall(ctx)
+			if err != nil {
+				logger.Error(err, "Failed to uninstall tenant", "name", tenant.Name)
+				return ctrl.Result{
+					Requeue:      true,
+					RequeueAfter: 5 * time.Minute,
+				}, err
+			}
+			// Remove the tenant from the status
+			modela.Status.Tenants = append(modela.Status.Tenants[:index], modela.Status.Tenants[index+1:]...)
+		}
+	}
+
+	return ctrl.Result{}, nil
+}
+
 // Define the interface for modela components that can be reconciled
 type ModelaComponent interface {
 	IsEnabled(modela managementv1.Modela) bool
@@ -238,11 +282,11 @@ func (r *ModelaReconciler) reconcileComponent(ctx context.Context, component Mod
 	}
 
 	if !component.IsEnabled(*modela) {
-		if err != ComponentNotInstalledByModelaError {
-			r.UpdatePhase(ctx, modela, managementv1alpha1.ModelaPhaseUninstalling)
+		if err != ComponentNotInstalledByModelaError && installed {
+			r.updatePhase(ctx, modela, managementv1alpha1.ModelaPhaseUninstalling)
 			err := component.Uninstall(ctx)
 			if err != nil {
-				logger.Error(err, "Failed to install component", "component", reflect.TypeOf(component).Name())
+				logger.Error(err, "Failed to uninstall component", "component", reflect.TypeOf(component).Name())
 				return ctrl.Result{}, err
 			}
 		}
@@ -262,14 +306,17 @@ func (r *ModelaReconciler) reconcileComponent(ctx context.Context, component Mod
 	if installing {
 		return ctrl.Result{
 			Requeue:      true,
-			RequeueAfter: 0,
+			RequeueAfter: 10 * time.Second,
 		}, nil
 	} else {
-		r.UpdatePhase(ctx, modela, component.GetInstallPhase())
+		r.updatePhase(ctx, modela, component.GetInstallPhase())
 		err := component.Install(ctx, modela)
 		if err != nil {
 			logger.Error(err, "Failed to install component", "component", reflect.TypeOf(component).Name())
-			return ctrl.Result{}, err
+			return ctrl.Result{
+				Requeue:      true,
+				RequeueAfter: 5 * time.Minute,
+			}, err
 		}
 		return ctrl.Result{}, nil
 	}

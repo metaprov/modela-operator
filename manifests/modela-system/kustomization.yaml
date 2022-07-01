@@ -8,6 +8,5 @@ resources:
   - ./dataplane
   - ./datadockd
   - ./frontend
-  - ./license
 
   

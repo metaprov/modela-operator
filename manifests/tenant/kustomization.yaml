@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ./accounts
+  - ./connections
+  - ./dataproducts
+  - ./labs  
+  - ./notifiers
+  - ./servingsites
+  - ./virtualbuckets
+  - ./userroleclasses
+

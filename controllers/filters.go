@@ -33,12 +33,16 @@ func (cv ContainerVersionFilter) Filter(nodes []*yaml.RNode) ([]*yaml.RNode, err
 			continue
 		}
 
-		// visit each container and apply the cpu and memory reservations
+		// Set ModelaSystem release
+		_ = node.PipeE(yaml.Lookup("spec", "release"), yaml.Set(yaml.NewStringRNode(cv.Version)))
+
+		// Visit each container and apply the container version
 		_ = containers.VisitElements(func(node *yaml.RNode) error {
 			imageNode, _ := node.Pipe(yaml.Lookup("image"))
 			image, _ := imageNode.String()
 			image = strings.Replace(image, "\n", "", -1)
-			if image == "ghcr.io/metaprov/modela-data-dock" {
+			// Skip data-dock image; this container is to be deprecated in a future release
+			if strings.Contains(image, "ghcr.io/metaprov/modela-data-dock") {
 				return nil
 			}
 
@@ -46,6 +50,38 @@ func (cv ContainerVersionFilter) Filter(nodes []*yaml.RNode) ([]*yaml.RNode, err
 			_ = node.PipeE(
 				yaml.Lookup("image"),
 				yaml.Set(yaml.NewStringRNode(image)))
+
+			return nil
+		})
+	}
+
+	return nodes, nil
+}
+
+type NamespaceFilter struct {
+	Namespace string
+}
+
+func (nf NamespaceFilter) Filter(nodes []*yaml.RNode) ([]*yaml.RNode, error) {
+	for _, node := range nodes {
+		_ = node.SetNamespace(nf.Namespace)
+		_ = node.PipeE(yaml.Lookup("spec", "tenantRef", "name"), yaml.Set(yaml.NewStringRNode(nf.Namespace)))
+		_ = node.PipeE(yaml.Lookup("spec", "secretRef", "namespace"), yaml.Set(yaml.NewStringRNode(nf.Namespace)))
+
+		stakeholders, err := node.Pipe(yaml.Lookup("spec", "permissions", "stakeholders"))
+		if err != nil || stakeholders == nil {
+			continue
+		}
+
+		_ = stakeholders.VisitElements(func(node *yaml.RNode) error {
+			roles, _ := node.Pipe(yaml.Lookup("roles"))
+			_ = roles.VisitElements(func(node *yaml.RNode) error {
+				err = node.PipeE(
+					yaml.Lookup("namespace"),
+					yaml.Set(yaml.NewStringRNode(nf.Namespace)))
+
+				return nil
+			})
 
 			return nil
 		})

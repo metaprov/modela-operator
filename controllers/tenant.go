@@ -24,8 +24,8 @@ func (t Tenant) Installed(ctx context.Context) (bool, error) {
 	return IsNamespaceCreated(t.Name)
 }
 
-func (dt Tenant) Install(ctx context.Context, modela managementv1.Modela) error {
-	// TODO
+func (dt Tenant) Install(ctx context.Context, modela *managementv1.Modela) error {
+
 	return nil
 }
 

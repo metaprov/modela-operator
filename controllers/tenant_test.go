@@ -22,7 +22,7 @@ func TestDefaultTenant_Install(t *testing.T) {
 	t.Skip("Run only on empty cluster")
 	tenant := NewTenant("default-tenant")
 
-	err := tenant.Install(context.Background(), v1alpha1.Modela{})
+	err := tenant.Install(context.Background(), &v1alpha1.Modela{})
 	assert.NoError(t, err)
 
 }

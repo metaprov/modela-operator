@@ -7,6 +7,7 @@ import (
 	"golang.org/x/mod/semver"
 	"io/ioutil"
 	"net/http"
+	"sigs.k8s.io/kustomize/kyaml/kio"
 
 	managementv1 "github.com/metaprov/modela-operator/api/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -81,13 +82,36 @@ func (ms ModelaSystem) InstallCRD(ctx context.Context, modela *managementv1.Mode
 		finalVersion = "v1alpha1"
 	}
 
+	// Check if the version is already installed
+	if version := GetCRDVersion("tenants.infra.modela.ai"); version == finalVersion {
+		logger.Info(fmt.Sprintf("CRD version %s already installed; skipping CRD installation", finalVersion))
+		return nil
+	}
+
 	// Install the determined CRD version using Kustomize
 	logger.Info(fmt.Sprintf("Installing CRD version %s", finalVersion))
 	return ApplyUrlKustomize(fmt.Sprintf(ms.CrdUrl, finalVersion))
 }
 
 func (ms ModelaSystem) Install(ctx context.Context, modela *managementv1.Modela) error {
-	//logger := log.FromContext(ctx)
+	logger := log.FromContext(ctx)
+	if err := ms.InstallCRD(ctx, modela); err != nil {
+		return err
+	}
+
+	yaml, err := LoadResources("modela-system", []kio.Filter{
+		ContainerVersionFilter{ms.ModelaVersion},
+		LabelFilter{Labels: map[string]string{"management.modela.ai/operator": modela.Name}},
+	})
+	if err != nil {
+		return err
+	}
+
+	logger.Info("Applying modela-system resources", "length", len(yaml))
+	if err := ApplyYaml(string(yaml)); err != nil {
+		return err
+	}
+
 	return nil
 }
 

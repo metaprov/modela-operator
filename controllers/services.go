@@ -8,8 +8,8 @@ import (
 	"k8s.io/client-go/discovery/cached/disk"
 	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/util/homedir"
-	"k8s.io/klog/v2"
 	"path/filepath"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"strings"
 	"time"
 
@@ -17,6 +17,7 @@ import (
 	"github.com/pkg/errors"
 	helmrelease "helm.sh/helm/v3/pkg/release"
 	v1 "k8s.io/api/core/v1"
+	apiextensions "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -96,12 +97,7 @@ func IsChartInstalled(ctx context.Context, repoName, repoUrl string, url string,
 
 // check if a pod is running, return not nil error if not.
 func IsPodRunning(ns string, prefix string) (bool, error) {
-	conf, err := RestClient()
-	if err != nil {
-		return false, errors.Wrapf(err, "Unable to create REST client")
-	}
-
-	clientSet := kubernetes.NewForConfigOrDie(conf)
+	clientSet := kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie())
 	pods, err := clientSet.CoreV1().Pods(ns).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return false, err
@@ -115,12 +111,7 @@ func IsPodRunning(ns string, prefix string) (bool, error) {
 }
 
 func IsDeploymentCreatedByModela(ns string, name string) (bool, error) {
-	conf, err := RestClient()
-	if err != nil {
-		return false, errors.Wrapf(err, "Unable to create REST client")
-	}
-
-	clientSet := kubernetes.NewForConfigOrDie(conf)
+	clientSet := kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie())
 	deployment, err := clientSet.AppsV1().Deployments(ns).Get(context.Background(), name, metav1.GetOptions{})
 	if err != nil {
 		return false, err
@@ -134,12 +125,7 @@ func IsDeploymentCreatedByModela(ns string, name string) (bool, error) {
 }
 
 func IsStatefulSetCreatedByModela(ns string, name string) (bool, error) {
-	conf, err := RestClient()
-	if err != nil {
-		return false, errors.Wrapf(err, "Unable to create REST client")
-	}
-
-	clientSet := kubernetes.NewForConfigOrDie(conf)
+	clientSet := kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie())
 	statefulSet, err := clientSet.AppsV1().StatefulSets(ns).Get(context.Background(), name, metav1.GetOptions{})
 	if err != nil {
 		return false, err
@@ -152,14 +138,23 @@ func IsStatefulSetCreatedByModela(ns string, name string) (bool, error) {
 	return false, nil
 }
 
-func CreateNamespace(name string) error {
-	conf, err := RestClient()
+func GetCRDVersion(name string) string {
+	clientSet := apiextensions.NewForConfigOrDie(ctrl.GetConfigOrDie())
+	crd, err := clientSet.ApiextensionsV1().CustomResourceDefinitions().Get(context.Background(), name, metav1.GetOptions{})
 	if err != nil {
-		return errors.Errorf("Error fetching rest client: %s", err)
+		return ""
 	}
-	// Get v1 interface to our cluster. Do or die trying
-	clientSet := kubernetes.NewForConfigOrDie(conf)
-	_, err = clientSet.CoreV1().Namespaces().Get(context.Background(), name, metav1.GetOptions{})
+	for _, version := range crd.Spec.Versions {
+		if version.Storage {
+			return version.Name
+		}
+	}
+	return ""
+}
+
+func CreateNamespace(name string) error {
+	clientSet := kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie())
+	_, err := clientSet.CoreV1().Namespaces().Get(context.Background(), name, metav1.GetOptions{})
 	if k8serr.IsNotFound(err) {
 		_, err = clientSet.CoreV1().Namespaces().Create(context.Background(), &v1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
@@ -176,24 +171,14 @@ func CreateNamespace(name string) error {
 }
 
 func IsNamespaceCreated(name string) (bool, error) {
-	conf, err := RestClient()
-	if err != nil {
-		return false, err
-	}
-	// Get v1 interface to our cluster. Do or die trying
-	clientSet := kubernetes.NewForConfigOrDie(conf)
-	_, err = clientSet.CoreV1().Namespaces().Get(context.Background(), name, metav1.GetOptions{})
+	clientSet := kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie())
+	_, err := clientSet.CoreV1().Namespaces().Get(context.Background(), name, metav1.GetOptions{})
 	return !k8serr.IsNotFound(err), nil
 }
 
 func DeleteNamespace(name string) error {
-	conf, err := RestClient()
-	if err != nil {
-		return errors.Errorf("Error fetching rest client: %s", err)
-	}
-	// Get v1 interface to our cluster. Do or die trying
-	clientSet := kubernetes.NewForConfigOrDie(conf)
-	err = clientSet.CoreV1().Namespaces().Delete(context.Background(), name, metav1.DeleteOptions{})
+	clientSet := kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie())
+	err := clientSet.CoreV1().Namespaces().Delete(context.Background(), name, metav1.DeleteOptions{})
 	if err != nil && !k8serr.IsNotFound(err) {
 		return errors.Errorf("Failed to delete namespace %s, err: %s", name, err)
 	}
@@ -201,12 +186,7 @@ func DeleteNamespace(name string) error {
 }
 
 func CreateOrUpdateSecret(ns string, name string, values map[string]string) error {
-	conf, err := RestClient()
-	if err != nil {
-		return errors.Errorf("Error fetching rest client: %s", err)
-	}
-	// Get v1 interface to our cluster. Do or die trying
-	clientSet := kubernetes.NewForConfigOrDie(conf)
+	clientSet := kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie())
 	secret, err := clientSet.CoreV1().Secrets(ns).Get(context.Background(), name, metav1.GetOptions{})
 	if k8serr.IsNotFound(err) {
 		s := &v1.Secret{
@@ -235,13 +215,8 @@ func CreateOrUpdateSecret(ns string, name string, values map[string]string) erro
 }
 
 func DeleteSecret(ns string, name string) error {
-	conf, err := RestClient()
-	if err != nil {
-		return errors.Errorf("Error fetching rest client: %s", err)
-	}
-	// Get v1 interface to our cluster. Do or die trying
-	clientSet := kubernetes.NewForConfigOrDie(conf)
-	err = clientSet.CoreV1().Secrets(ns).Delete(context.Background(), name, metav1.DeleteOptions{})
+	clientSet := kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie())
+	err := clientSet.CoreV1().Secrets(ns).Delete(context.Background(), name, metav1.DeleteOptions{})
 	if k8serr.IsNotFound(err) {
 		return nil
 	}
@@ -249,22 +224,12 @@ func DeleteSecret(ns string, name string) error {
 }
 
 func GetSecret(ns string, name string) (*v1.Secret, error) {
-	conf, err := RestClient()
-	if err != nil {
-		return nil, errors.Errorf("Error fetching rest client: %s", err)
-	}
-	// Get v1 interface to our cluster. Do or die trying
-	clientSet := kubernetes.NewForConfigOrDie(conf)
+	clientSet := kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie())
 	return clientSet.CoreV1().Secrets(ns).Get(context.Background(), name, metav1.GetOptions{})
 }
 
 func GetSecretValuesAsString(ns string, name string) (map[string]string, error) {
-	conf, err := RestClient()
-	if err != nil {
-		return nil, errors.Errorf("Error fetching rest client: %s", err)
-	}
-
-	clientSet := kubernetes.NewForConfigOrDie(conf)
+	clientSet := kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie())
 	s, err := clientSet.CoreV1().Secrets(ns).Get(context.Background(), name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -319,12 +284,7 @@ func GetConnection(ns string, name string) (*infra.Connection, error) {
 }
 
 func WaitForPod(ns string, name string) error {
-	conf, err := RestClient()
-	if err != nil {
-		return errors.Errorf("Error fetching rest client: %s", err)
-	}
-	// Get v1 interface to our cluster. Do or die trying
-	clientSet := kubernetes.NewForConfigOrDie(conf)
+	clientSet := kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie())
 	checks := 0
 	for checks = 0; checks < 20; checks++ {
 		pod, err := clientSet.CoreV1().Pods(ns).Get(context.Background(), name, metav1.GetOptions{})
@@ -371,28 +331,6 @@ func IsPodRunningWithWait(ns string, name string) (bool, error) {
 	}
 	return true, nil
 
-}
-
-func RestClient() (*rest.Config, error) {
-	var config *rest.Config
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		if err == rest.ErrNotInCluster {
-			loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
-			configOverrides := &clientcmd.ConfigOverrides{}
-			kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
-			config, err = kubeConfig.ClientConfig()
-
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			klog.Errorf("%+v", err)
-			return nil, errors.Wrapf(err, "Unable to load in-cluster config")
-		}
-	}
-
-	return config, nil
 }
 
 type RESTClientGetter struct {

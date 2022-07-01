@@ -4,7 +4,7 @@ metadata:
   name: system
   namespace: modela-system
 spec:
-  release: v0.4.350
+  release: latest
   active: true  
   podTemplate:
       metadata: 

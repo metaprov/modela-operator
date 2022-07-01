@@ -21,10 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
-// The phases of modela cluster
+// The current phase of a Modela installation
 type ModelaPhase string
 
 const (
@@ -70,29 +67,22 @@ type ModelaCondition struct {
 	Message string `json:"message,omitempty"`
 }
 
-// ModelaAccessSpec defines the configuration for Modela to be exposed externally
+// ModelaAccessSpec defines the configuration for Modela to be exposed externally through Ingress resources.
+// The Kubernetes Ingress Class annotation (kubernetes.io/ingress.class) must be defined in the parent Modela resource
+// for Ingress resources to be created.
 type ModelaAccessSpec struct {
 	// IngressEnabled indicates if Ingress resources will be created to expose the Modela API gateway, proxy, and frontend.
 	// +kubebuilder:default:=true
-	IngressEnabled *bool `json:"ingressEnabled,omitempty"`
-	// InstallNginx indicates if the Nginx Ingress Controller will be installed. If enabled, Ingress resources created
-	// by the Modela operator will use Nginx as their Ingress class.
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default:=false
-	InstallNginx *bool `json:"installNginx,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 	// Hostname specifies the host domain which will be used as the hostname for rules in Ingress resources managed
 	// by the Modela operator. By default, the hostname will default to a localhost alias.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:="vcap.me"
 	Hostname *string `json:"hostname,omitempty"`
-	// IngressClass specifies the Ingress class which will be applied to Ingress resources managed by the Modela operator.
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default:="nginx"
-	IngressClass *string `json:"ingressClass,omitempty"`
 }
 
 type ApiGatewaySpec struct {
-	// Define the number of api gateway replicas
+	// Define the number of API Gateway replicas
 	// +kubebuilder:default:=1
 	// +kubebuilder:validation:Optional
 	Replicas *int32 `json:"replicas,omitempty"`
@@ -101,20 +91,22 @@ type ApiGatewaySpec struct {
 }
 
 type ControlPlaneSpec struct {
-	// The number of control plane replicas
+	// The number of Control Plane replicas
 	// +kubebuilder:default:=1
 	// +kubebuilder:validation:Optional
 	Replicas *int32 `json:"replicas,omitempty"`
 }
 
 type DataPlaneSpec struct {
-	// The number of data plane replicas
+	// The number of Data Plane replicas
 	// +kubebuilder:default:=1
 	// +kubebuilder:validation:Optional
 	Replicas *int32 `json:"replicas,omitempty"`
 }
 
 type CertManagerSpec struct {
+	// The chart version of the helm/cert-manager Helm Chart.
+	// https://artifacthub.io/packages/helm/cert-manager/cert-manager
 	// +kubebuilder:default:=true
 	// +kubebuilder:validation:Optional
 	Install *bool `json:"install"`
@@ -128,16 +120,17 @@ type ObjectStorageSpec struct {
 	//+kubebuilder:validation:Optional
 	Install *bool `json:"install"`
 
+	// The chart version of the bitnami/minio Helm Chart.
+	// https://artifacthub.io/packages/helm/bitnami/minio
 	//+kubebuilder:validation:Optional
 	MinioChartVersion *string `json:"chartVersion,omitempty"`
 }
 
 type SystemDatabaseSpec struct {
-	// +kubebuilder:default:=true
-	//+kubebuilder:validation:Optional
-	Install *bool `json:"installed"`
+	// The chart version of the bitnami/postgres Helm Chart.
+	// https://artifacthub.io/packages/helm/bitnami/postgresql
 	// +kubebuilder:default:="10.9.2"
-	//+kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	PostgresChartVersion *string `json:"chartVersion,omitempty"`
 }
 
@@ -180,53 +173,47 @@ type ModelaLicenseSpec struct {
 }
 
 type TenantSpec struct {
-	Name *string `json:"name"`
+	// The name of the Tenant. This will determine the name of the namespace containing the Tenant's resources.
+	// +kubebuilder:validation:Required
+	Name string `json:"name"`
+
+	// The password for the default admin account (with the username "admin"). If empty, then the
+	// Modela Operator will generate a random, 16-character long password that will be logged to
+	// the output of the operator's container.
+	// +kubebuilder:validation:Optional
+	AdminPassword *string `json:"adminPassword"`
 }
 
 type TenantStatus struct {
-	Name      *string `json:"name"`
-	Installed *bool   `json:"installed"`
-}
-
-type ModelaSystemSpec struct {
-	// +kubebuilder:default:=true
-	//+kubebuilder:validation:Optional
-	Installed *bool `json:"installed"`
-
-	//+kubebuilder:validation:Optional
-	ChartVersion *string `json:"chartVersion"`
+	Name      string `json:"name"`
+	Installed bool   `json:"installed"`
 }
 
 // ModelaSpec defines the desired state of Modela
 type ModelaSpec struct {
-	// ReleaseVersion denotes the desired version of Modela. This version will determine the
+	// Distribution denotes the desired version of Modela. This version will determine the
 	// Docker image tags for all Modela images provided by Metaprov
+	// +kubebuilder:default:="latest"
 	// +kubebuilder:validation:Required
-	ReleaseVersion string `json:"releaseVersion"`
+	Distribution string `json:"distribution"`
 
 	// Observability specifies the configuration to install monitoring tools (Prometheus and Loki)
 	Observability ObservabilitySpec `json:"observability,omitempty"`
 
-	// Access specifies the configuration to install Ingress resources that will expose Modela externally
-	Access ModelaAccessSpec `json:"access,omitempty"`
+	// Ingress specifies the configuration to install Ingress resources that will expose Modela externally
+	Ingress ModelaAccessSpec `json:"ingress,omitempty"`
 
-	// License specifies the license (or modela.ai account) information
+	// License specifies the license information
 	// that will be applied to the installation of Modela
 	License ModelaLicenseSpec `json:"license,omitempty"`
-
-	// If true install the default tenant.
-	//+kubebuilder:validation:Optional
-	ModelaChart ModelaSystemSpec `json:"modelaChart,omitempty"`
 
 	// Tenants contains the collection of tenants that will be installed
 	//+kubebuilder:validation:Optional
 	Tenants []TenantSpec `json:"defaultTenantChart,omitempty"`
 
-	// Desired state of object storage
 	//+kubebuilder:validation:Optional
 	CertManager CertManagerSpec `json:"certManager,omitempty"`
 
-	// Desired state of object storage
 	//+kubebuilder:validation:Optional
 	ObjectStore ObjectStorageSpec `json:"objectStore,omitempty"`
 
@@ -237,20 +224,19 @@ type ModelaSpec struct {
 	DataPlane DataPlaneSpec `json:"dataPlane,omitempty"`
 
 	ApiGateway ApiGatewaySpec `json:"apiGateway,omitempty"`
-
-	Pod *v1.PodTemplate `json:"podTemplate,omitempty"`
 }
 
 // ModelaStatus defines the observed state of Modela
 type ModelaStatus struct {
 	InstalledVersion string `json:"installedVersion,omitempty"`
 
-	// Status of the control plane
 	ModelaSystemInstalled bool `json:"modelaSystemInstalled,omitempty"`
 
-	// Status of data plane
-	Tenants []TenantStatus `json:"tenants,omitempty"`
+	// InstalledTenants contains the names of all Tenants installed by the Modela resource
+	Tenants []string `json:"installedTenants,omitempty"`
 
+	// LicenseToken contains the reference to the license token generated by the license linking process, which
+	// can be used to fetch the active license of a modela.ai
 	LicenseToken *v1.ObjectReference `json:"licenseTokenRef,omitempty"`
 
 	Phase ModelaPhase `json:"phase,omitempty"`
@@ -259,9 +245,10 @@ type ModelaStatus struct {
 	//+kubebuilder:validation:Optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 
+	// The Modela resource controller will update FailureMessage with an error message in the case of a failure
 	FailureMessage *string `json:"failureMessage,omitempty"`
 
-	// Last time the modela installation was upgraded
+	// The last time the Modela resource was update d
 	//+kubebuilder:validation:Optional
 	LastUpdated *metav1.Time `json:"lastUpdated,omitempty"`
 

@@ -11,11 +11,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	helmkube "helm.sh/helm/v3/pkg/kube"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"k8s.io/client-go/rest"
 	"os"
 	"regexp"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/kustomize/kyaml/kio"
 
 	"k8s.io/klog/v2"
@@ -45,9 +44,9 @@ func (lb LabelPostRenderer) Run(renderedManifests *bytes.Buffer) (modifiedManife
 		KeepReaderAnnotations: true,
 	}
 	p := kio.Pipeline{
-		Inputs:  []kio.Reader{rw}, // read the inputs into a slice
+		Inputs:  []kio.Reader{rw},
 		Filters: []kio.Filter{LabelFilter{lb.Labels}},
-		Outputs: []kio.Writer{rw}, // copy the inputs to the output
+		Outputs: []kio.Writer{rw},
 	}
 
 	if err := p.Execute(); err != nil {
@@ -87,20 +86,13 @@ func NewHelmChart(repoName, repoUrl, name, namespace, releaseName, versionName s
 
 func (chart *HelmChart) GetConfig() (*helmaction.Configuration, error) {
 	var kubeConfig *genericclioptions.ConfigFlags
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		if err == rest.ErrNotInCluster {
-			kubeConfig = helmkube.GetConfig(settings.KubeConfig, settings.KubeContext, chart.Namespace)
-		} else {
-			klog.Errorf("%+v", err)
-		}
-	} else {
-		kubeConfig = genericclioptions.NewConfigFlags(false)
-		kubeConfig.APIServer = &config.Host
-		kubeConfig.BearerToken = &config.BearerToken
-		kubeConfig.CAFile = &config.CAFile
-		kubeConfig.Namespace = &chart.Namespace
-	}
+	config := ctrl.GetConfigOrDie()
+	kubeConfig = genericclioptions.NewConfigFlags(false)
+	kubeConfig.APIServer = &config.Host
+	kubeConfig.BearerToken = &config.BearerToken
+	kubeConfig.CAFile = &config.CAFile
+	kubeConfig.Namespace = &chart.Namespace
+
 	actionConfig := new(helmaction.Configuration)
 	if err := actionConfig.Init(kubeConfig, chart.Namespace, os.Getenv("HELM_DRIVER"), klog.Infof); err != nil {
 		klog.Error(err, "Unable to initialize Helm")

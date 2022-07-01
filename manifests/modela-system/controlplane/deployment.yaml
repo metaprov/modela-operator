@@ -44,13 +44,13 @@ spec:
             - name: CACHE_PATH
               valueFrom:
                 configMapKeyRef:
-                    name: controlplane-configmap
-                    key: cache-path
+                  name: controlplane-configmap
+                  key: cache-path
           resources:
             requests:
               cpu: 400m
               memory: 1024Mi
-      
+
         - name: cloud-proxy
           image: ghcr.io/metaprov/modela-cloud-proxy:develop
           imagePullPolicy: IfNotPresent
@@ -62,24 +62,24 @@ spec:
               cpu: "100m"
               memory: 256Mi
           ports:
-                  - containerPort: 8090
-                    name: http
-                  - containerPort: 9090
-                    name: metrics
-                  - containerPort: 8008
-                    name: profiling
-                  - containerPort: 6060
-                    name: pprof
+            - containerPort: 8090
+              name: http
+            - containerPort: 9090
+              name: metrics
+            - containerPort: 8008
+              name: profiling
+            - containerPort: 6060
+              name: pprof
           volumeMounts:
-                  - name: data
-                    mountPath: /var/opt/modela/data
-         
+            - name: data
+              mountPath: /var/opt/modela/data
+
           env:
             - name: CACHE_PATH
               valueFrom:
-                  configMapKeyRef:
-                    name: controlplane-configmap
-                    key: cache-path
+                configMapKeyRef:
+                  name: controlplane-configmap
+                  key: cache-path
 
         - name: db-proxy
           image: ghcr.io/metaprov/modela-database-proxy:develop
@@ -97,12 +97,12 @@ spec:
               memory: 128Mi
             requests:
               cpu: "100m"
-              memory: 64Mi    
+              memory: 64Mi
           readinessProbe:
             exec:
-              command: ["/bin/grpc_health_probe", "-addr=:8091"]
+              command: [ "/bin/grpc_health_probe", "-addr=:8091" ]
             initialDelaySeconds: 5
-         
+
           env:
             - name: DB_HOST
               valueFrom:
@@ -126,7 +126,7 @@ spec:
                   key: postgres-password
       volumes:
         - name: data
-          emptyDir: {}
+          emptyDir: { }
         - name: webhook-server-cert
           secret:
             secretName: webhook-server-cert

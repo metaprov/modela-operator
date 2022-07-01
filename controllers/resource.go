@@ -12,6 +12,7 @@ import (
 	"k8s.io/kubectl/pkg/scheme"
 	"log"
 	"path/filepath"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/kustomize/api/krusty"
 	"sigs.k8s.io/kustomize/kyaml/filesys"
 	"sigs.k8s.io/kustomize/kyaml/kio"
@@ -38,11 +39,7 @@ func LoadResources(folder string, filters []kio.Filter) ([]byte, error) {
 }
 
 func ApplyYaml(yaml string) error {
-	restClient, err := RestClient()
-	if err != nil {
-		return err
-	}
-	f := util.NewFactory(RESTClientGetter{RestConfig: restClient})
+	f := util.NewFactory(RESTClientGetter{RestConfig: ctrl.GetConfigOrDie()})
 	mapper, err := f.ToRESTMapper()
 	if err != nil {
 		return err
@@ -85,6 +82,7 @@ func ApplyYaml(yaml string) error {
 		Overwrite:         true,
 		ServerSideApply:   true,
 		FieldManager:      "kubectl",
+		ForceConflicts:    true,
 	}
 
 	err = applyOptions.Run()
@@ -97,11 +95,7 @@ func ApplyYaml(yaml string) error {
 }
 
 func ApplyUrlKustomize(url string) error {
-	restClient, err := RestClient()
-	if err != nil {
-		return err
-	}
-	f := util.NewFactory(RESTClientGetter{RestConfig: restClient})
+	f := util.NewFactory(RESTClientGetter{RestConfig: ctrl.GetConfigOrDie()})
 	mapper, err := f.ToRESTMapper()
 	if err != nil {
 		return err
