@@ -1,0 +1,10 @@
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Cloud
+metadata:
+  name: azure
+  namespace: modela-catalog
+spec:
+  defaultRegionName: default-azure-region
+  defaultMachineClassName: default-azure-machineclass
+  defaultGpuClassName: default-azure-gpuclass
+

@@ -1,0 +1,14 @@
+apiVersion: catalog.modela.ai/v1alpha1
+kind: ManagedImage
+metadata:
+  name: modela-api-gateway-latest
+  namespace: modela-catalog
+spec:
+  description: "Modela API Gateway Image"
+  registry: "ghcr.io"
+  repository: "metaprov/modela-api-gateway"
+  tag: latest
+  role: "system"
+  active: true
+  maintainedBy: "Metaprov Inc"
+  

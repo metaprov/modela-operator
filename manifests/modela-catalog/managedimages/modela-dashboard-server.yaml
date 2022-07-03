@@ -1,0 +1,13 @@
+apiVersion: catalog.modela.ai/v1alpha1
+kind: ManagedImage
+metadata:
+  name: modela-dashboard-server
+  namespace: modela-catalog
+spec:
+  description: "Modela Dashboard Server Image"
+  registry: "ghcr.io"
+  repository: "metaprov/modela-dashboard-server"
+  tag: "latest"
+  role: dashboard  
+  active: true
+  maintainedBy: "Metaprov Inc"  

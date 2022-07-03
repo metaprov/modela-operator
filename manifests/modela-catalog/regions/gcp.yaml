@@ -1,0 +1,244 @@
+#asia-east1	a, b, c	Changhua County, Taiwan
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: gcp-asia-east1
+  namespace: modela-catalog
+spec:
+  cloudName: gcp
+  defaultDatacenterName: ds1
+  location: Changhua County, Taiwan
+---
+
+#asia-east2	a, b, c	Hong Kong
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: gcp-asia-east2
+  namespace: modela-catalog
+spec:
+  cloudName: gcp
+  defaultDatacenterName: ds1
+  location: Hong Kong
+---
+#asia-northeast1	a, b, c	Tokyo, Japan
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: gcp-asia-northeast1
+  namespace: modela-catalog
+spec:
+  cloudName: gcp
+  defaultDatacenterName: ds1
+  location: Tokyo, Japan
+---
+#asia-northeast2	a, b, c	Osaka, Japan
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: gcp-asia-northeast2
+  namespace: modela-catalog
+spec:
+  cloudName: gcp
+  defaultDatacenterName: ds1
+  location: Osaka, Japan
+---
+#asia-northeast3	a, b, c	Seoul, South Korea
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: gcp-asia-northeast3
+  namespace: modela-catalog
+spec:
+  cloudName: gcp
+  defaultDatacenterName: ds1
+  location: Seoul, South Korea
+---
+#asia-south1	a, b, c	Mumbai, India
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: gcp-asia-south1
+  namespace: modela-catalog
+spec:
+  cloudName: gcp
+  defaultDatacenterName: ds1
+  location: Mumbai, India
+---
+#asia-southeast1	a, b, c	Jurong West, Singapore
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: gcp-asia-southeast1
+  namespace: modela-catalog
+spec:
+  cloudName: gcp
+  defaultDatacenterName: ds1
+  location: Jurong West, Singapore
+---
+#australia-southeast1	a, b, c	Sydney, Australia
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: gcp-australia-southeast1
+  namespace: modela-catalog
+spec:
+  cloudName: gcp
+  defaultDatacenterName: ds1
+  location: Sydney, Australia
+---
+#europe-north1	a, b, c	Hamina, Finland
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: gcp-europe-north1
+  namespace: modela-catalog
+spec:
+  cloudName: gcp
+  defaultDatacenterName: ds1
+  location: Hamina, Finland
+---
+#europe-west1	b, c, d	St. Ghislain, Belgium
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: gcp-europe-west1
+  namespace: modela-catalog
+spec:
+  cloudName: gcp
+  defaultDatacenterName: ds1
+  location: St. Ghislain, Belgium
+---
+#europe-west2	a, b, c	London, England, UK
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: gcp-europe-west2
+  namespace: modela-catalog
+spec:
+  cloudName: gcp
+  defaultDatacenterName: ds1
+  location: London, England, UK
+---
+#europe-west3	a, b, c	Frankfurt, Germany
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: gcp-europe-west3
+  namespace: modela-catalog
+spec:
+  cloudName: gcp
+  defaultDatacenterName: ds1
+  location: Frankfurt, Germany
+---
+#europe-west4	a, b, c	Eemshaven, Netherlands
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: gcp-europe-west4
+  namespace: modela-catalog
+spec:
+  cloudName: gcp
+  defaultDatacenterName: ds1
+  location: Eemshaven, Netherlands
+---
+#europe-west6	a, b, c	Zürich, Switzerland
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: gcp-europe-west6
+  namespace: modela-catalog
+spec:
+  cloudName: gcp
+  defaultDatacenterName: ds1
+  location: Zürich, Switzerland
+---
+#northamerica-northeast1	a, b, c	Montréal, Québec, Canada
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: gcp-northamerica-northeast1
+  namespace: modela-catalog
+spec:
+  cloudName: gcp
+  defaultDatacenterName: ds1
+  location: Montréal, Québec, Canada
+---
+#southamerica-east1	a, b, c	Osasco (São Paulo), Brazil
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: gcp-southamerica-east1
+  namespace: modela-catalog
+spec:
+  cloudName: gcp
+  defaultDatacenterName: ds1
+  location: Osasco (São Paulo), Brazil
+---
+#us-central1	a, b, c, f	Council Bluffs, Iowa, USA
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: gcp-us-central1
+  namespace: modela-catalog
+spec:
+  cloudName: gcp
+  defaultDatacenterName: ds1
+  location: Council Bluffs, Iowa, USA
+---
+#us-east1	b, c, d	Moncks Corner, South Carolina, USA
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: gcp-us-east1
+  namespace: modela-catalog
+spec:
+  cloudName: gcp
+  defaultDatacenterName: ds1
+  location: Moncks Corner, South Carolina, USA
+---
+#us-east4	a, b, c	Ashburn, Northern Virginia, USA
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: gcp-us-east4
+  namespace: modela-catalog
+spec:
+  cloudName: gcp
+  defaultDatacenterName: ds1
+  location: Ashburn, Northern Virginia, USA
+---
+#us-west1	a, b, c	The Dalles, Oregon, USA
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: gcp-us-west1
+  namespace: modela-catalog
+spec:
+  cloudName: gcp
+  defaultDatacenterName: ds1
+  location: The Dalles, Oregon, USA
+---
+#us-west2	a, b, c	Los Angeles, California, USA
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: gcp-us-west2
+  namespace: modela-catalog
+spec:
+  cloudName: gcp
+  defaultDatacenterName: ds1
+  location: Los Angeles, California, USA
+---
+#us-west3	a, b, c	Salt Lake City, Utah, USA
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: gcp-us-west3
+  namespace: modela-catalog
+spec:
+  cloudName: gcp
+  defaultDatacenterName: ds1
+  location: Salt Lake City, Utah, USA
+---
+

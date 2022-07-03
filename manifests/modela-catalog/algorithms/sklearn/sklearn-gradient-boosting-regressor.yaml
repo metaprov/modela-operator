@@ -1,0 +1,31 @@
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+  name: gadient-boosting-regression
+  namespace: modela-catalog
+  labels:
+    app.kubernetes.io/part-of: modela
+spec:
+  task: regression
+  frameworkName: scikit-learn
+  integerParameters:
+    - name: min_samples_leaf
+      min: 1
+      max: 20
+      defaultValue: 1
+    - name: n_iter_no_change
+      min: 1
+      max: 20
+      defaultValue: 10
+  floatParameters:
+    - name: validation_fraction
+      min: 0.01
+      max: 1
+      defaultValue: 0.1
+      log: true
+    - name: learning_rate
+      min: 0.01
+      max: 1
+      defaultValue: 0.1
+      log: true
+ 

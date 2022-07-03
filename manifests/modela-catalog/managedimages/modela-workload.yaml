@@ -1,0 +1,14 @@
+apiVersion: catalog.modela.ai/v1alpha1
+kind: ManagedImage
+metadata:
+  name: modela-workload-latest
+  namespace: modela-catalog
+spec:
+  description: "Modela Workload Image"
+  registry: "ghcr.io"
+  repository: "metaprov/modela-workload"
+  tag: latest
+  active: true
+  role: workload  
+  maintainedBy: "Metaprov Inc"
+  

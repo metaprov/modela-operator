@@ -1,0 +1,104 @@
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: do-nyc1
+  namespace: modela-catalog
+spec:
+  cloudName: digitalocean
+  defaultDatacenterName: ds1
+  location: New York City, United States
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: do-nyc2
+  namespace: modela-catalog
+spec:
+  cloudName: digitalocean
+  defaultDatacenterName: ds1
+  location: New York City, United States
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: do-nyc3
+  namespace: modela-catalog
+spec:
+  cloudName: digitalocean
+  defaultDatacenterName: ds1
+  location: New York City, United States
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: do-ams2
+  namespace: modela-catalog
+spec:
+  cloudName: digitalocean
+  defaultDatacenterName: ds1
+  location: Amsterdam, the Netherlands
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: do-ams3
+  namespace: modela-catalog
+spec:
+  cloudName: digitalocean
+  defaultDatacenterName: ds1
+  location: Amsterdam, the Netherlands
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: do-sfo2
+  namespace: modela-catalog
+spec:
+  cloudName: digitalocean
+  defaultDatacenterName: ds1
+  location: Amsterdam, the Netherlands
+---
+#SGP1: Singapore
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: do-sgp1
+  namespace: modela-catalog
+spec:
+  cloudName: digitalocean
+  defaultDatacenterName: ds1
+  location: Singapore
+---
+#LON1: London, United Kingdom
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: do-lon1
+  namespace: modela-catalog
+spec:
+  cloudName: digitalocean
+  defaultDatacenterName: ds1
+  location: Singapore
+---
+#FRA1: Frankfurt, Germany
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: do-fra1
+  namespace: modela-catalog
+spec:
+  cloudName: digitalocean
+  defaultDatacenterName: ds1
+  location: Frankfurt, Germany
+---
+#BLR1: Bangalore, India
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: do-blr1
+  namespace: modela-catalog
+spec:
+  cloudName: digitalocean
+  defaultDatacenterName: ds1
+  location: Bangalore, India
+---

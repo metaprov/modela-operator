@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - compute-small.yaml
+  - compute-2xlarge.yaml
+  - compute-medium.yaml
+  - compute-large.yaml
+  - compute-xlarge.yaml
+  - general-nano.yaml  
+  - general-small.yaml
+  - general-medium.yaml
+  - general-large.yaml
+  - gpu-2xlarge.yaml
+  - gpu-medium.yaml
+  - gpu-xlarge.yaml
+  - memory-small.yaml
+  - memory-medium.yaml
+  - memory-large.yaml
+  - memory-xlarge.yaml
+  - memory-2xlarge.yaml

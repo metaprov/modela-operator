@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"github.com/metaprov/modelaapi/pkg/util"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"testing"
 
@@ -17,10 +18,24 @@ func TestModela_Installed(t *testing.T) {
 
 }
 
-// run on an empty system
 func TestModela_InstallAPI(t *testing.T) {
 	modela := NewModelaSystem("v0.4.716")
 	err := modela.InstallCRD(context.Background(), &v1alpha1.Modela{ObjectMeta: v1.ObjectMeta{Name: "modela-test"}})
+	assert.NoError(t, err)
+}
+
+func TestModela_InstallCatalog(t *testing.T) {
+	modela := NewModelaSystem("v0.4.716")
+	err := modela.InstallCatalog(context.Background(), &v1alpha1.Modela{ObjectMeta: v1.ObjectMeta{Name: "modela-test"}})
+	assert.NoError(t, err)
+}
+
+func TestModela_InstallLicense(t *testing.T) {
+	modela := NewModelaSystem("v0.4.716")
+	err := modela.InstallLicense(context.Background(), &v1alpha1.Modela{ObjectMeta: v1.ObjectMeta{Name: "modela-test"},
+		Spec: v1alpha1.ModelaSpec{
+			License: v1alpha1.ModelaLicenseSpec{LicenseKey: util.StrPtr("abc123")},
+		}})
 	assert.NoError(t, err)
 }
 

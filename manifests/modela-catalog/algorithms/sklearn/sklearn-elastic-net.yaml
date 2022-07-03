@@ -1,0 +1,10 @@
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+  name: elasticnet
+  namespace: modela-catalog
+  labels:
+    app.kubernetes.io/part-of: modela
+spec:
+  task: regression
+  frameworkName: scikit-learn

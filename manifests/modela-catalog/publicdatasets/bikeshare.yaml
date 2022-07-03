@@ -1,0 +1,16 @@
+apiVersion: catalog.modela.ai/v1alpha1
+kind: PublicDataset
+metadata:
+  name: bikeshare
+  namespace: modela-catalog
+spec:
+  url: https://github.com/metaprov/modela-public-datasets/tree/main/datasets/bikeshare
+  description: Rental bike share
+  task: regression
+  dataUrl: https://raw.githubusercontent.com/metaprov/modela-public-datasets/main/datasets/bikeshare/bikeshare.csv
+  citation: ""
+  rows: 17389
+  columns: 16
+  fileSize: 20000
+  targetColumn:  ""
+  imbalanced: false

@@ -1,0 +1,16 @@
+apiVersion: catalog.modela.ai/v1alpha1
+kind: PublicDataset
+metadata:
+  name: mushroom
+  namespace: modela-catalog
+spec:
+  url: https://github.com/metaprov/modelaapi/tree/main/datasets/mushroom
+  description:  "From Audobon Society Field Guide; mushrooms described in terms of physical characteristics; classification poisonous or edible"
+  task: binary-classification
+  dataUrl: https://raw.githubusercontent.com/metaprov/modelaapi/main/datasets/mushroom/mushroom.csv
+  citation: "Mushroom records drawn from The Audubon Society Field Guide to North American Mushrooms (1981). G. H. Lincoff (Pres.), New York: Alfred A. Knopf"
+  rows: 8124
+  columns: 22
+  fileSize: 20000
+  targetColumn:  ""
+  imbalanced: false

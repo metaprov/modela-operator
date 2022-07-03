@@ -89,3 +89,16 @@ func (nf NamespaceFilter) Filter(nodes []*yaml.RNode) ([]*yaml.RNode, error) {
 
 	return nodes, nil
 }
+
+type ManagedImageFilter struct {
+	Version string
+}
+
+func (mi ManagedImageFilter) Filter(nodes []*yaml.RNode) ([]*yaml.RNode, error) {
+	for _, node := range nodes {
+		if node.GetKind() == "ManagedImage" {
+			_ = node.PipeE(yaml.Lookup("spec", "tag"), yaml.Set(yaml.NewStringRNode(mi.Version)))
+		}
+	}
+	return nodes, nil
+}

@@ -1,0 +1,8 @@
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+  name: arima
+  namespace: modela-catalog
+spec:
+  frameworkName: dart
+  task: forecasting

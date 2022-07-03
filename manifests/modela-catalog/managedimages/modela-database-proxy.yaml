@@ -1,0 +1,14 @@
+apiVersion: catalog.modela.ai/v1alpha1
+kind: ManagedImage
+metadata:
+  name: modela-database-proxy-latest
+  namespace: modela-catalog
+spec:
+  description: "Modela Database Proxy Image"
+  registry: "ghcr.io"
+  repository: "metaprov/modela-database-proxy"
+  tag: latest
+  role: system  
+  active: true
+  maintainedBy: "Metaprov Inc"
+  

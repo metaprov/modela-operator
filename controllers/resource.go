@@ -1,11 +1,15 @@
 package controllers
 
 import (
+	"context"
 	"io/ioutil"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/cli-runtime/pkg/printers"
 	"k8s.io/cli-runtime/pkg/resource"
+
 	"k8s.io/kubectl/pkg/cmd/apply"
 	k8sdelete "k8s.io/kubectl/pkg/cmd/delete"
 	"k8s.io/kubectl/pkg/cmd/util"
@@ -13,14 +17,17 @@ import (
 	"log"
 	"path/filepath"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/kustomize/api/krusty"
 	"sigs.k8s.io/kustomize/kyaml/filesys"
 	"sigs.k8s.io/kustomize/kyaml/kio"
 	"strings"
 )
 
+var kustomizer = krusty.MakeKustomizer(krusty.MakeDefaultOptions())
+
 func LoadResources(folder string, filters []kio.Filter) ([]byte, error) {
-	kustomizer := krusty.MakeKustomizer(krusty.MakeDefaultOptions())
 	path, _ := filepath.Abs("../manifests")
 	resMap, err := kustomizer.Run(filesys.MakeFsOnDisk(), filepath.Join(path, folder))
 	if err != nil {
@@ -36,6 +43,33 @@ func LoadResources(folder string, filters []kio.Filter) ([]byte, error) {
 	} else {
 		return nil, err
 	}
+}
+
+// CompareExistingResources returns the number of resources defined by the
+// specified Kustomization that do not exist on the Kubernetes cluster.
+func CompareExistingResources(folder string) (int, error) {
+	path, _ := filepath.Abs("../manifests")
+	resMap, err := kustomizer.Run(filesys.MakeFsOnDisk(), filepath.Join(path, folder))
+	if err != nil {
+		return 0, err
+	}
+
+	var missing = 0
+	k8sclient, err := client.New(config.GetConfigOrDie(), client.Options{})
+	for _, res := range resMap.Resources() {
+		obj := &unstructured.Unstructured{}
+		obj.SetGroupVersionKind(schema.GroupVersionKind{
+			Group:   res.GetGvk().Group,
+			Version: res.GetGvk().Version,
+			Kind:    res.GetGvk().Kind,
+		})
+		err := k8sclient.Get(context.Background(), client.ObjectKey{res.GetNamespace(), res.GetName()}, obj)
+		if err != nil {
+			missing++
+		}
+	}
+
+	return missing, nil
 }
 
 func ApplyYaml(yaml string) error {

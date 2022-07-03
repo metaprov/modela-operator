@@ -1,0 +1,10 @@
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Cloud
+metadata:
+  name: digitalocean
+  namespace: modela-catalog
+spec:
+  defaultRegionName: default-digitalocean-region
+  defaultMachineClassName: default-digitalocean-machineclass
+  defaultGpuClassName: default-digitalocean-gpuclass
+

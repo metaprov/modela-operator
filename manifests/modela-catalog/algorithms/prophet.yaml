@@ -1,0 +1,27 @@
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+  name: prophet
+  namespace: modela-catalog
+spec:
+  frameworkName: prophet
+  task: forecasting
+  categoricalParameters:
+    - name: seasonality_mod
+      enums:
+          - gbdt
+          - dart
+      defaultValue:  gbdt
+  floatParameters:
+    - name: changepoint_prior_scale
+      min: 0.001
+      max: 0.5
+      log: True
+    - name: seasonality_prior_scale
+      min: 0.01
+      max: 10
+      log: True
+    - name: holidays_prior_scale
+      min: 0.01
+      max: 10
+      log: True

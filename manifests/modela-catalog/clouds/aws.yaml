@@ -1,0 +1,10 @@
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Cloud
+metadata:
+  name: aws
+  namespace: modela-catalog
+spec:
+  defaultRegionName: default-aws-region
+  defaultMachineClassName: default-aws-machineclass
+  defaultGpuClassName: default-aws-gpuclass
+

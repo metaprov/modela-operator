@@ -1,0 +1,16 @@
+apiVersion: catalog.modela.ai/v1alpha1
+kind: PublicDataset
+metadata:
+  name: iris
+  namespace: modela-catalog
+spec:
+  url: https://github.com/metaprov/modela-public-datasets/tree/main/datasets/iris
+  description: Iris flower dataset
+  task: multi-classification
+  dataUrl: https://raw.githubusercontent.com/metaprov/modela-public-datasets/main/datasets/iris/iris.csv
+  citation: ""
+  rows: 120
+  columns: 5
+  fileSize: 20000
+  targetColumn:  ""
+  imbalanced: false

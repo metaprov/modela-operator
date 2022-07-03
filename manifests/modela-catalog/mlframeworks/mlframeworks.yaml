@@ -1,0 +1,136 @@
+apiVersion: catalog.modela.ai/v1alpha1
+kind: MLFramework
+metadata:
+  name: lightgbm
+  namespace: modela-catalog
+  labels:
+    app.kubernetes.io/part-of: modela
+spec:
+  url: "https://lightgbm.readthedocs.io/en/latest/"
+  description: "lightgbm"
+  version: "1.2.2"
+  lang: "python"
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: MLFramework
+metadata:
+  name: spacy
+  namespace: modela-catalog
+  labels:
+    app.kubernetes.io/part-of: modela
+spec:
+  url: "https://spacy.io/"
+  description: "Industrial-Strength Natural Language Processing"
+  version: "1.2.2"
+  lang: "python"
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: MLFramework
+metadata:
+  name: langdetect
+  namespace: modela-catalog
+  labels:
+    app.kubernetes.io/part-of: modela
+spec:
+  url: "https://github.com/Mimino666/langdetect"
+  description: "Language detection library"
+  version: "1.2.2"
+  lang: "python"
+
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: MLFramework
+metadata:
+  name: mesh-transformer-jax
+  namespace: modela-catalog
+  labels:
+    app.kubernetes.io/part-of: modela
+spec:
+  url: "https://github.com/kingoflolz/mesh-transformer-jax/"
+  description: "Language detection library"
+  version: "1.2.2"
+  lang: "python"
+
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: MLFramework
+metadata:
+  name: hugging-face
+  namespace: modela-catalog
+  labels:
+    app.kubernetes.io/part-of: modela
+spec:
+  url: "https://huggingface.co/"
+  description: "AI Community"
+  version: "1.2.2"
+  lang: "python"
+
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: MLFramework
+metadata:
+  name: scikit-learn
+  namespace: modela-catalog
+spec:
+  url: "https://scikit-learn.org/stable/"
+  description: "scikit-learn description"
+  version: "2.1.0"
+  lang: "python"
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: MLFramework
+metadata:
+  name: xgboost
+  namespace: modela-catalog
+spec:
+  url: "https://xgboost.readthedocs.io/en/latest/"
+  description: "xgboost description"
+  version: "1.0.0"
+  lang: "python"
+
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: MLFramework
+metadata:
+  name: prophet
+  namespace: modela-catalog
+spec:
+  url: "https://github.com/facebook/prophet"
+  description: "Prophet: Automatic Forecasting Procedure"
+  version: "1.0.0"
+  lang: "python"
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: MLFramework
+metadata:
+  name: dart
+  namespace: modela-catalog
+spec:
+  url: https://github.com/unit8co/darts
+  description: "Dart "
+  version: "1.0.0"
+  lang: "python"
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: MLFramework
+metadata:
+  name: implicit
+  namespace: modela-catalog
+spec:
+  url: https://github.com/benfred/implicit
+  description: "Implicit collaborative filtering framework"
+  version: "1.0.0"
+  lang: "python"
+
+
+
+

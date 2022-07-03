@@ -1,0 +1,10 @@
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+  name: lasso-lars
+  namespace: modela-catalog
+  labels:
+    app.kubernetes.io/part-of: modela
+spec:
+  frameworkName: scikit-learn
+  task: regression

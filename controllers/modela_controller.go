@@ -37,7 +37,8 @@ import (
 	managementv1alpha1 "github.com/metaprov/modela-operator/api/v1alpha1"
 )
 
-var ComponentNotInstalledByModelaError = errors.New("component not installed by Modela")
+var ComponentNotInstalledByModelaError = errors.New("component not installed by Modela Operator")
+var ComponentMissingResourcesError = errors.New("component missing resources")
 
 // ModelaReconciler reconciles a Modela object
 type ModelaReconciler struct {
@@ -45,21 +46,27 @@ type ModelaReconciler struct {
 	Scheme *runtime.Scheme
 }
 
+//+kubebuilder:rbac:groups=catalog.modela.ai,resources=*,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=team.modela.ai,resources=*,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=data.modela.ai,resources=*,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=inference.modela.ai,resources=*,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=infra.modela.ai,resources=*,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=training.modela.ai,resources=*,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=management.modela.ai,resources=modelas,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=management.modela.ai,resources=modelas/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=management.modela.ai,resources=modelas/finalizers,verbs=update
-//+kubebuilder:rbac:groups="",resources=*,verbs=*
-//+kubebuilder:rbac:groups="batch",resources=*,verbs=*
+//+kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=*,verbs=*
 //+kubebuilder:rbac:groups="extensions",resources=*,verbs=*
 //+kubebuilder:rbac:groups="apps",resources=*,verbs=*
+//+kubebuilder:rbac:groups="core",resources=*,verbs=*
+//+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;delete;patch
+//+kubebuilder:rbac:groups=networking.k8s.io,resources=services,verbs=get;list;watch;create;update;delete;patch
+//+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=*,verbs=get;list;watch;create;update;delete;patch
+//+kubebuilder:rbac:groups=cert-manager.io/v1,resources=*,verbs=get;list;watch;create;update;delete;patch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the Modela object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
+
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.1/pkg/reconcile
 func (r *ModelaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -143,7 +150,6 @@ func (r ModelaReconciler) updatePhase(ctx context.Context, modela *managementv1a
 
 func (r ModelaReconciler) isStateEqual(old managementv1alpha1.ModelaStatus, new managementv1alpha1.ModelaStatus) bool {
 	return old.InstalledVersion == new.InstalledVersion &&
-		old.ModelaSystemInstalled == new.ModelaSystemInstalled &&
 		reflect.DeepEqual(old.LicenseToken, new.LicenseToken) &&
 		reflect.DeepEqual(old.Conditions, new.Conditions) &&
 		reflect.DeepEqual(old.Tenants, new.Tenants)
@@ -151,6 +157,8 @@ func (r ModelaReconciler) isStateEqual(old managementv1alpha1.ModelaStatus, new 
 }
 
 func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alpha1.Modela) (ctrl.Result, error) {
+	logger := log.FromContext(ctx)
+
 	// Cert Manager
 	certManager := NewCertManager(*modela.Spec.CertManager.CertManagerChartVersion)
 	result, err := r.reconcileComponent(ctx, certManager, modela)
@@ -193,18 +201,35 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 		return result, err
 	}
 
-	/*defaultTenant := NewDefaultTenant(*modela.Spec.DefaultTenantChart.ChartVersion)
-	installed, err = defaultTenant.Installed(ctx)
-	if err != nil {
-		return ctrl.Result{}, err
+	if ready, err := modelaSystem.Ready(ctx); err != nil || !ready {
+		return ctrl.Result{
+			Requeue:      true,
+			RequeueAfter: 10 * time.Second,
+		}, err
 	}
-	if !installed {
-		// reconcile default tenant, make sure that all the items are as defined.
-		result, err := r.reconcileComponent(ctx, defaultTenant, *modela)
-		if err != nil || result.Requeue {
-			return result, err
+
+	if installed, err := modelaSystem.CatalogInstalled(ctx); !installed || err == ComponentMissingResourcesError {
+		r.updatePhase(ctx, modela, managementv1alpha1.ModelaPhaseInstallingModela)
+		err := modelaSystem.InstallCatalog(ctx, modela)
+		if err != nil {
+			logger.Error(err, "Failed to install modela catalog")
+			return ctrl.Result{
+				Requeue:      true,
+				RequeueAfter: 5 * time.Minute,
+			}, err
 		}
-	}*/
+		return ctrl.Result{}, nil
+	} else if err != nil {
+		return ctrl.Result{
+			Requeue:      true,
+			RequeueAfter: 10 * time.Second,
+		}, err
+	}
+
+	result, err = r.reconcileTenants(ctx, modela)
+	if err != nil || result.Requeue {
+		return result, err
+	}
 
 	modela.Status.Phase = managementv1alpha1.ModelaPhaseReady
 	return ctrl.Result{}, err
@@ -262,7 +287,7 @@ func (r *ModelaReconciler) reconcileTenants(ctx context.Context, modela *managem
 	return ctrl.Result{}, nil
 }
 
-// Define the interface for modela components that can be reconciled
+// ModelaComponent defines the interface for system components that can be reconciled
 type ModelaComponent interface {
 	IsEnabled(modela managementv1.Modela) bool
 	Installed(ctx context.Context) (bool, error)
@@ -276,7 +301,7 @@ type ModelaComponent interface {
 func (r *ModelaReconciler) reconcileComponent(ctx context.Context, component ModelaComponent, modela *managementv1.Modela) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	installed, err := component.Installed(ctx)
-	if err != nil && err != ComponentNotInstalledByModelaError {
+	if err != nil && err != ComponentNotInstalledByModelaError && err != ComponentMissingResourcesError {
 		logger.Error(err, "Failed to check if component is installed", "component", reflect.TypeOf(component).Name())
 		return ctrl.Result{}, err
 	}
@@ -303,7 +328,7 @@ func (r *ModelaReconciler) reconcileComponent(ctx context.Context, component Mod
 		return ctrl.Result{}, err
 	}
 
-	if installing {
+	if installing && err != ComponentMissingResourcesError {
 		return ctrl.Result{
 			Requeue:      true,
 			RequeueAfter: 10 * time.Second,

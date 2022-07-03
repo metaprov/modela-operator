@@ -1,0 +1,14 @@
+apiVersion: catalog.modela.ai/v1alpha1
+kind: ManagedImage
+metadata:
+  name: modela-control-plane-latest
+  namespace: modela-catalog
+spec:
+  description: "Modela Control Plane Image"
+  registry: "ghcr.io"
+  repository: "metaprov/modela-control-plane"
+  tag: "latest"
+  role: system 
+  active: true
+  maintainedBy: "Metaprov Inc"
+  

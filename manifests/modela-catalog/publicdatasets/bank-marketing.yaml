@@ -1,0 +1,17 @@
+apiVersion: catalog.modela.ai/v1alpha1
+kind: PublicDataset
+metadata:
+  name: bank-marketing
+  namespace: modela-catalog
+spec:
+  url: https://github.com/metaprov/modela-public-datasets/tree/main/datasets/bank-marketing
+  description: Predict whether income exceeds $50K/yr
+  task: binary-classification
+  dataUrl: https://raw.githubusercontent.com/metaprov/modela-public-datasets/main/datasets/bank-marketing/bank.csv
+  citation: ""
+  rows: 48842
+  columns: 14
+  fileSize: 20000
+  targetColumn:  ""
+  imbalanced: false
+  industry: "finance"

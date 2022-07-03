@@ -1,0 +1,14 @@
+apiVersion: catalog.modela.ai/v1alpha1
+kind: ManagedImage
+metadata:
+  name: modela-prediction-router-latest
+  namespace: modela-catalog
+spec:
+  description: "Modela Prediction Router Image"
+  registry: "ghcr.io"
+  repository: "metaprov/modela-prediction-router"
+  tag: "latest"
+  active: true
+  role: prediction-router  
+  maintainedBy: "Metaprov Inc"
+  

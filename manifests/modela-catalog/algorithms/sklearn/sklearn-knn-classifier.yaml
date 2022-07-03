@@ -1,0 +1,31 @@
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+  name: knn-classifier
+  namespace: modela-catalog
+  labels:
+    app.kubernetes.io/part-of: modela
+spec:
+  frameworkName: scikit-learn
+  task: binary-classification
+  integerParameters:
+   - name: n_neighbors
+     min: 1
+     max: 100     
+     defaultValue: 1
+  categoricalParameters:
+   - name: weights
+     enums:
+       - "uniform"
+       - "distance"
+     defaultValue: "uniform"
+   - name: p
+     enums:
+       - "1"
+       - "2"
+     defaultValue : "2"
+
+
+
+
+

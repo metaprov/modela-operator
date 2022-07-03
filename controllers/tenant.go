@@ -2,17 +2,22 @@ package controllers
 
 import (
 	"context"
+	k8serr "k8s.io/apimachinery/pkg/api/errors"
+	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/kustomize/kyaml/kio"
 
 	managementv1 "github.com/metaprov/modela-operator/api/v1alpha1"
 )
 
 type Tenant struct {
-	Name string
+	Name         string
+	ManifestPath string
 }
 
 func NewTenant(name string) *Tenant {
 	return &Tenant{
-		Name: name,
+		Name:         name,
+		ManifestPath: "tenant",
 	}
 }
 
@@ -24,7 +29,26 @@ func (t Tenant) Installed(ctx context.Context) (bool, error) {
 	return IsNamespaceCreated(t.Name)
 }
 
-func (dt Tenant) Install(ctx context.Context, modela *managementv1.Modela) error {
+func (t Tenant) Install(ctx context.Context, modela *managementv1.Modela) error {
+	logger := log.FromContext(ctx)
+
+	if err := CreateNamespace(t.Name); err != nil && !k8serr.IsAlreadyExists(err) {
+		logger.Error(err, "failed to create namespace")
+		return err
+	}
+
+	yaml, err := LoadResources(t.ManifestPath, []kio.Filter{
+		LabelFilter{Labels: map[string]string{"management.modela.ai/operator": modela.Name}},
+		NamespaceFilter{Namespace: t.Name},
+	})
+	if err != nil {
+		return err
+	}
+
+	logger.Info("Applying tenant resources", "tenant", t.Name, "length", len(yaml))
+	if err := ApplyYaml(string(yaml)); err != nil {
+		return err
+	}
 
 	return nil
 }

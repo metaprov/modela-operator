@@ -1,0 +1,257 @@
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: aws-ap-northeast-1
+  namespace: modela-catalog
+spec:
+  cloudName: aws
+  defaultDatacenterName: ds1
+  location: Asia Pacific (Tokyo)
+  billingCode: APN1
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: aws-ap-northeast-2
+  namespace: modela-catalog
+spec:
+  cloudName: aws
+  defaultDatacenterName: ds1
+  location: Asia Pacific (Seoul)
+  billingCode: APN2
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: aws-ap-northeast-3
+  namespace: modela-catalog
+spec:
+  cloudName: aws
+  defaultDatacenterName: "ds1"
+  location: Asia Pacific (Osaka-Local)
+  billingCode: APN3
+
+---
+
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: aws-ap-south-1
+  namespace: modela-catalog
+spec:
+  cloudName: aws
+  defaultDatacenterName: ds1
+  location: Asia Pacific (Mumbai)
+  billingCode: APS3
+
+---
+
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: aws-ap-southeast-1
+  namespace: modela-catalog
+spec:
+  cloudName: aws
+  defaultDatacenterName: ds1
+  location: Asia Pacific (Singapore)
+  billingCode: APS1
+
+
+---
+
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: aws-ap-southeast-2
+  namespace: modela-catalog
+spec:
+  cloudName: aws
+  defaultDatacenterName: ds1
+  location: Asia Pacific (Sydney)
+  billingCode: APS2
+
+---
+
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: aws-ca-central-1
+  namespace: modela-catalog
+spec:
+  cloudName: aws
+  defaultDatacenterName: ds1
+  location: Canada (Central)
+  billingCode: CAN1
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: aws-cn-north-1-region
+  namespace: modela-catalog
+spec:
+  cloudName: aws
+  defaultDatacenterName: ds1
+  location: China (Beijing)
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: aws-us-east-1
+  namespace: modela-catalog
+spec:
+  cloudName: aws
+  defaultDatacenterName: ds1
+  location: Asia Pacific (Hong Kong)
+
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: aws-us-east-2
+  namespace: modela-catalog
+spec:
+  cloudName: aws
+  defaultDatacenterName: ds1
+  location: US East (Ohio)
+  billingCode: USE2
+
+
+---
+
+#                                "":    "us-west-1",
+
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: aws-us-west-1
+  namespace: modela-catalog
+spec:
+  cloudName: aws
+  defaultDatacenterName: ds1
+  location: US West (N. California)
+  billingCode: USW1
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: aws-us-west-2
+  namespace: modela-catalog
+spec:
+  cloudName: aws
+  defaultDatacenterName: ds1
+  location: US West (Oregon)
+  billingCode: USW2
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: aws-cn-northwest-1
+  namespace: modela-catalog
+spec:
+  cloudName: aws
+  defaultDatacenterName: ds1
+  location: China (Ningxia)
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: aws-eu-central-1
+  namespace: modela-catalog
+spec:
+  cloudName: aws
+  defaultDatacenterName: ds1
+  location: EU (Frankfurt)
+  billingCode: EUC1
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: aws-eu-west-1
+  namespace: modela-catalog
+spec:
+  cloudName: aws
+  defaultDatacenterName: ds1
+  location: EU (Ireland)
+  billingCode: EU
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: aws-eu-west-2
+  namespace: modela-catalog
+spec:
+  cloudName: aws
+  defaultDatacenterName: ds1
+  location: EU (London)
+  billingCode: EUW2
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: aws-eu-west-3
+  namespace: modela-catalog
+spec:
+  cloudName: aws
+  defaultDatacenterName: ds1
+  location: EU (Paris)
+  billingCode: EUW3
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: eu-north-1
+  namespace: modela-catalog
+spec:
+  cloudName: aws
+  defaultDatacenterName: ds1
+  location: EU (Stockholm)
+  billingCode: EUN1
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: sa-east-1
+  namespace: modela-catalog
+spec:
+  cloudName: aws
+  defaultDatacenterName: ds1
+  location: South America (Sao Paulo)
+  billingCode: SAE1
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: us-gov-east-1
+  namespace: modela-catalog
+spec:
+  cloudName: aws
+  defaultDatacenterName: ds1
+  location: AWS GovCloud (US-East)
+  billingCode: UGE1
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: us-gov-west-1
+  namespace: modela-catalog
+spec:
+  cloudName: aws
+  defaultDatacenterName: ds1
+  location: AWS GovCloud (US)
+  billingCode: UGW1

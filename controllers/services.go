@@ -4,12 +4,16 @@ import (
 	"context"
 	"fmt"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/discovery/cached/disk"
 	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/util/homedir"
 	"path/filepath"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"strings"
 	"time"
 
@@ -24,6 +28,14 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
+
+var (
+	clientScheme = runtime.NewScheme()
+)
+
+func init() {
+	utilruntime.Must(infra.AddKnownTypes(clientScheme))
+}
 
 func InstallChart(ctx context.Context, repoName, repoUrl, name string, ns string, releaseName string, versionName string) error {
 	chart := NewHelmChart(repoName, repoUrl, name, ns, releaseName, versionName, false)
@@ -239,6 +251,28 @@ func GetSecretValuesAsString(ns string, name string) (map[string]string, error) 
 		result[k] = string(v)
 	}
 	return result, nil
+}
+
+func CreateOrUpdateLicense(ns string, name string, license *infra.License) error {
+	k8sClient, err := client.New(config.GetConfigOrDie(), client.Options{
+		Scheme: clientScheme,
+	})
+	if err != nil {
+		return err
+	}
+
+	if err = k8sClient.Get(context.Background(), client.ObjectKey{ns, name}, &infra.License{}); k8serr.IsNotFound(err) {
+		err = k8sClient.Create(context.Background(), license)
+		if err != nil {
+			return err
+		}
+	} else if err != nil {
+		return err
+	}
+	if err := k8sClient.Update(context.Background(), license); err != nil {
+		return err
+	}
+	return nil
 }
 
 func CreateOrUpdateConnection(ns string, name string, conn *infra.Connection) error {

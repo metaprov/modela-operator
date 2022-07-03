@@ -1,0 +1,45 @@
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+  name: xgboost-regressor
+  namespace: modela-catalog
+spec:
+  task: regression
+  frameworkName: xgboost
+  categoricalParameters:
+    - name:  criterion      
+      enums:
+        - gini
+        - entropy
+      defaultValue:  gini
+  integerParameters:
+    - name:   max_depth
+      min: 3
+      max: 18
+      defaultValue: 3
+    - name:   n_estimators
+      min: 50
+      max: 500
+      defaultValue: 50
+  floatParameters:
+    - name: learning_rate
+      min: 0
+      max:  1
+      defaultValue: 1.0    
+    - name: subsample
+      min: 0.5
+      max:  1
+      defaultValue: 0.8
+    - name: colsample_bytree
+      min: 0.3
+      max:  0.8
+      defaultValue: 0.8
+    - name: alpha
+      min: 1e-7
+      max:  1e-1
+      log: true
+      defaultValue: 0.0001
+
+
+
+  

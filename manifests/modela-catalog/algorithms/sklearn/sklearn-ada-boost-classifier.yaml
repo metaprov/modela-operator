@@ -1,0 +1,27 @@
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+  name: adaboost
+  namespace: modela-catalog
+  labels:
+    app.kubernetes.io/part-of: modela
+spec:
+  frameworkName: scikit-learn
+  task: binary-classification
+  integerParameters:
+    - name: n_estimators
+      min: 50
+      max: 500
+      defaultValue: 50
+  floatParameters:
+    - name: learning_rate
+      min: 0.01
+      max: 2
+      defaultValue: 0.1
+      log: true
+  categoricalParameters:
+    - name: algorithm
+      enums:
+        - SAMME.R
+        - SAMME
+      defaultValue: SAMME.R

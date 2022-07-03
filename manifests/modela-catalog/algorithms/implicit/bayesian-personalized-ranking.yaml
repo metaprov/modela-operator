@@ -1,0 +1,8 @@
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+  name: baysien-personalized-ranking
+  namespace: modela-catalog
+spec:
+  frameworkName: implicit
+  task: recommendation

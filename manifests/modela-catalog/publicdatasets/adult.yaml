@@ -1,0 +1,16 @@
+apiVersion: catalog.modela.ai/v1alpha1
+kind: PublicDataset
+metadata:
+  name: adult
+  namespace: modela-catalog
+spec:
+  url: https://github.com/metaprov/modela-public-datasets/tree/main/datasets/adult
+  description: Predict whether income exceeds $50K/yr
+  task: binary-classification
+  dataUrl: https://raw.githubusercontent.com/metaprov/modela-public-datasets/main/datasets/adult/adult.csv
+  citation: "1994 Census database"
+  rows: 48842
+  columns: 14
+  fileSize: 20000
+  targetColumn:  ""
+  imbalanced: false

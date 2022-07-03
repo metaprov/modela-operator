@@ -1,0 +1,10 @@
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Cloud
+metadata:
+  name: gcp
+  namespace: modela-catalog
+spec:
+  defaultRegionName: default-gcp-region
+  defaultMachineClassName : default-gcp-machineclass
+  defaultGpuClassName: default-gcp-gpuclass
+

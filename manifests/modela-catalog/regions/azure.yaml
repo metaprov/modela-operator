@@ -1,0 +1,652 @@
+#Central US	Iowa
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-centeral-us
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Iowa
+---
+#East US 2	Virginia
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-east-us-2
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Virginia
+---
+
+#East US	Virginia
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-east-us
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Virginia
+---
+
+#North Central US	Illinois
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-north-central-us
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Illinois
+---
+#South Central US	Texas
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-south-central-us
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Texas
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-west-us-2
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Washington
+---
+#West Central US	Wyoming
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-central-us
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Wyoming
+---
+#West US	California
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-west-us
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: California
+---
+#Canada Central	Toronto
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-canda-central
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Toronto
+---
+#Canada East	Quebec City
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-canda-east
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Quebec City
+---
+#Brazil South	Sao Paulo State
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-brazil-south
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Sao Paulo State
+---
+#Mexico Central	Queretaro State
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-mexico-central
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Queretaro State
+---
+#East Asia	Hong Kong
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-east-asia
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Hong Kong
+---
+#Southeast Asia	Singapore
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-southeast-asia
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Singapore
+---
+#Australia Central	Canberra
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-australia-central
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Canberra
+---
+#Australia Central 2	Canberra
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-australia-central-2
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Canberra
+---
+#Australia East	New South Wales
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-australia-east
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: New South Wales
+---
+#Australia Southeast	Victoria
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-australia-southeast
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Victoria
+---
+#China East	        Shanghai
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-china-east
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Shanghai
+---
+#China North	        Beijing
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-china-north
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Beijing
+---
+#China East 2	    Shanghai
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-china-east-2
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Shanghai
+---
+#China North 2	    Beijing
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-china-north-2
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Beijing
+---
+#Central India	    Pune
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-centeral-india
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Pune
+---
+#South India	        Chennai
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-south-india
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Chennai
+---
+#West India	        Mumbai
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-west-india
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Mumbai
+---
+#Japan East	        Tokyo, Saitama
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-japan-east
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Tokyo, Saitama
+---
+#Japan West	        Osaka
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-japan-west
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Osaka
+---
+#Korea Central	    Seoul
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-korea-central
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Seoul
+---
+#Korea South	        Busan
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-korea-south
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Busan
+---
+#South Africa North	Johannesburg
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-south-africa-north
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Johannesburg
+---
+#South Africa West	Cape Town
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-south-africa-west
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Cape Town
+---
+#UAE Central	Abu Dhabi
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-uae-central
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Abu Dhabi
+---
+#UAE North	Dubai
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-uae-north
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Dubai
+---
+#Israel Central	Israel
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-israel-central
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Israel
+---
+#Qatar Central	Doha
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-qatar-central
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Doha
+---
+#North Europe	Ireland
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-north-europe
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Ireland
+---
+#West Europe	Netherlands
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-west-europe
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Netherlands
+---
+#France Central	Paris
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-france-central
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Paris
+---
+#France South	Marseille
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-france-south
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Marseille
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-uk-south
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: London
+---
+#UK West	Cardiff
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-uk-west
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Cardiff
+---
+#Germany Central (Sovereign)	Frankfurt
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-germany-central-sovereign
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Frankfurt
+---
+#Germany Northeast (Sovereign)	Magdeburg
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-germany-northeast-sovereign
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Magdeburg
+---
+#Germany West Central (Public)	Frankfurt
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-germany-northeast-public
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Frankfurt
+---
+#Germany North (Public)	Berlin
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-germany-north-public
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Berlin
+---
+#Switzerland North	Zurich
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-switzerland-north
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Zurich
+---
+#Switzerland West	Geneva
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-switzerland-west
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Geneva
+---
+#Norway West	Stavanger
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-norway-west
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Stavanger
+---
+#Norway East	Oslo
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-norway-east
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Oslo
+---
+#Spain Central	Madrid
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-spain-central
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Madrid
+---
+#US DoD Central	Iowa
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-dod-central
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Iowa
+---
+#US DoD East	Virginia
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-dod-east
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Virginia
+---
+#US Gov Arizona	Arizona
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-gov-arizona
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Arizona
+---
+#US Gov Iowa	Iowa
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-gov-iwoa
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Iowa
+---
+#US Gov Texas	Texas
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-gov-texas
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Texas
+---
+#US Gov Virginia	Virginia
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: azure-gov-virgina
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Virginia
+---
+#US Sec West	Undisclosed
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: us-sec-west
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Undisclosed
+---
+#US Sec East	Undisclosed
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Region
+metadata:
+  name: us-sec-east
+  namespace: modela-catalog
+spec:
+  cloudName: azure
+  defaultDatacenterName: ds1
+  location: Undisclosed
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
