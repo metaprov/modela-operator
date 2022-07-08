@@ -65,7 +65,7 @@ func (db Database) Install(ctx context.Context, modela *managementv1.Modela) err
 		return err
 	}
 	logger.Info("Added Helm Repo", "repo", db.RepoName)
-	if err := CreateNamespace(db.Namespace); err != nil && !k8serr.IsAlreadyExists(err) {
+	if err := CreateNamespace(db.Namespace, modela.Name); err != nil && !k8serr.IsAlreadyExists(err) {
 		logger.Error(err, "failed to create namespace")
 		return err
 	}
@@ -103,7 +103,7 @@ func (db Database) Ready(ctx context.Context) (bool, error) {
 	return !installing, nil
 }
 
-func (db Database) Uninstall(ctx context.Context) error {
+func (db Database) Uninstall(ctx context.Context, modela *managementv1.Modela) error {
 	return UninstallChart(ctx,
 		db.RepoName,
 		db.RepoUrl,

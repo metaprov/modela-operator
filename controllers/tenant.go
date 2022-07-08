@@ -32,12 +32,12 @@ func (t Tenant) Installed(ctx context.Context) (bool, error) {
 func (t Tenant) Install(ctx context.Context, modela *managementv1.Modela) error {
 	logger := log.FromContext(ctx)
 
-	if err := CreateNamespace(t.Name); err != nil && !k8serr.IsAlreadyExists(err) {
+	if err := CreateNamespace(t.Name, modela.Name); err != nil && !k8serr.IsAlreadyExists(err) {
 		logger.Error(err, "failed to create namespace")
 		return err
 	}
 
-	yaml, err := LoadResources(t.ManifestPath, []kio.Filter{
+	yaml, _, err := LoadResources(t.ManifestPath, []kio.Filter{
 		LabelFilter{Labels: map[string]string{"management.modela.ai/operator": modela.Name}},
 		NamespaceFilter{Namespace: t.Name},
 	})
@@ -61,11 +61,20 @@ func (dt Tenant) Installing(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
-// Check if the default tenant is installed and ready
 func (d Tenant) Ready(ctx context.Context) (bool, error) {
 	return d.Installed(ctx)
 }
 
-func (d Tenant) Uninstall(ctx context.Context) error {
+func (d Tenant) Uninstall(ctx context.Context, modela *managementv1.Modela) error {
+	if created, err := IsNamespaceCreatedByOperator(d.Name, modela.Name); !created {
+		return ComponentNotInstalledByModelaError
+	} else if err != nil {
+		return err
+	}
+
+	if err := DeleteNamespace(d.Name); err != nil {
+		return err
+	}
+
 	return nil
 }

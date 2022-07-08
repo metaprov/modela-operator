@@ -30,7 +30,7 @@ func TestObjectStorage_Install(t *testing.T) {
 func TestObjectStorage_Uninstall(t *testing.T) {
 	prem := NewObjectStorage(ObjectVersion)
 
-	err := prem.Uninstall(context.Background())
+	err := prem.Uninstall(context.Background(), nil)
 	assert.NoError(t, err)
 	installed, err := prem.Installed(context.Background())
 	assert.NoError(t, err)

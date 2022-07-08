@@ -25,7 +25,7 @@ func TestCertManager_Install(t *testing.T) {
 func TestCertManager_Uninstall(t *testing.T) {
 	certmanager := NewCertManager("v1.7.1")
 
-	err := certmanager.Uninstall(context.Background())
+	err := certmanager.Uninstall(context.Background(), nil)
 	assert.NoError(t, err)
 	installed, err := certmanager.Installed(context.Background())
 	assert.NoError(t, err)

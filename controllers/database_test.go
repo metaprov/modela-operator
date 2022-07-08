@@ -27,7 +27,7 @@ func TestDatabase_Install(t *testing.T) {
 func TestDatabase_Uninstall(t *testing.T) {
 	database := NewDatabase(PostgresVersion)
 
-	err := database.Uninstall(context.Background())
+	err := database.Uninstall(context.Background(), nil)
 	assert.NoError(t, err)
 	installed, err := database.Installed(context.Background())
 	assert.NoError(t, err)

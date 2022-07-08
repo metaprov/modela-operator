@@ -164,13 +164,14 @@ func GetCRDVersion(name string) string {
 	return ""
 }
 
-func CreateNamespace(name string) error {
+func CreateNamespace(name string, operatorName string) error {
 	clientSet := kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie())
 	_, err := clientSet.CoreV1().Namespaces().Get(context.Background(), name, metav1.GetOptions{})
 	if k8serr.IsNotFound(err) {
 		_, err = clientSet.CoreV1().Namespaces().Create(context.Background(), &v1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: name,
+				Name:   name,
+				Labels: map[string]string{"management.modela.ai/operator": operatorName},
 			},
 		}, metav1.CreateOptions{})
 		if err != nil {
@@ -188,11 +189,25 @@ func IsNamespaceCreated(name string) (bool, error) {
 	return !k8serr.IsNotFound(err), nil
 }
 
+func IsNamespaceCreatedByOperator(name string, operator string) (bool, error) {
+	clientSet := kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie())
+	namespace, err := clientSet.CoreV1().Namespaces().Get(context.Background(), name, metav1.GetOptions{})
+	if err != nil {
+		return false, err
+	}
+	if val, ok := namespace.GetLabels()["management.modela.ai/operator"]; ok {
+		if val == operator {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func DeleteNamespace(name string) error {
 	clientSet := kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie())
 	err := clientSet.CoreV1().Namespaces().Delete(context.Background(), name, metav1.DeleteOptions{})
 	if err != nil && !k8serr.IsNotFound(err) {
-		return errors.Errorf("Failed to delete namespace %s, err: %s", name, err)
+		return errors.Wrapf(err, "Failed to delete namespace %s", name)
 	}
 	return nil
 }

@@ -36,7 +36,7 @@ func (cm CertManager) GetInstallPhase() managementv1.ModelaPhase {
 }
 
 func (cm CertManager) IsEnabled(modela managementv1.Modela) bool {
-	return *modela.Spec.CertManager.Install
+	return modela.Spec.CertManager.Install
 }
 
 func (cm CertManager) Installed(ctx context.Context) (bool, error) {
@@ -65,7 +65,7 @@ func (cm CertManager) Install(ctx context.Context, modela *managementv1.Modela) 
 		return err
 	}
 	logger.Info("Added Helm Repo", "repo", cm.RepoName)
-	if err := CreateNamespace(cm.Namespace); err != nil && !k8serr.IsAlreadyExists(err) {
+	if err := CreateNamespace(cm.Namespace, modela.Name); err != nil && !k8serr.IsAlreadyExists(err) {
 		logger.Error(err, "failed to create namespace")
 		return err
 	}
@@ -107,7 +107,7 @@ func (cm CertManager) Ready(ctx context.Context) (bool, error) {
 	return !installing, nil
 }
 
-func (cm CertManager) Uninstall(ctx context.Context) error {
+func (cm CertManager) Uninstall(ctx context.Context, modela *managementv1.Modela) error {
 	logger := log.FromContext(ctx)
 	if err := AddRepo(cm.RepoName, cm.RepoUrl, false); err != nil {
 		logger.Error(err, "Failed to download Helm Repo")

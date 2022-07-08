@@ -38,7 +38,7 @@ func (m Prometheus) GetInstallPhase() managementv1.ModelaPhase {
 }
 
 func (m Prometheus) IsEnabled(modela managementv1.Modela) bool {
-	return *modela.Spec.Observability.Prometheus
+	return modela.Spec.Observability.Prometheus
 }
 
 // Check if the database installed
@@ -63,7 +63,7 @@ func (m Prometheus) Install(ctx context.Context, modela *managementv1.Modela) er
 	}
 	logger.Info("added repo " + m.RepoName)
 	// install namespace modela-system
-	if err := CreateNamespace(m.Namespace); err != nil {
+	if err := CreateNamespace(m.Namespace, modela.Name); err != nil {
 		logger.Error(err, "failed to create namespace "+m.Namespace)
 		return err
 	}
@@ -106,7 +106,7 @@ func (m Prometheus) Ready(ctx context.Context) (bool, error) {
 	return running, nil
 }
 
-func (m Prometheus) Uninstall(ctx context.Context) error {
+func (m Prometheus) Uninstall(ctx context.Context, modela *managementv1.Modela) error {
 	return UninstallChart(
 		ctx,
 		m.RepoName,

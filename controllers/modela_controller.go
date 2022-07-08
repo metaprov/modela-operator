@@ -160,35 +160,35 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 	logger := log.FromContext(ctx)
 
 	// Cert Manager
-	certManager := NewCertManager(*modela.Spec.CertManager.CertManagerChartVersion)
+	certManager := NewCertManager(modela.Spec.CertManager.CertManagerChartVersion)
 	result, err := r.reconcileComponent(ctx, certManager, modela)
 	if err != nil || result.Requeue {
 		return result, err
 	}
 
 	// Object Storage (Minio)
-	objectStore := NewObjectStorage(*modela.Spec.ObjectStore.MinioChartVersion)
+	objectStore := NewObjectStorage(modela.Spec.ObjectStore.MinioChartVersion)
 	result, err = r.reconcileComponent(ctx, objectStore, modela)
 	if err != nil || result.Requeue {
 		return result, err
 	}
 
 	// PostgreSQL
-	database := NewDatabase(*modela.Spec.SystemDatabase.PostgresChartVersion)
+	database := NewDatabase(modela.Spec.SystemDatabase.PostgresChartVersion)
 	result, err = r.reconcileComponent(ctx, database, modela)
 	if err != nil || result.Requeue {
 		return result, err
 	}
 
 	// Loki
-	loki := NewLoki(*modela.Spec.Observability.LokiVersion)
+	loki := NewLoki(modela.Spec.Observability.LokiVersion)
 	result, err = r.reconcileComponent(ctx, loki, modela)
 	if err != nil || result.Requeue {
 		return result, err
 	}
 
 	// Prometheus
-	prom := NewPrometheus(*modela.Spec.Observability.PrometheusVersion)
+	prom := NewPrometheus(modela.Spec.Observability.PrometheusVersion)
 	result, err = r.reconcileComponent(ctx, prom, modela)
 	if err != nil || result.Requeue {
 		return result, err
@@ -271,7 +271,7 @@ func (r *ModelaReconciler) reconcileTenants(ctx context.Context, modela *managem
 			// The tenant no longer exists in the spec, uninstall
 			tenant := NewTenant(tenant)
 			r.updatePhase(ctx, modela, managementv1alpha1.ModelaPhaseUninstalling)
-			err := tenant.Uninstall(ctx)
+			err := tenant.Uninstall(ctx, modela)
 			if err != nil {
 				logger.Error(err, "Failed to uninstall tenant", "name", tenant.Name)
 				return ctrl.Result{
@@ -294,7 +294,7 @@ type ModelaComponent interface {
 	Install(ctx context.Context, modela *managementv1.Modela) error
 	Installing(ctx context.Context) (bool, error)
 	Ready(ctx context.Context) (bool, error)
-	Uninstall(ctx context.Context) error
+	Uninstall(ctx context.Context, modela *managementv1.Modela) error
 	GetInstallPhase() managementv1alpha1.ModelaPhase
 }
 
@@ -309,7 +309,7 @@ func (r *ModelaReconciler) reconcileComponent(ctx context.Context, component Mod
 	if !component.IsEnabled(*modela) {
 		if err != ComponentNotInstalledByModelaError && installed {
 			r.updatePhase(ctx, modela, managementv1alpha1.ModelaPhaseUninstalling)
-			err := component.Uninstall(ctx)
+			err := component.Uninstall(ctx, modela)
 			if err != nil {
 				logger.Error(err, "Failed to uninstall component", "component", reflect.TypeOf(component).Name())
 				return ctrl.Result{}, err

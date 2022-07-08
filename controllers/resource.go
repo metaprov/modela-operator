@@ -27,31 +27,16 @@ import (
 
 var kustomizer = krusty.MakeKustomizer(krusty.MakeDefaultOptions())
 
-func LoadResources(folder string, filters []kio.Filter) ([]byte, error) {
+func LoadResources(folder string, filters []kio.Filter) ([]byte, int, error) {
 	path, _ := filepath.Abs("../manifests")
 	resMap, err := kustomizer.Run(filesys.MakeFsOnDisk(), filepath.Join(path, folder))
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	for _, filter := range filters {
 		if err = resMap.ApplyFilter(filter); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
-	}
-	if yaml, err := resMap.AsYaml(); err == nil {
-		return yaml, nil
-	} else {
-		return nil, err
-	}
-}
-
-// CompareExistingResources returns the number of resources defined by the
-// specified Kustomization that do not exist on the Kubernetes cluster.
-func CompareExistingResources(folder string) (int, error) {
-	path, _ := filepath.Abs("../manifests")
-	resMap, err := kustomizer.Run(filesys.MakeFsOnDisk(), filepath.Join(path, folder))
-	if err != nil {
-		return 0, err
 	}
 
 	var missing = 0
@@ -66,10 +51,16 @@ func CompareExistingResources(folder string) (int, error) {
 		err := k8sclient.Get(context.Background(), client.ObjectKey{res.GetNamespace(), res.GetName()}, obj)
 		if err != nil {
 			missing++
+		} else {
+			_ = resMap.Remove(res.OrgId())
 		}
 	}
 
-	return missing, nil
+	if yaml, err := resMap.AsYaml(); err == nil {
+		return yaml, missing, nil
+	} else {
+		return nil, missing, err
+	}
 }
 
 func ApplyYaml(yaml string) error {
@@ -173,5 +164,4 @@ func ApplyUrlKustomize(url string) error {
 	}
 
 	return nil
-
 }

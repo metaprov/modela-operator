@@ -67,17 +67,25 @@ type ModelaCondition struct {
 	Message string `json:"message,omitempty"`
 }
 
+// Unstructured values for rendering Helm Charts
+// +k8s:deepcopy-gen=false
+type ChartValues struct {
+	// Object is a JSON compatible map with string, float, int, bool, []interface{}, or
+	// map[string]interface{} children.
+	Object map[string]interface{} `json:"-"`
+}
+
 // ModelaAccessSpec defines the configuration for Modela to be exposed externally through Ingress resources.
 // The Kubernetes Ingress Class annotation (kubernetes.io/ingress.class) must be defined in the parent Modela resource
 // for Ingress resources to be created.
 type ModelaAccessSpec struct {
 	// IngressEnabled indicates if Ingress resources will be created to expose the Modela API gateway, proxy, and frontend.
 	// +kubebuilder:default:=true
-	Enabled *bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled,omitempty"`
 	// Hostname specifies the host domain which will be used as the hostname for rules in Ingress resources managed
 	// by the Modela operator. By default, the hostname will default to a localhost alias.
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default:="vcap.me"
+	// +kubebuilder:default:="localhost"
 	Hostname *string `json:"hostname,omitempty"`
 }
 
@@ -109,21 +117,27 @@ type CertManagerSpec struct {
 	// https://artifacthub.io/packages/helm/cert-manager/cert-manager
 	// +kubebuilder:default:=true
 	// +kubebuilder:validation:Optional
-	Install *bool `json:"install"`
+	Install bool `json:"install"`
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:="v1.7.1"
-	CertManagerChartVersion *string `json:"chartVersion,omitempty"`
+	CertManagerChartVersion string `json:"chartVersion,omitempty"`
+
+	// ChartValues is the set of Helm values that is used to render the Cert Manager Chart.
+	Values ChartValues `json:"values,omitempty"`
 }
 
 type ObjectStorageSpec struct {
 	// +kubebuilder:default:=true
 	//+kubebuilder:validation:Optional
-	Install *bool `json:"install"`
+	Install bool `json:"install"`
 
 	// The chart version of the bitnami/minio Helm Chart.
 	// https://artifacthub.io/packages/helm/bitnami/minio
 	//+kubebuilder:validation:Optional
-	MinioChartVersion *string `json:"chartVersion,omitempty"`
+	MinioChartVersion string `json:"chartVersion,omitempty"`
+
+	// ChartValues is the set of Helm values that is used to render the Cert Manager Chart.
+	Values ChartValues `json:"values,omitempty"`
 }
 
 type SystemDatabaseSpec struct {
@@ -131,35 +145,40 @@ type SystemDatabaseSpec struct {
 	// https://artifacthub.io/packages/helm/bitnami/postgresql
 	// +kubebuilder:default:="10.9.2"
 	// +kubebuilder:validation:Optional
-	PostgresChartVersion *string `json:"chartVersion,omitempty"`
-}
+	PostgresChartVersion string `json:"chartVersion,omitempty"`
 
-type BackupSpec struct {
-	// If true enable backups
-	// +kubebuilder:default:=false
-	//+kubebuilder:validation:Optional
-	Enabled *bool `json:"enabled"`
-	//+kubebuilder:validation:Optional
-	CronSchedule string `json:"schedule"`
-	// +kubebuilder:default:=false
-	//+kubebuilder:validation:Optional
-	Suspended *bool `json:"suspended"`
+	// ChartValues is the set of Helm values that is used to render the Postgres Chart.
+	Values ChartValues `json:"values,omitempty"`
 }
 
 type ObservabilitySpec struct {
 	// Prometheus indicates if the Prometheus Helm Chart will be installed
 	// +kubebuilder:default:=false
 	//+kubebuilder:validation:Optional
-	Prometheus *bool `json:"installPrometheus"`
+	Prometheus bool `json:"installPrometheus"`
 	// +kubebuilder:default:="2.8.4"
 	//+kubebuilder:validation:Optional
-	PrometheusVersion *string `json:"chartVersion"`
+	PrometheusVersion string `json:"chartVersion"`
+	// ChartValues is the set of Helm values that is used to render the Prometheus Chart.
+	PrometheusValues ChartValues `json:"prometheusValues,omitempty"`
+
 	// Loki indicates if the Loki Helm Chart will be installed
 	// +kubebuilder:default:=false
 	//+kubebuilder:validation:Optional
-	Loki *bool `json:"installLoki"`
+	Loki bool `json:"installLoki"`
 	//+kubebuilder:validation:Optional
-	LokiVersion *string `json:"lokiChartVersion"`
+	LokiVersion string `json:"lokiChartVersion"`
+	// ChartValues is the set of Helm values that is used to render the Loki Chart.
+	LokiValues ChartValues `json:"lokiValues,omitempty"`
+
+	// Grafana indicates if the Grafana Helm Chart will be installed
+	// +kubebuilder:default:=false
+	//+kubebuilder:validation:Optional
+	Grafana bool `json:"installGrafana"`
+	//+kubebuilder:validation:Optional
+	GrafanaVersion string `json:"grafanaChartVersion"`
+	// ChartValues is the set of Helm values that is used to render the Loki Chart.
+	GrafanaValues ChartValues `json:"grafanaValues,omitempty"`
 }
 
 type ModelaLicenseSpec struct {

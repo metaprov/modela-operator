@@ -39,10 +39,16 @@ func TestModela_InstallLicense(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-// run on an empty system
 func TestModela_Install(t *testing.T) {
 	modela := NewModelaSystem("develop")
 
 	err := modela.Install(context.Background(), &v1alpha1.Modela{ObjectMeta: v1.ObjectMeta{Name: "modela-test"}})
+	assert.NoError(t, err)
+}
+
+func TestModela_Uninstall(t *testing.T) {
+	modela := NewModelaSystem("develop")
+
+	err := modela.Uninstall(context.Background(), &v1alpha1.Modela{ObjectMeta: v1.ObjectMeta{Name: "modela-test"}})
 	assert.NoError(t, err)
 }

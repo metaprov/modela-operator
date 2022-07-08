@@ -62,7 +62,7 @@ func (m Loki) Install(ctx context.Context, modela *managementv1.Modela) error {
 	}
 	logger.Info("added repo " + m.RepoName)
 	// install namespace modela-system
-	if err := CreateNamespace(m.Namespace); err != nil {
+	if err := CreateNamespace(m.Namespace, modela.Name); err != nil {
 		logger.Error(err, "failed to create namespace %s"+m.RepoName)
 		return err
 	}
@@ -105,7 +105,7 @@ func (m Loki) Ready(ctx context.Context) (bool, error) {
 	return running, nil
 }
 
-func (m Loki) Uninstall(ctx context.Context) error {
+func (m Loki) Uninstall(ctx context.Context, modela *managementv1.Modela) error {
 	return UninstallChart(
 		ctx,
 		m.RepoName,

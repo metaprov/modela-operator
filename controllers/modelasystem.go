@@ -53,7 +53,7 @@ func (ms ModelaSystem) Installed(ctx context.Context) (bool, error) {
 	if created, err := IsNamespaceCreated("modela-system"); !created || err != nil {
 		return created, err
 	}
-	if missing, err := CompareExistingResources(ms.SystemManifestPath); missing > 0 {
+	if _, missing, err := LoadResources(ms.SystemManifestPath, nil); missing > 0 {
 		log.FromContext(ctx).Info("Resources detected as missing from the modela-system namespace", "count", missing)
 		return false, ComponentMissingResourcesError
 	} else if err != nil {
@@ -66,7 +66,7 @@ func (ms ModelaSystem) CatalogInstalled(ctx context.Context) (bool, error) {
 	if created, err := IsNamespaceCreated("modela-catalog"); !created || err != nil {
 		return created, err
 	}
-	if missing, err := CompareExistingResources(ms.CatalogManifestPath); missing > 0 {
+	if _, missing, err := LoadResources(ms.CatalogManifestPath, nil); missing > 0 {
 		log.FromContext(ctx).Info("Resources detected as missing from the modela-catalog namespace", "count", missing)
 		return false, ComponentMissingResourcesError
 	} else if err != nil {
@@ -124,7 +124,7 @@ func (ms ModelaSystem) InstallCRD(ctx context.Context, modela *managementv1.Mode
 func (ms ModelaSystem) InstallManagedImages(ctx context.Context, modela *managementv1.Modela) error {
 	logger := log.FromContext(ctx)
 
-	yaml, err := LoadResources(ms.CatalogManifestPath+"/managedimages", []kio.Filter{
+	yaml, _, err := LoadResources(ms.CatalogManifestPath+"/managedimages", []kio.Filter{
 		LabelFilter{Labels: map[string]string{"management.modela.ai/operator": modela.Name}},
 		ManagedImageFilter{Version: ms.ModelaVersion},
 	})
@@ -181,14 +181,14 @@ func (ms ModelaSystem) InstallLicense(ctx context.Context, modela *managementv1.
 func (ms ModelaSystem) InstallCatalog(ctx context.Context, modela *managementv1.Modela) error {
 	logger := log.FromContext(ctx)
 
-	yaml, err := LoadResources(ms.CatalogManifestPath, []kio.Filter{
+	yaml, _, err := LoadResources(ms.CatalogManifestPath, []kio.Filter{
 		LabelFilter{Labels: map[string]string{"management.modela.ai/operator": modela.Name}},
 	})
 	if err != nil {
 		return err
 	}
 
-	if err := CreateNamespace(ms.CatalogNamespace); err != nil && !k8serr.IsAlreadyExists(err) {
+	if err := CreateNamespace(ms.CatalogNamespace, modela.Name); err != nil && !k8serr.IsAlreadyExists(err) {
 		logger.Error(err, "failed to create namespace")
 		return err
 	}
@@ -210,12 +210,12 @@ func (ms ModelaSystem) Install(ctx context.Context, modela *managementv1.Modela)
 		return err
 	}
 
-	if err := CreateNamespace(ms.Namespace); err != nil && !k8serr.IsAlreadyExists(err) {
+	if err := CreateNamespace(ms.Namespace, modela.Name); err != nil && !k8serr.IsAlreadyExists(err) {
 		logger.Error(err, "failed to create namespace")
 		return err
 	}
 
-	yaml, err := LoadResources(ms.SystemManifestPath, []kio.Filter{
+	yaml, _, err := LoadResources(ms.SystemManifestPath, []kio.Filter{
 		ContainerVersionFilter{ms.ModelaVersion},
 		LabelFilter{Labels: map[string]string{"management.modela.ai/operator": modela.Name}},
 	})
@@ -251,6 +251,16 @@ func (ms ModelaSystem) Ready(ctx context.Context) (bool, error) {
 	return !installing, nil
 }
 
-func (dm ModelaSystem) Uninstall(ctx context.Context) error {
+func (ms ModelaSystem) Uninstall(ctx context.Context, modela *managementv1.Modela) error {
+	if created, err := IsNamespaceCreatedByOperator(ms.Namespace, modela.Name); !created {
+		return ComponentNotInstalledByModelaError
+	} else if err != nil {
+		return err
+	}
+
+	if err := DeleteNamespace(ms.Namespace); err != nil {
+		return err
+	}
+
 	return nil
 }

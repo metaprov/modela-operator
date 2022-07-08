@@ -37,7 +37,7 @@ func (os ObjectStorage) GetInstallPhase() managementv1.ModelaPhase {
 }
 
 func (os ObjectStorage) IsEnabled(modela managementv1.Modela) bool {
-	return *modela.Spec.ObjectStore.Install
+	return modela.Spec.ObjectStore.Install
 }
 
 // Check if the database installed
@@ -68,7 +68,7 @@ func (os ObjectStorage) Install(ctx context.Context, modela *managementv1.Modela
 		return err
 	}
 	logger.Info("Added Helm Repo", "repo", os.RepoName)
-	if err := CreateNamespace(os.Namespace); err != nil && !k8serr.IsAlreadyExists(err) {
+	if err := CreateNamespace(os.Namespace, modela.Name); err != nil && !k8serr.IsAlreadyExists(err) {
 		logger.Error(err, "failed to create namespace")
 		return err
 	}
@@ -106,7 +106,7 @@ func (os ObjectStorage) Ready(ctx context.Context) (bool, error) {
 	return !installing, nil
 }
 
-func (os ObjectStorage) Uninstall(ctx context.Context) error {
+func (os ObjectStorage) Uninstall(ctx context.Context, modela *managementv1.Modela) error {
 	return UninstallChart(
 		ctx,
 		os.RepoName,
