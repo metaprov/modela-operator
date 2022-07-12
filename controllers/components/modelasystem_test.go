@@ -1,15 +1,6 @@
-package controllers
+package components
 
-import (
-	"context"
-	"github.com/metaprov/modelaapi/pkg/util"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"testing"
-
-	"github.com/metaprov/modela-operator/api/v1alpha1"
-	"github.com/stretchr/testify/assert"
-)
-
+/*
 func TestModela_Installed(t *testing.T) {
 	modela := NewModelaSystem("v0.4.716")
 	installed, err := modela.Installed(context.Background())
@@ -51,4 +42,4 @@ func TestModela_Uninstall(t *testing.T) {
 
 	err := modela.Uninstall(context.Background(), &v1alpha1.Modela{ObjectMeta: v1.ObjectMeta{Name: "modela-test"}})
 	assert.NoError(t, err)
-}
+}*/

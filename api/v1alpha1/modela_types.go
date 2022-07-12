@@ -17,8 +17,11 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"encoding/json"
+	"errors"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // The current phase of a Modela installation
@@ -28,13 +31,19 @@ const (
 	ModelaPhaseInstallingCertManager   = "InstallingCertManager"
 	ModelaPhaseInstallingObjectStorage = "InstallingObjectStorage"
 	ModelaPhaseInstallingPrometheus    = "InstallingPrometheus"
-	ModelaPhaseInstallingDatabase      = "InstallingSystemDatabase"
+	ModelaPhaseInstallingGrafana       = "InstallingGrafana"
 	ModelaPhaseInstallingLoki          = "InstallingLoki"
+	ModelaPhaseInstallingDatabase      = "InstallingSystemDatabase"
 	ModelaPhaseInstallingModela        = "InstallingModela"
 	ModelaPhaseInstallingTenant        = "InstallingTenant"
 	ModelaPhaseReady                   = "Ready"
 	ModelaPhaseUninstalling            = "UninstallingComponent"
 	ModelaPhaseFailed                  = "Failed"
+)
+
+var (
+	ComponentNotInstalledByModelaError = errors.New("component not installed by Modela Operator")
+	ComponentMissingResourcesError     = errors.New("component missing resources")
 )
 
 // ConditionStatus defines conditions of resources
@@ -73,6 +82,30 @@ type ChartValues struct {
 	// Object is a JSON compatible map with string, float, int, bool, []interface{}, or
 	// map[string]interface{} children.
 	Object map[string]interface{} `json:"-"`
+}
+
+// MarshalJSON ensures that the unstructured object produces proper
+// JSON when passed to Go's standard JSON library.
+func (u *ChartValues) MarshalJSON() ([]byte, error) {
+	return json.Marshal(u.Object)
+}
+
+// UnmarshalJSON ensures that the unstructured object properly decodes
+// JSON when passed to Go's standard JSON library.
+func (u *ChartValues) UnmarshalJSON(data []byte) error {
+	m := make(map[string]interface{})
+	if err := json.Unmarshal(data, &m); err != nil {
+		return err
+	}
+
+	u.Object = m
+
+	return nil
+}
+
+// Declaring this here prevents it from being generated.
+func (u *ChartValues) DeepCopyInto(out *ChartValues) {
+	out.Object = runtime.DeepCopyJSON(u.Object)
 }
 
 // ModelaAccessSpec defines the configuration for Modela to be exposed externally through Ingress resources.
@@ -123,17 +156,19 @@ type CertManagerSpec struct {
 	CertManagerChartVersion string `json:"chartVersion,omitempty"`
 
 	// ChartValues is the set of Helm values that is used to render the Cert Manager Chart.
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:Optional
 	Values ChartValues `json:"values,omitempty"`
 }
 
 type ObjectStorageSpec struct {
 	// +kubebuilder:default:=true
-	//+kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	Install bool `json:"install"`
 
 	// The chart version of the bitnami/minio Helm Chart.
 	// https://artifacthub.io/packages/helm/bitnami/minio
-	//+kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	MinioChartVersion string `json:"chartVersion,omitempty"`
 
 	// ChartValues is the set of Helm values that is used to render the Cert Manager Chart.
@@ -148,6 +183,8 @@ type SystemDatabaseSpec struct {
 	PostgresChartVersion string `json:"chartVersion,omitempty"`
 
 	// ChartValues is the set of Helm values that is used to render the Postgres Chart.
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:Optional
 	Values ChartValues `json:"values,omitempty"`
 }
 
@@ -160,6 +197,9 @@ type ObservabilitySpec struct {
 	//+kubebuilder:validation:Optional
 	PrometheusVersion string `json:"chartVersion"`
 	// ChartValues is the set of Helm values that is used to render the Prometheus Chart.
+	// Values are determined from https://artifacthub.io/packages/helm/prometheus-community/prometheus
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:Optional
 	PrometheusValues ChartValues `json:"prometheusValues,omitempty"`
 
 	// Loki indicates if the Loki Helm Chart will be installed
@@ -169,6 +209,9 @@ type ObservabilitySpec struct {
 	//+kubebuilder:validation:Optional
 	LokiVersion string `json:"lokiChartVersion"`
 	// ChartValues is the set of Helm values that is used to render the Loki Chart.
+	// Values are determined from https://artifacthub.io/packages/helm/grafana/loki
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:Optional
 	LokiValues ChartValues `json:"lokiValues,omitempty"`
 
 	// Grafana indicates if the Grafana Helm Chart will be installed
@@ -177,7 +220,10 @@ type ObservabilitySpec struct {
 	Grafana bool `json:"installGrafana"`
 	//+kubebuilder:validation:Optional
 	GrafanaVersion string `json:"grafanaChartVersion"`
-	// ChartValues is the set of Helm values that is used to render the Loki Chart.
+	// ChartValues is the set of Helm values that is used to render the Grafana Chart.
+	// Values are determined from https://artifacthub.io/packages/helm/grafana/grafana
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:Optional
 	GrafanaValues ChartValues `json:"grafanaValues,omitempty"`
 }
 

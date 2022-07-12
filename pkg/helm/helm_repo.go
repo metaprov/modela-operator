@@ -4,7 +4,7 @@
  * Metaprov.com
  */
 
-package controllers
+package helm
 
 import (
 	"helm.sh/helm/v3/pkg/getter"
@@ -53,4 +53,13 @@ func (r *HelmRepo) DownloadIndex() error {
 	chartRepo.IndexFile.SortEntries()
 	return nil
 
+}
+
+func AddRepo(name string, url string, dryrun bool) error {
+	helmRepo := NewHelmRepo(name, url, dryrun, true)
+	if err := helmRepo.DownloadIndex(); err != nil {
+		return err
+	}
+
+	return nil
 }

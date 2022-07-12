@@ -1,10 +1,11 @@
-package controllers
+package components
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 	managementv1 "github.com/metaprov/modela-operator/api/v1alpha1"
+	"github.com/metaprov/modela-operator/pkg/kube"
 	infra "github.com/metaprov/modelaapi/pkg/apis/infra/v1alpha1"
 	"golang.org/x/mod/semver"
 	"io/ioutil"
@@ -50,12 +51,12 @@ func NewModelaSystem(version string) *ModelaSystem {
 }
 
 func (ms ModelaSystem) Installed(ctx context.Context) (bool, error) {
-	if created, err := IsNamespaceCreated("modela-system"); !created || err != nil {
+	if created, err := kube.IsNamespaceCreated("modela-system"); !created || err != nil {
 		return created, err
 	}
-	if _, missing, err := LoadResources(ms.SystemManifestPath, nil); missing > 0 {
+	if _, missing, err := kube.LoadResources(ms.SystemManifestPath, nil); missing > 0 {
 		log.FromContext(ctx).Info("Resources detected as missing from the modela-system namespace", "count", missing)
-		return false, ComponentMissingResourcesError
+		return false, managementv1.ComponentMissingResourcesError
 	} else if err != nil {
 		return false, err
 	}
@@ -63,12 +64,12 @@ func (ms ModelaSystem) Installed(ctx context.Context) (bool, error) {
 }
 
 func (ms ModelaSystem) CatalogInstalled(ctx context.Context) (bool, error) {
-	if created, err := IsNamespaceCreated("modela-catalog"); !created || err != nil {
+	if created, err := kube.IsNamespaceCreated("modela-catalog"); !created || err != nil {
 		return created, err
 	}
-	if _, missing, err := LoadResources(ms.CatalogManifestPath, nil); missing > 0 {
+	if _, missing, err := kube.LoadResources(ms.CatalogManifestPath, nil); missing > 0 {
 		log.FromContext(ctx).Info("Resources detected as missing from the modela-catalog namespace", "count", missing)
-		return false, ComponentMissingResourcesError
+		return false, managementv1.ComponentMissingResourcesError
 	} else if err != nil {
 		return false, err
 	}
@@ -111,22 +112,22 @@ func (ms ModelaSystem) InstallCRD(ctx context.Context, modela *managementv1.Mode
 	}
 
 	// Check if the version is already installed
-	if version := GetCRDVersion("tenants.infra.modela.ai"); version == finalVersion {
+	if version := kube.GetCRDVersion("tenants.infra.modela.ai"); version == finalVersion {
 		logger.Info(fmt.Sprintf("CRD version %s already installed; skipping CRD installation", finalVersion))
 		return nil
 	}
 
 	// Install the determined CRD version using Kustomize
 	logger.Info(fmt.Sprintf("Installing CRD version %s", finalVersion))
-	return ApplyUrlKustomize(fmt.Sprintf(ms.CrdUrl, finalVersion))
+	return kube.ApplyUrlKustomize(fmt.Sprintf(ms.CrdUrl, finalVersion))
 }
 
 func (ms ModelaSystem) InstallManagedImages(ctx context.Context, modela *managementv1.Modela) error {
 	logger := log.FromContext(ctx)
 
-	yaml, _, err := LoadResources(ms.CatalogManifestPath+"/managedimages", []kio.Filter{
-		LabelFilter{Labels: map[string]string{"management.modela.ai/operator": modela.Name}},
-		ManagedImageFilter{Version: ms.ModelaVersion},
+	yaml, _, err := kube.LoadResources(ms.CatalogManifestPath+"/managedimages", []kio.Filter{
+		kube.LabelFilter{Labels: map[string]string{"management.modela.ai/operator": modela.Name}},
+		kube.ManagedImageFilter{Version: ms.ModelaVersion},
 	})
 	if err != nil {
 		return err
@@ -134,7 +135,7 @@ func (ms ModelaSystem) InstallManagedImages(ctx context.Context, modela *managem
 
 	fmt.Println(string(yaml))
 	logger.Info("Applying modela-catalog ManagedImage resources", "length", len(yaml))
-	if err := ApplyYaml(string(yaml)); err != nil {
+	if err := kube.ApplyYaml(string(yaml)); err != nil {
 		return err
 	}
 
@@ -148,7 +149,7 @@ func (ms ModelaSystem) InstallLicense(ctx context.Context, modela *managementv1.
 		return nil
 	}
 
-	if err := CreateOrUpdateSecret("modela-system", "license-secret", map[string]string{
+	if err := kube.CreateOrUpdateSecret("modela-system", "license-secret", map[string]string{
 		"token": *modela.Spec.License.LicenseKey,
 	}); err != nil {
 		logger.Error(err, "Failed to update license secret")
@@ -156,7 +157,7 @@ func (ms ModelaSystem) InstallLicense(ctx context.Context, modela *managementv1.
 	}
 
 	now := metav1.Now()
-	if err := CreateOrUpdateLicense("modela-system", "modela-license", &infra.License{
+	if err := kube.CreateOrUpdateLicense("modela-system", "modela-license", &infra.License{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "modela-license",
 			Namespace: "modela-system",
@@ -181,20 +182,20 @@ func (ms ModelaSystem) InstallLicense(ctx context.Context, modela *managementv1.
 func (ms ModelaSystem) InstallCatalog(ctx context.Context, modela *managementv1.Modela) error {
 	logger := log.FromContext(ctx)
 
-	yaml, _, err := LoadResources(ms.CatalogManifestPath, []kio.Filter{
-		LabelFilter{Labels: map[string]string{"management.modela.ai/operator": modela.Name}},
+	yaml, _, err := kube.LoadResources(ms.CatalogManifestPath, []kio.Filter{
+		kube.LabelFilter{Labels: map[string]string{"management.modela.ai/operator": modela.Name}},
 	})
 	if err != nil {
 		return err
 	}
 
-	if err := CreateNamespace(ms.CatalogNamespace, modela.Name); err != nil && !k8serr.IsAlreadyExists(err) {
+	if err := kube.CreateNamespace(ms.CatalogNamespace, modela.Name); err != nil && !k8serr.IsAlreadyExists(err) {
 		logger.Error(err, "failed to create namespace")
 		return err
 	}
 
 	logger.Info("Applying modela-catalog resources", "length", len(yaml))
-	if err := ApplyYaml(string(yaml)); err != nil {
+	if err := kube.ApplyYaml(string(yaml)); err != nil {
 		return err
 	}
 
@@ -210,21 +211,21 @@ func (ms ModelaSystem) Install(ctx context.Context, modela *managementv1.Modela)
 		return err
 	}
 
-	if err := CreateNamespace(ms.Namespace, modela.Name); err != nil && !k8serr.IsAlreadyExists(err) {
+	if err := kube.CreateNamespace(ms.Namespace, modela.Name); err != nil && !k8serr.IsAlreadyExists(err) {
 		logger.Error(err, "failed to create namespace")
 		return err
 	}
 
-	yaml, _, err := LoadResources(ms.SystemManifestPath, []kio.Filter{
-		ContainerVersionFilter{ms.ModelaVersion},
-		LabelFilter{Labels: map[string]string{"management.modela.ai/operator": modela.Name}},
+	yaml, _, err := kube.LoadResources(ms.SystemManifestPath, []kio.Filter{
+		kube.ContainerVersionFilter{ms.ModelaVersion},
+		kube.LabelFilter{Labels: map[string]string{"management.modela.ai/operator": modela.Name}},
 	})
 	if err != nil {
 		return err
 	}
 
 	logger.Info("Applying modela-system resources", "length", len(yaml))
-	if err := ApplyYaml(string(yaml)); err != nil {
+	if err := kube.ApplyYaml(string(yaml)); err != nil {
 		return err
 	}
 
@@ -236,7 +237,7 @@ func (ms ModelaSystem) Installing(ctx context.Context) (bool, error) {
 	if !installed {
 		return installed, err
 	}
-	running, err := IsPodRunning(ms.Namespace, ms.PodNamePrefix)
+	running, err := kube.IsPodRunning(ms.Namespace, ms.PodNamePrefix)
 	if err != nil {
 		return false, err
 	}
@@ -252,13 +253,13 @@ func (ms ModelaSystem) Ready(ctx context.Context) (bool, error) {
 }
 
 func (ms ModelaSystem) Uninstall(ctx context.Context, modela *managementv1.Modela) error {
-	if created, err := IsNamespaceCreatedByOperator(ms.Namespace, modela.Name); !created {
-		return ComponentNotInstalledByModelaError
+	if created, err := kube.IsNamespaceCreatedByOperator(ms.Namespace, modela.Name); !created {
+		return managementv1.ComponentNotInstalledByModelaError
 	} else if err != nil {
 		return err
 	}
 
-	if err := DeleteNamespace(ms.Namespace); err != nil {
+	if err := kube.DeleteNamespace(ms.Namespace); err != nil {
 		return err
 	}
 

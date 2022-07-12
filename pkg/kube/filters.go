@@ -1,4 +1,4 @@
-package controllers
+package kube
 
 import (
 	"sigs.k8s.io/kustomize/kyaml/yaml"

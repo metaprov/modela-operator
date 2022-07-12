@@ -18,7 +18,7 @@ package controllers
 
 import (
 	"context"
-	"errors"
+	"github.com/metaprov/modela-operator/controllers/components"
 	"github.com/metaprov/modelaapi/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"reflect"
@@ -36,9 +36,6 @@ import (
 	managementv1 "github.com/metaprov/modela-operator/api/v1alpha1"
 	managementv1alpha1 "github.com/metaprov/modela-operator/api/v1alpha1"
 )
-
-var ComponentNotInstalledByModelaError = errors.New("component not installed by Modela Operator")
-var ComponentMissingResourcesError = errors.New("component missing resources")
 
 // ModelaReconciler reconciles a Modela object
 type ModelaReconciler struct {
@@ -160,42 +157,42 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 	logger := log.FromContext(ctx)
 
 	// Cert Manager
-	certManager := NewCertManager(modela.Spec.CertManager.CertManagerChartVersion)
+	certManager := components.NewCertManager(modela.Spec.CertManager.CertManagerChartVersion)
 	result, err := r.reconcileComponent(ctx, certManager, modela)
 	if err != nil || result.Requeue {
 		return result, err
 	}
 
 	// Object Storage (Minio)
-	objectStore := NewObjectStorage(modela.Spec.ObjectStore.MinioChartVersion)
+	objectStore := components.NewObjectStorage(modela.Spec.ObjectStore.MinioChartVersion)
 	result, err = r.reconcileComponent(ctx, objectStore, modela)
 	if err != nil || result.Requeue {
 		return result, err
 	}
 
 	// PostgreSQL
-	database := NewDatabase(modela.Spec.SystemDatabase.PostgresChartVersion)
+	database := components.NewDatabase(modela.Spec.SystemDatabase.PostgresChartVersion)
 	result, err = r.reconcileComponent(ctx, database, modela)
 	if err != nil || result.Requeue {
 		return result, err
 	}
 
 	// Loki
-	loki := NewLoki(modela.Spec.Observability.LokiVersion)
+	loki := components.NewLoki(modela.Spec.Observability.LokiVersion)
 	result, err = r.reconcileComponent(ctx, loki, modela)
 	if err != nil || result.Requeue {
 		return result, err
 	}
 
 	// Prometheus
-	prom := NewPrometheus(modela.Spec.Observability.PrometheusVersion)
+	prom := components.NewPrometheus(modela.Spec.Observability.PrometheusVersion)
 	result, err = r.reconcileComponent(ctx, prom, modela)
 	if err != nil || result.Requeue {
 		return result, err
 	}
 
 	// Modela System
-	modelaSystem := NewModelaSystem(modela.Spec.Distribution)
+	modelaSystem := components.NewModelaSystem(modela.Spec.Distribution)
 	result, err = r.reconcileComponent(ctx, modelaSystem, modela)
 	if err != nil || result.Requeue {
 		return result, err
@@ -208,7 +205,7 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 		}, err
 	}
 
-	if installed, err := modelaSystem.CatalogInstalled(ctx); !installed || err == ComponentMissingResourcesError {
+	if installed, err := modelaSystem.CatalogInstalled(ctx); !installed || err == managementv1alpha1.ComponentMissingResourcesError {
 		r.updatePhase(ctx, modela, managementv1alpha1.ModelaPhaseInstallingModela)
 		err := modelaSystem.InstallCatalog(ctx, modela)
 		if err != nil {
@@ -249,7 +246,7 @@ func (r *ModelaReconciler) reconcileTenants(ctx context.Context, modela *managem
 	var tenants = make(map[string]bool)
 	for _, tenant := range modela.Spec.Tenants {
 		tenants[tenant.Name] = true
-		tenant := NewTenant(tenant.Name)
+		tenant := components.NewTenant(tenant.Name)
 		if installed, err := tenant.Installed(ctx); err != nil {
 			return ctrl.Result{}, err
 		} else if !installed {
@@ -269,7 +266,7 @@ func (r *ModelaReconciler) reconcileTenants(ctx context.Context, modela *managem
 	for index, tenant := range modela.Status.Tenants {
 		if _, ok := tenants[tenant]; !ok {
 			// The tenant no longer exists in the spec, uninstall
-			tenant := NewTenant(tenant)
+			tenant := components.NewTenant(tenant)
 			r.updatePhase(ctx, modela, managementv1alpha1.ModelaPhaseUninstalling)
 			err := tenant.Uninstall(ctx, modela)
 			if err != nil {
@@ -301,13 +298,13 @@ type ModelaComponent interface {
 func (r *ModelaReconciler) reconcileComponent(ctx context.Context, component ModelaComponent, modela *managementv1.Modela) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	installed, err := component.Installed(ctx)
-	if err != nil && err != ComponentNotInstalledByModelaError && err != ComponentMissingResourcesError {
+	if err != nil && err != managementv1alpha1.ComponentNotInstalledByModelaError && err != managementv1alpha1.ComponentMissingResourcesError {
 		logger.Error(err, "Failed to check if component is installed", "component", reflect.TypeOf(component).Name())
 		return ctrl.Result{}, err
 	}
 
 	if !component.IsEnabled(*modela) {
-		if err != ComponentNotInstalledByModelaError && installed {
+		if err != managementv1alpha1.ComponentNotInstalledByModelaError && installed {
 			r.updatePhase(ctx, modela, managementv1alpha1.ModelaPhaseUninstalling)
 			err := component.Uninstall(ctx, modela)
 			if err != nil {
@@ -328,7 +325,7 @@ func (r *ModelaReconciler) reconcileComponent(ctx context.Context, component Mod
 		return ctrl.Result{}, err
 	}
 
-	if installing && err != ComponentMissingResourcesError {
+	if installing && err != managementv1alpha1.ComponentMissingResourcesError {
 		return ctrl.Result{
 			Requeue:      true,
 			RequeueAfter: 10 * time.Second,
@@ -343,12 +340,11 @@ func (r *ModelaReconciler) reconcileComponent(ctx context.Context, component Mod
 				RequeueAfter: 5 * time.Minute,
 			}, err
 		}
-		return ctrl.Result{}, nil
+		return ctrl.Result{Requeue: true}, nil
 	}
 }
 
 func (r *ModelaReconciler) reconcileApiGateway(ctx context.Context, modela *managementv1alpha1.Modela) (ctrl.Result, error) {
-	// get api gateway deployment
 	var deployment appsv1.Deployment
 
 	name := types.NamespacedName{

@@ -1,4 +1,4 @@
-package controllers
+package kube
 
 import (
 	"context"
@@ -19,7 +19,6 @@ import (
 
 	infra "github.com/metaprov/modelaapi/pkg/apis/infra/v1alpha1"
 	"github.com/pkg/errors"
-	helmrelease "helm.sh/helm/v3/pkg/release"
 	v1 "k8s.io/api/core/v1"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
@@ -35,76 +34,6 @@ var (
 
 func init() {
 	utilruntime.Must(infra.AddKnownTypes(clientScheme))
-}
-
-func InstallChart(ctx context.Context, repoName, repoUrl, name string, ns string, releaseName string, versionName string) error {
-	chart := NewHelmChart(repoName, repoUrl, name, ns, releaseName, versionName, false)
-	chart.ChartVersion = versionName
-	chart.ReleaseName = releaseName
-	chart.Namespace = ns
-
-	canInstall, err := chart.CanInstall(ctx)
-	if err != nil {
-		return errors.Errorf("Failed to check if chart is installed ,err: %s", err)
-	}
-	if canInstall {
-		err = chart.Install(ctx)
-		if err != nil {
-			return errors.Wrapf(err, "Error installing chart %s", name)
-		}
-	}
-	return nil
-}
-
-func InstallChartWithValues(ctx context.Context, repoName, repoUrl, name string, ns string, releaseName string, versionName string, values map[string]interface{}) error {
-	chart := NewHelmChart(repoName, repoUrl, name, ns, releaseName, versionName, false)
-	chart.ChartVersion = versionName
-	chart.ReleaseName = releaseName
-	chart.Namespace = ns
-	chart.Values = values
-
-	canInstall, err := chart.CanInstall(ctx)
-	if err != nil {
-		return errors.Errorf("Failed to check if chart is installed ,err: %s", err)
-	}
-	if canInstall {
-		err = chart.Install(ctx)
-		if err != nil {
-			return errors.Wrapf(err, "Error installing chart %s", name)
-		}
-	}
-	return nil
-}
-
-func UninstallChart(ctx context.Context, repoName, repoUrl, name string, ns string, releaseName string, versionName string) error {
-	chart := NewHelmChart(repoName, repoUrl, name, ns, releaseName, versionName, false)
-	chart.ChartVersion = versionName
-	chart.ReleaseName = releaseName
-	chart.Namespace = ns
-
-	installed, err := chart.IsInstalled(ctx)
-	if err != nil {
-		if !installed {
-			return nil
-		}
-	}
-	err = chart.Uninstall(ctx)
-	if err != nil {
-		return errors.Wrapf(err, "Error uninstalling chart %s", name)
-	}
-	return nil
-}
-
-func IsChartInstalled(ctx context.Context, repoName, repoUrl string, url string, ns string, releaseName string, versionName string) (bool, error) {
-	chart := NewHelmChart(repoName, repoUrl, url, ns, releaseName, versionName, false)
-	chartStatus, _ := chart.GetStatus(ctx)
-	if chartStatus == helmrelease.StatusUnknown {
-		return false, nil
-	}
-	if chartStatus != helmrelease.StatusDeployed {
-		return false, errors.New("chart " + releaseName + " is not in deployed state")
-	}
-	return true, nil
 }
 
 // check if a pod is running, return not nil error if not.
@@ -349,15 +278,6 @@ func WaitForPod(ns string, name string) error {
 	if checks == 20 {
 		return errors.New("failed to start all the pods")
 	}
-	return nil
-}
-
-func AddRepo(name string, url string, dryrun bool) error {
-	repo := NewHelmRepo(name, url, dryrun, true)
-	if err := repo.DownloadIndex(); err != nil {
-		return err
-	}
-
 	return nil
 }
 

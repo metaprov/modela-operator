@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"github.com/metaprov/modela-operator/api/v1alpha1"
+	"github.com/metaprov/modela-operator/controllers/components"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -20,7 +22,7 @@ var (
 	ModelaName        = "modela"
 	ModelaNamespace   = "default"
 	TimeoutInterval   = 15 * time.Second
-	CheckInterval     = 500 * time.Millisecond
+	PollInterval      = 500 * time.Millisecond
 	NotInstalledError = errors.New("not installed")
 )
 
@@ -30,18 +32,16 @@ var _ = Context("Inside the default namespace", func() {
 
 	testModelaResource := &v1alpha1.Modela{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "modela",
-			Namespace: "default",
+			Name:      ModelaName,
+			Namespace: ModelaNamespace,
 		},
 		Spec: v1alpha1.ModelaSpec{
-			Distribution:  "develop",
-			Observability: v1alpha1.ObservabilitySpec{},
-			Ingress:       v1alpha1.ModelaAccessSpec{},
-			License:       v1alpha1.ModelaLicenseSpec{},
-			Tenants:       nil,
-			CertManager: v1alpha1.CertManagerSpec{
-				Install: false,
-			},
+			Distribution:   "develop",
+			Observability:  v1alpha1.ObservabilitySpec{},
+			Ingress:        v1alpha1.ModelaAccessSpec{},
+			License:        v1alpha1.ModelaLicenseSpec{},
+			Tenants:        nil,
+			CertManager:    v1alpha1.CertManagerSpec{},
 			ObjectStore:    v1alpha1.ObjectStorageSpec{},
 			SystemDatabase: v1alpha1.SystemDatabaseSpec{},
 			ControlPlane:   v1alpha1.ControlPlaneSpec{},
@@ -53,44 +53,51 @@ var _ = Context("Inside the default namespace", func() {
 	Describe("Modela Operator Controller", func() {
 		Context("Modela CRD", func() {
 			It("Should create the Modela CR", func() {
-				err := k8sClient.Create(ctx, testModelaResource)
-				Expect(err).NotTo(HaveOccurred(), "failed to create test Modela Operator resource")
-
-				By("Checking if the Modela CR was created")
-				Eventually(
-					getResourceFunc(ctx, client.ObjectKey{Name: ModelaName, Namespace: ModelaNamespace}, testModelaResource),
-					time.Second*3, CheckInterval).Should(BeNil(), "Modela resource %s", testModelaResource.Name)
+				createModelaResource(testModelaResource)
 
 				By("Deleting the created Modela CR")
-				//TODO
-			})
+				Eventually(
+					deleteResourceFunc(ctx, client.ObjectKey{Name: ModelaName, Namespace: ModelaNamespace}, testModelaResource),
+					time.Second*3, PollInterval).Should(BeNil())
 
+				// Uninstall database, as it should have started installing it
+				_ = components.NewDatabase("").Uninstall(ctx, testModelaResource)
+			})
 		})
 		Context("After creation", func() {
 			It("Should install the enabled Helm Charts", func() {
-				By("Creating the Modela CR")
+				testModelaResource.Spec.CertManager.Install = true
+				testModelaResource.Spec.ObjectStore.Install = true
+				createModelaResource(testModelaResource)
 
 				By("Installing cert-manager and changing the status")
-				certManagerController := NewCertManager("")
-				Eventually(getModelaStatus(ctx), TimeoutInterval, CheckInterval).Should(Equal(v1alpha1.ModelaPhaseInstallingCertManager))
+				certManagerController := components.NewCertManager("")
+				Eventually(getModelaStatus(ctx), TimeoutInterval, PollInterval).Should(Equal(v1alpha1.ModelaPhaseInstallingCertManager))
 
 				By("Checking if cert-manager was installed")
-				Eventually(getComponentInstalled(ctx, certManagerController), time.Minute*3, CheckInterval).Should(BeNil())
+				Eventually(getComponentInstalled(ctx, certManagerController), time.Minute*3, PollInterval).Should(BeNil())
+
+				By("Installing minio and changing the status")
+				minioController := components.NewObjectStorage("")
+				Eventually(getModelaStatus(ctx), TimeoutInterval, PollInterval).Should(Equal(v1alpha1.ModelaPhaseInstallingObjectStorage))
+
+				By("Checking if minio was installed")
+				Eventually(getComponentInstalled(ctx, minioController), time.Minute*3, PollInterval).Should(BeNil())
 
 			})
 			It("Should install the system database", func() {
-				Eventually(getModelaStatus(ctx), TimeoutInterval, CheckInterval).Should(Equal(v1alpha1.ModelaPhaseInstallingDatabase))
+				Eventually(getModelaStatus(ctx), TimeoutInterval, PollInterval).Should(Equal(v1alpha1.ModelaPhaseInstallingDatabase))
 
 			})
 			It("Should install the Modela system", func() {
-				modelaSystemController := NewModelaSystem("")
-				Eventually(getModelaStatus(ctx), TimeoutInterval, CheckInterval).Should(Equal(v1alpha1.ModelaPhaseInstallingModela))
-				Eventually(getComponentInstalled(ctx, modelaSystemController), time.Minute*3, CheckInterval).Should(BeNil())
-				Eventually(getComponentReady(ctx, modelaSystemController), time.Minute*3, CheckInterval).Should(BeNil())
+				modelaSystemController := components.NewModelaSystem("")
+				Eventually(getModelaStatus(ctx), TimeoutInterval, PollInterval).Should(Equal(v1alpha1.ModelaPhaseInstallingModela))
+				Eventually(getComponentInstalled(ctx, modelaSystemController), time.Minute*3, PollInterval).Should(BeNil())
+				Eventually(getComponentReady(ctx, modelaSystemController), time.Minute*3, PollInterval).Should(BeNil())
 			})
 			It("Should install the Modela catalog", func() {
-				modelaSystemController := NewModelaSystem("")
-				Eventually(getModelaStatus(ctx), TimeoutInterval, CheckInterval).Should(Equal(v1alpha1.ModelaPhaseInstallingModela))
+				modelaSystemController := components.NewModelaSystem("")
+				Eventually(getModelaStatus(ctx), TimeoutInterval, PollInterval).Should(Equal(v1alpha1.ModelaPhaseInstallingModela))
 				Eventually(func() error {
 					ready, err := modelaSystemController.CatalogInstalled(ctx)
 					if err != nil {
@@ -99,23 +106,25 @@ var _ = Context("Inside the default namespace", func() {
 						return NotInstalledError
 					}
 					return nil
-				}, time.Minute*3, CheckInterval).Should(BeNil())
+				}, time.Minute*3, PollInterval).Should(BeNil())
 			})
+		})
+		When("Changing the spec", func() {
 			It("Should not uninstall components not installed by Modela", func() {
 				By("Removing the Modela Operator labels")
-				certManagerController := NewCertManager("")
+				certManagerController := components.NewCertManager("")
 				changeModelaOperatorLabel(false, certManagerController.Namespace, "cert-manager")
-				Expect(getComponentInstalled(ctx, certManagerController)).Should(Equal(ComponentNotInstalledByModelaError))
+				Expect(getComponentInstalled(ctx, certManagerController)).Should(Equal(v1alpha1.ComponentNotInstalledByModelaError))
 
 				By("Disabling the component in the spec")
 
 			})
-			It("Should uninstall components by changing the spec", func() {
+			It("Should uninstall components after changing the spec", func() {
 				By("Adding Modela Operator labels to component namespaces")
 
 				By("Disabling Helm Chart components in the spec")
 
-				Eventually(getModelaStatus(ctx), TimeoutInterval, CheckInterval).Should(Equal(v1alpha1.ModelaPhaseUninstalling))
+				Eventually(getModelaStatus(ctx), TimeoutInterval, PollInterval).Should(Equal(v1alpha1.ModelaPhaseUninstalling))
 
 				By("Checking if cert-manager is installed")
 
@@ -128,15 +137,19 @@ var _ = Context("Inside the default namespace", func() {
 				By("Checking if grafana is installed")
 
 			})
-		})
-		When("Changing the tenant spec", func() {
-			It("Should install the tenant", func() {
+			It("Should change the container tags of Modela pods when changing the distribution spec", func() {
+
+			})
+			It("Should install tenants added to the spec", func() {
 
 			})
 			It("Should uninstall the tenant when removed from the spec", func() {
 
 			})
 			It("Should uninstall tenants belonging to the CR before removal", func() {
+
+			})
+			It("Should modify the number of replicas when changing the deployment specs", func() {
 
 			})
 		})
@@ -151,9 +164,32 @@ var _ = Context("Inside the default namespace", func() {
 	})
 })
 
+func createObject(obj client.Object) error {
+	err := k8sClient.Create(context.Background(), obj)
+	if k8serr.IsAlreadyExists(err) {
+		err = nil
+	}
+
+	return err
+}
+
 func getResourceFunc(ctx context.Context, key client.ObjectKey, obj client.Object) func() error {
 	return func() error {
 		return k8sClient.Get(ctx, key, obj)
+	}
+}
+
+func deleteResourceFunc(ctx context.Context, key client.ObjectKey, obj client.Object) func() error {
+	return func() error {
+		if err := getResourceFunc(ctx, key, obj)(); err != nil {
+			if k8serr.IsNotFound(err) {
+				err = nil
+			}
+
+			return err
+		}
+
+		return k8sClient.Delete(ctx, obj)
 	}
 }
 
@@ -203,4 +239,15 @@ func changeModelaOperatorLabel(add bool, ns string, name string) {
 
 	_, err = clientSet.AppsV1().Deployments(ns).Update(context.Background(), deployment, metav1.UpdateOptions{})
 	return
+}
+
+func createModelaResource(modela *v1alpha1.Modela) {
+	By("Creating a new Modela resource")
+	Expect(createObject(modela)).Should(Succeed())
+
+	By("Checking if the Modela resource was created")
+	Eventually(
+		getResourceFunc(context.Background(), client.ObjectKey{Name: modela.Name, Namespace: modela.Namespace}, modela),
+		time.Second*3, PollInterval).Should(BeNil(), "Modela resource %s", modela.Name)
+
 }

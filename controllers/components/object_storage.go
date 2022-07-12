@@ -1,8 +1,10 @@
-package controllers
+package components
 
 import (
 	"context"
 	managementv1 "github.com/metaprov/modela-operator/api/v1alpha1"
+	"github.com/metaprov/modela-operator/pkg/helm"
+	"github.com/metaprov/modela-operator/pkg/kube"
 	"github.com/pkg/errors"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -42,8 +44,10 @@ func (os ObjectStorage) IsEnabled(modela managementv1.Modela) bool {
 
 // Check if the database installed
 func (os ObjectStorage) Installed(ctx context.Context) (bool, error) {
-	//repoName, repoUrl string, url string, ns string, releaseName string, versionName string
-	if installed, err := IsChartInstalled(
+	if belonging, err := kube.IsDeploymentCreatedByModela(os.Namespace, "modela-storage-minio"); err == nil && !belonging {
+		return true, managementv1.ComponentNotInstalledByModelaError
+	}
+	if installed, err := helm.IsChartInstalled(
 		ctx,
 		os.RepoName,
 		os.RepoUrl,
@@ -54,27 +58,25 @@ func (os ObjectStorage) Installed(ctx context.Context) (bool, error) {
 	); !installed {
 		return false, err
 	}
-	if belonging, _ := IsDeploymentCreatedByModela(os.Namespace, "modela-storage-minio"); !belonging {
-		return true, ComponentNotInstalledByModelaError
-	}
+
 	return true, nil
 }
 
 func (os ObjectStorage) Install(ctx context.Context, modela *managementv1.Modela) error {
 	logger := log.FromContext(ctx)
 
-	if err := AddRepo(os.RepoName, os.RepoUrl, false); err != nil {
+	if err := helm.AddRepo(os.RepoName, os.RepoUrl, false); err != nil {
 		logger.Error(err, "Failed to download Helm Repo", "repo", os.RepoUrl)
 		return err
 	}
 	logger.Info("Added Helm Repo", "repo", os.RepoName)
-	if err := CreateNamespace(os.Namespace, modela.Name); err != nil && !k8serr.IsAlreadyExists(err) {
+	if err := kube.CreateNamespace(os.Namespace, modela.Name); err != nil && !k8serr.IsAlreadyExists(err) {
 		logger.Error(err, "failed to create namespace")
 		return err
 	}
 
 	logger.Info("Applying Helm Chart", "version", os.Version)
-	return InstallChart(
+	return helm.InstallChart(
 		ctx,
 		os.RepoName,
 		os.RepoUrl,
@@ -82,6 +84,7 @@ func (os ObjectStorage) Install(ctx context.Context, modela *managementv1.Modela
 		os.Namespace,
 		os.ReleaseName,
 		os.Version,
+		map[string]interface{}{},
 	)
 }
 
@@ -91,7 +94,7 @@ func (os ObjectStorage) Installing(ctx context.Context) (bool, error) {
 	if !installed {
 		return installed, err
 	}
-	running, err := IsPodRunning(os.Namespace, os.PodNamePrefix)
+	running, err := kube.IsPodRunning(os.Namespace, os.PodNamePrefix)
 	if err != nil {
 		return false, err
 	}
@@ -100,14 +103,14 @@ func (os ObjectStorage) Installing(ctx context.Context) (bool, error) {
 
 func (os ObjectStorage) Ready(ctx context.Context) (bool, error) {
 	installing, err := os.Installed(ctx)
-	if err != nil && err != ComponentNotInstalledByModelaError {
+	if err != nil && err != managementv1.ComponentNotInstalledByModelaError {
 		return false, err
 	}
 	return !installing, nil
 }
 
 func (os ObjectStorage) Uninstall(ctx context.Context, modela *managementv1.Modela) error {
-	return UninstallChart(
+	return helm.UninstallChart(
 		ctx,
 		os.RepoName,
 		os.RepoUrl,
@@ -115,12 +118,13 @@ func (os ObjectStorage) Uninstall(ctx context.Context, modela *managementv1.Mode
 		os.Namespace,
 		os.ReleaseName,
 		os.Version,
+		map[string]interface{}{},
 	)
 }
 
 func (os ObjectStorage) PostInstall() error {
 
-	values, err := GetSecretValuesAsString("modela-system", "modela-storage-minio")
+	values, err := kube.GetSecretValuesAsString("modela-system", "modela-storage-minio")
 
 	// build the minio url
 	accessKey, ok := values["root-user"]
@@ -132,24 +136,24 @@ func (os ObjectStorage) PostInstall() error {
 		return errors.New("key root-password is missing in the minio secret")
 	}
 	// create a connection and update the fields.
-	connection, err := GetConnection("default-tenant", "default-minio")
+	connection, err := kube.GetConnection("default-tenant", "default-minio")
 	if err != nil {
 		return err
 	}
 	host := "modela-storage-minio.modela-system.svc.cluster.local:9000"
 	connection.Spec.Minio.Host = &host
 	// save the connection
-	err = CreateOrUpdateConnection("default-tenant", connection.Name, connection)
+	err = kube.CreateOrUpdateConnection("default-tenant", connection.Name, connection)
 	if err != nil {
 		return err
 	}
-	defaultSecret, err := GetSecret("default-tenant", "default-minio-secret")
+	defaultSecret, err := kube.GetSecret("default-tenant", "default-minio-secret")
 	if err != nil {
 		return err
 	}
 	values = make(map[string]string)
 	values["accessKey"] = accessKey
 	values["secretKey"] = secertKey
-	err = CreateOrUpdateSecret(defaultSecret.Namespace, defaultSecret.Name, values)
+	err = kube.CreateOrUpdateSecret(defaultSecret.Namespace, defaultSecret.Name, values)
 	return err
 }

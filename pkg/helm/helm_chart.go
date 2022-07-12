@@ -4,13 +4,15 @@
  * Metaprov.com
  */
 
-package controllers
+package helm
 
 import (
 	"bufio"
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/metaprov/modela-operator/pkg/kube"
+
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"os"
 	"regexp"
@@ -45,7 +47,7 @@ func (lb LabelPostRenderer) Run(renderedManifests *bytes.Buffer) (modifiedManife
 	}
 	p := kio.Pipeline{
 		Inputs:  []kio.Reader{rw},
-		Filters: []kio.Filter{LabelFilter{lb.Labels}},
+		Filters: []kio.Filter{kube.LabelFilter{lb.Labels}},
 		Outputs: []kio.Writer{rw},
 	}
 
@@ -111,10 +113,10 @@ func (chart *HelmChart) Load(ctx context.Context) error {
 	}
 
 	client := helmaction.NewInstall(config)
-	//client.ChartPathOptions.RepoURL = chart.RepoUrl
+	client.ChartPathOptions.RepoURL = chart.RepoUrl
 	client.Namespace = chart.Namespace
 	client.ReleaseName = chart.ReleaseName
-	name := chart.RepoName + "/" + chart.Name
+	name := chart.Name //chart.RepoName + "/" + chart.Name
 
 	chartFullPath, err := client.ChartPathOptions.LocateChart(name, settings)
 	if err != nil {
@@ -210,7 +212,6 @@ func (chart *HelmChart) IsInstalled(ctx context.Context) (bool, error) {
 }
 
 func (chart *HelmChart) GetStatus(ctx context.Context) (helmrelease.Status, error) {
-
 	err := chart.Load(ctx)
 	if err != nil {
 		return helmrelease.StatusUnknown, errors.Wrapf(err, "failed to load chart")
@@ -365,4 +366,62 @@ func (chart *HelmChart) Uninstall(ctx context.Context) error {
 		return fmt.Errorf("failed to run uninstall due to %s", err)
 	}
 	return nil
+}
+
+func InstallChart(ctx context.Context, repoName, repoUrl, name string, ns string, releaseName string, versionName string, values map[string]interface{}) error {
+	chart := NewHelmChart(repoName, repoUrl, name, ns, releaseName, versionName, false)
+	chart.ChartVersion = versionName
+	chart.ReleaseName = releaseName
+	chart.Namespace = ns
+	chart.Values = values
+
+	canInstall, err := chart.CanInstall(ctx)
+	if err != nil {
+		return errors.Errorf("Failed to check if chart is installed ,err: %s", err)
+	}
+	if canInstall {
+		err = chart.Install(ctx)
+		if err != nil {
+			return errors.Wrapf(err, "Error installing chart %s", name)
+		}
+	}
+	return nil
+}
+
+func UninstallChart(ctx context.Context, repoName, repoUrl, name string, ns string, releaseName string, versionName string, values map[string]interface{}) error {
+	chart := NewHelmChart(repoName, repoUrl, name, ns, releaseName, versionName, false)
+	chart.ChartVersion = versionName
+	chart.ReleaseName = releaseName
+	chart.Namespace = ns
+	chart.Values = values
+
+	if installed, err := chart.IsInstalled(ctx); err != nil {
+		return err
+	} else if !installed {
+		return nil
+	}
+
+	if err := chart.Uninstall(ctx); err != nil {
+		return errors.Wrapf(err, "Error uninstalling chart %s", name)
+	}
+
+	return nil
+}
+
+func IsChartInstalled(ctx context.Context, repoName, repoUrl string, url string, ns string, releaseName string, versionName string) (bool, error) {
+	// TODO(liam): Refactor these methods into the helm chart struct
+	if err := AddRepo(repoName, repoUrl, false); err != nil {
+		return false, err
+	}
+	fmt.Println("Added repo", repoName, repoUrl)
+
+	chart := NewHelmChart(repoName, repoUrl, url, ns, releaseName, versionName, false)
+	chartStatus, _ := chart.GetStatus(ctx)
+	if chartStatus == helmrelease.StatusUnknown {
+		return false, nil
+	}
+	if chartStatus != helmrelease.StatusDeployed {
+		return false, errors.New("chart " + releaseName + " is not in deployed state")
+	}
+	return true, nil
 }

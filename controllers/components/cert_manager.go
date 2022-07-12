@@ -1,8 +1,10 @@
-package controllers
+package components
 
 import (
 	"context"
 	managementv1 "github.com/metaprov/modela-operator/api/v1alpha1"
+	"github.com/metaprov/modela-operator/pkg/helm"
+	"github.com/metaprov/modela-operator/pkg/kube"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -23,7 +25,7 @@ func NewCertManager(version string) *CertManager {
 		Namespace:     "cert-manager",
 		Version:       version,
 		ReleaseName:   "cert-manager",
-		Url:           "jetstack/cert-manager",
+		Url:           "cert-manager",
 		RepoUrl:       "https://charts.jetstack.io",
 		RepoName:      "jetstack",
 		Name:          "cert-manager",
@@ -40,7 +42,10 @@ func (cm CertManager) IsEnabled(modela managementv1.Modela) bool {
 }
 
 func (cm CertManager) Installed(ctx context.Context) (bool, error) {
-	if installed, err := IsChartInstalled(
+	if belonging, err := kube.IsDeploymentCreatedByModela(cm.Namespace, "cert-manager"); err == nil && !belonging {
+		return true, managementv1.ComponentNotInstalledByModelaError
+	}
+	if installed, err := helm.IsChartInstalled(
 		ctx,
 		cm.RepoName,
 		cm.RepoUrl,
@@ -51,27 +56,24 @@ func (cm CertManager) Installed(ctx context.Context) (bool, error) {
 	); !installed {
 		return false, err
 	}
-	if belonging, _ := IsDeploymentCreatedByModela(cm.Namespace, "cert-manager"); !belonging {
-		return true, ComponentNotInstalledByModelaError
-	}
 	return true, nil
 }
 
 func (cm CertManager) Install(ctx context.Context, modela *managementv1.Modela) error {
 	logger := log.FromContext(ctx)
 
-	if err := AddRepo(cm.RepoName, cm.RepoUrl, false); err != nil {
+	if err := helm.AddRepo(cm.RepoName, cm.RepoUrl, false); err != nil {
 		logger.Error(err, "Failed to download Helm Repo", "repo", cm.RepoUrl)
 		return err
 	}
 	logger.Info("Added Helm Repo", "repo", cm.RepoName)
-	if err := CreateNamespace(cm.Namespace, modela.Name); err != nil && !k8serr.IsAlreadyExists(err) {
+	if err := kube.CreateNamespace(cm.Namespace, modela.Name); err != nil && !k8serr.IsAlreadyExists(err) {
 		logger.Error(err, "failed to create namespace")
 		return err
 	}
 
 	logger.Info("Applying Helm Chart", "version", cm.Version)
-	return InstallChartWithValues(
+	return helm.InstallChart(
 		ctx,
 		cm.RepoName,
 		cm.RepoUrl,
@@ -91,7 +93,7 @@ func (cm CertManager) Installing(ctx context.Context) (bool, error) {
 	if !installed {
 		return installed, err
 	}
-	running, err := IsPodRunning(cm.Namespace, cm.PodNamePrefix)
+	running, err := kube.IsPodRunning(cm.Namespace, cm.PodNamePrefix)
 	if err != nil {
 		return false, err
 	}
@@ -101,7 +103,7 @@ func (cm CertManager) Installing(ctx context.Context) (bool, error) {
 
 func (cm CertManager) Ready(ctx context.Context) (bool, error) {
 	installing, err := cm.Installed(ctx)
-	if err != nil && err != ComponentNotInstalledByModelaError {
+	if err != nil && err != managementv1.ComponentNotInstalledByModelaError {
 		return false, err
 	}
 	return !installing, nil
@@ -109,13 +111,13 @@ func (cm CertManager) Ready(ctx context.Context) (bool, error) {
 
 func (cm CertManager) Uninstall(ctx context.Context, modela *managementv1.Modela) error {
 	logger := log.FromContext(ctx)
-	if err := AddRepo(cm.RepoName, cm.RepoUrl, false); err != nil {
+	if err := helm.AddRepo(cm.RepoName, cm.RepoUrl, false); err != nil {
 		logger.Error(err, "Failed to download Helm Repo")
 		return err
 	}
 
 	logger.Info("Added Helm Repo", "repo", cm.RepoName)
-	return UninstallChart(
+	return helm.UninstallChart(
 		ctx,
 		cm.RepoName,
 		cm.RepoUrl,
@@ -123,5 +125,6 @@ func (cm CertManager) Uninstall(ctx context.Context, modela *managementv1.Modela
 		cm.Namespace,
 		cm.ReleaseName,
 		cm.Version,
+		map[string]interface{}{},
 	)
 }
