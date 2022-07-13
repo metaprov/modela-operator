@@ -95,7 +95,7 @@ func (m Grafana) Installing(ctx context.Context) (bool, error) {
 }
 
 func (m Grafana) Ready(ctx context.Context) (bool, error) {
-	installing, err := m.Installed(ctx)
+	installing, err := m.Installing(ctx)
 	if err != nil && err != managementv1.ComponentNotInstalledByModelaError {
 		return false, err
 	}

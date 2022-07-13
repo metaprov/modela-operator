@@ -2,6 +2,7 @@ package components
 
 import (
 	"context"
+	"fmt"
 	"github.com/metaprov/modela-operator/api/v1alpha1"
 	"github.com/metaprov/modela-operator/pkg/kube"
 	. "github.com/onsi/ginkgo"
@@ -43,6 +44,14 @@ var _ = Describe("Cert manager installer", func() {
 		installed, err = certmanager.Installed(context.Background())
 		Expect(err).NotTo(HaveOccurred())
 		Expect(installed).To(BeFalse())
+	})
+
+	It("Should uninstall cert-manager", func() {
+		fmt.Println(certmanager.Installed(context.Background()))
+		By("Uninstalling cert-manager")
+		Expect(certmanager.Uninstall(context.Background(), &v1alpha1.Modela{})).To(BeNil())
+		_, err := kube.IsDeploymentCreatedByModela("cert-manager", "cert-manager")
+		Expect(k8serr.IsNotFound(err)).To(BeTrue())
 	})
 })
 

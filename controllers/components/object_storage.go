@@ -102,7 +102,7 @@ func (os ObjectStorage) Installing(ctx context.Context) (bool, error) {
 }
 
 func (os ObjectStorage) Ready(ctx context.Context) (bool, error) {
-	installing, err := os.Installed(ctx)
+	installing, err := os.Installing(ctx)
 	if err != nil && err != managementv1.ComponentNotInstalledByModelaError {
 		return false, err
 	}

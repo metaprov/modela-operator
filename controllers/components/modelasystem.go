@@ -133,7 +133,6 @@ func (ms ModelaSystem) InstallManagedImages(ctx context.Context, modela *managem
 		return err
 	}
 
-	fmt.Println(string(yaml))
 	logger.Info("Applying modela-catalog ManagedImage resources", "length", len(yaml))
 	if err := kube.ApplyYaml(string(yaml)); err != nil {
 		return err
@@ -245,7 +244,7 @@ func (ms ModelaSystem) Installing(ctx context.Context) (bool, error) {
 }
 
 func (ms ModelaSystem) Ready(ctx context.Context) (bool, error) {
-	installing, err := ms.Installed(ctx)
+	installing, err := ms.Installing(ctx)
 	if err != nil {
 		return false, err
 	}

@@ -42,7 +42,7 @@ func (db Database) IsEnabled(modela managementv1.Modela) bool {
 }
 
 func (db Database) Installed(ctx context.Context) (bool, error) {
-	if belonging, _ := kube.IsStatefulSetCreatedByModela(db.Namespace, "modela-postgresql"); !belonging {
+	if belonging, err := kube.IsStatefulSetCreatedByModela(db.Namespace, "modela-postgresql"); err == nil && !belonging {
 		return true, managementv1.ComponentNotInstalledByModelaError
 	}
 	if installed, err := helm.IsChartInstalled(
@@ -97,7 +97,7 @@ func (db Database) Installing(ctx context.Context) (bool, error) {
 }
 
 func (db Database) Ready(ctx context.Context) (bool, error) {
-	installing, err := db.Installed(ctx)
+	installing, err := db.Installing(ctx)
 	if err != nil && err != managementv1.ComponentNotInstalledByModelaError {
 		return false, err
 	}

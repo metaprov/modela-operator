@@ -21,7 +21,7 @@ import (
 var (
 	ModelaName        = "modela"
 	ModelaNamespace   = "default"
-	TimeoutInterval   = 15 * time.Second
+	TimeoutInterval   = 30 * time.Second
 	PollInterval      = 500 * time.Millisecond
 	NotInstalledError = errors.New("not installed")
 )
@@ -50,6 +50,12 @@ var _ = Context("Inside the default namespace", func() {
 		},
 	}
 
+	certManagerController := components.NewCertManager("")
+	minioController := components.NewObjectStorage("")
+	lokiController := components.NewObjectStorage("")
+	grafanaController := components.NewGrafana("")
+	prometheusController := components.NewObjectStorage("")
+
 	Describe("Modela Operator Controller", func() {
 		Context("Modela CRD", func() {
 			It("Should create the Modela CR", func() {
@@ -61,33 +67,63 @@ var _ = Context("Inside the default namespace", func() {
 					time.Second*3, PollInterval).Should(BeNil())
 
 				// Uninstall database, as it should have started installing it
-				_ = components.NewDatabase("").Uninstall(ctx, testModelaResource)
+				//_ = components.NewDatabase("").Uninstall(ctx, testModelaResource)
 			})
 		})
 		Context("After creation", func() {
+
+			/*After(func() {
+				Eventually(
+					deleteResourceFunc(ctx, client.ObjectKey{Name: ModelaName, Namespace: ModelaNamespace}, testModelaResource),
+					time.Second*3, PollInterval).Should(BeNil())
+			})*/
+
 			It("Should install the enabled Helm Charts", func() {
 				testModelaResource.Spec.CertManager.Install = true
 				testModelaResource.Spec.ObjectStore.Install = true
+				testModelaResource.Spec.Observability.Loki = true
+				testModelaResource.Spec.Observability.Grafana = true
+				testModelaResource.Spec.Observability.Prometheus = true
 				createModelaResource(testModelaResource)
 
 				By("Installing cert-manager and changing the status")
-				certManagerController := components.NewCertManager("")
 				Eventually(getModelaStatus(ctx), TimeoutInterval, PollInterval).Should(Equal(v1alpha1.ModelaPhaseInstallingCertManager))
 
 				By("Checking if cert-manager was installed")
 				Eventually(getComponentInstalled(ctx, certManagerController), time.Minute*3, PollInterval).Should(BeNil())
 
 				By("Installing minio and changing the status")
-				minioController := components.NewObjectStorage("")
 				Eventually(getModelaStatus(ctx), TimeoutInterval, PollInterval).Should(Equal(v1alpha1.ModelaPhaseInstallingObjectStorage))
 
 				By("Checking if minio was installed")
 				Eventually(getComponentInstalled(ctx, minioController), time.Minute*3, PollInterval).Should(BeNil())
 
+				By("Installing loki and changing the status")
+				Eventually(getModelaStatus(ctx), TimeoutInterval, PollInterval).Should(Equal(v1alpha1.ModelaPhaseInstallingLoki))
+
+				By("Checking if loki was installed")
+				Eventually(getComponentInstalled(ctx, lokiController), time.Minute*3, PollInterval).Should(BeNil())
+
+				By("Installing grafana and changing the status")
+				Eventually(getModelaStatus(ctx), TimeoutInterval, PollInterval).Should(Equal(v1alpha1.ModelaPhaseInstallingGrafana))
+
+				By("Checking if grafana was installed")
+				Eventually(getComponentInstalled(ctx, grafanaController), time.Minute*3, PollInterval).Should(BeNil())
+
+				By("Installing prometheus and changing the status")
+				Eventually(getModelaStatus(ctx), TimeoutInterval, PollInterval).Should(Equal(v1alpha1.ModelaPhaseInstallingPrometheus))
+
+				By("Checking if prometheus was installed")
+				Eventually(getComponentInstalled(ctx, prometheusController), time.Minute*3, PollInterval).Should(BeNil())
 			})
 			It("Should install the system database", func() {
+				databaseController := components.NewDatabase("")
+
+				By("Installing postgres and changing the status")
 				Eventually(getModelaStatus(ctx), TimeoutInterval, PollInterval).Should(Equal(v1alpha1.ModelaPhaseInstallingDatabase))
 
+				By("Checking if postgres was installed")
+				Eventually(getComponentInstalled(ctx, databaseController), time.Minute*3, PollInterval).Should(BeNil())
 			})
 			It("Should install the Modela system", func() {
 				modelaSystemController := components.NewModelaSystem("")
@@ -110,32 +146,34 @@ var _ = Context("Inside the default namespace", func() {
 			})
 		})
 		When("Changing the spec", func() {
-			It("Should not uninstall components not installed by Modela", func() {
-				By("Removing the Modela Operator labels")
-				certManagerController := components.NewCertManager("")
-				changeModelaOperatorLabel(false, certManagerController.Namespace, "cert-manager")
-				Expect(getComponentInstalled(ctx, certManagerController)).Should(Equal(v1alpha1.ComponentNotInstalledByModelaError))
-
-				By("Disabling the component in the spec")
-
-			})
 			It("Should uninstall components after changing the spec", func() {
-				By("Adding Modela Operator labels to component namespaces")
+				testModelaResource.Spec.CertManager.Install = false
+				testModelaResource.Spec.ObjectStore.Install = false
+				testModelaResource.Spec.Observability.Loki = false
+				testModelaResource.Spec.Observability.Grafana = false
+				testModelaResource.Spec.Observability.Prometheus = false
+				createModelaResource(testModelaResource)
 
-				By("Disabling Helm Chart components in the spec")
-
+				By("Changing the status to uninstalling")
 				Eventually(getModelaStatus(ctx), TimeoutInterval, PollInterval).Should(Equal(v1alpha1.ModelaPhaseUninstalling))
 
 				By("Checking if cert-manager is installed")
+				Eventually(getComponentInstalled(ctx, certManagerController), time.Minute*3, PollInterval).Should(Equal(NotInstalledError))
 
 				By("Checking if minio is installed")
+				Eventually(getComponentInstalled(ctx, minioController), time.Minute*3, PollInterval).Should(Equal(NotInstalledError))
 
 				By("Checking if loki is installed")
+				Eventually(getComponentInstalled(ctx, lokiController), time.Minute*3, PollInterval).Should(Equal(NotInstalledError))
 
 				By("Checking if prometheus is installed")
+				Eventually(getComponentInstalled(ctx, prometheusController), time.Minute*3, PollInterval).Should(Equal(NotInstalledError))
 
 				By("Checking if grafana is installed")
+				Eventually(getComponentInstalled(ctx, grafanaController), time.Minute*3, PollInterval).Should(Equal(NotInstalledError))
 
+				By("Should return to a ready state")
+				Eventually(getModelaStatus(ctx), time.Minute*3, PollInterval).Should(Equal(v1alpha1.ModelaPhaseReady))
 			})
 			It("Should change the container tags of Modela pods when changing the distribution spec", func() {
 
@@ -167,7 +205,11 @@ var _ = Context("Inside the default namespace", func() {
 func createObject(obj client.Object) error {
 	err := k8sClient.Create(context.Background(), obj)
 	if k8serr.IsAlreadyExists(err) {
-		err = nil
+		if err := k8sClient.Delete(context.Background(), obj); err != nil {
+			return err
+		} else {
+			return createObject(obj)
+		}
 	}
 
 	return err
@@ -193,11 +235,11 @@ func deleteResourceFunc(ctx context.Context, key client.ObjectKey, obj client.Ob
 	}
 }
 
-func getModelaStatus(ctx context.Context) func() v1alpha1.ModelaPhase {
-	return func() v1alpha1.ModelaPhase {
+func getModelaStatus(ctx context.Context) func() string {
+	return func() string {
 		obj := &v1alpha1.Modela{}
 		_ = k8sClient.Get(ctx, client.ObjectKey{Name: ModelaName, Namespace: ModelaNamespace}, obj)
-		return obj.Status.Phase
+		return string(obj.Status.Phase)
 	}
 }
 

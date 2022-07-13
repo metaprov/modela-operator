@@ -102,7 +102,7 @@ func (cm CertManager) Installing(ctx context.Context) (bool, error) {
 }
 
 func (cm CertManager) Ready(ctx context.Context) (bool, error) {
-	installing, err := cm.Installed(ctx)
+	installing, err := cm.Installing(ctx)
 	if err != nil && err != managementv1.ComponentNotInstalledByModelaError {
 		return false, err
 	}

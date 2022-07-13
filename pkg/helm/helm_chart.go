@@ -12,9 +12,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/metaprov/modela-operator/pkg/kube"
-
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"os"
 	"regexp"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/kustomize/kyaml/kio"
@@ -96,10 +94,11 @@ func (chart *HelmChart) GetConfig() (*helmaction.Configuration, error) {
 	kubeConfig.Namespace = &chart.Namespace
 
 	actionConfig := new(helmaction.Configuration)
-	if err := actionConfig.Init(kubeConfig, chart.Namespace, os.Getenv("HELM_DRIVER"), klog.Infof); err != nil {
+	if err := actionConfig.Init(kubeConfig, chart.Namespace, "secret", klog.Infof); err != nil {
 		klog.Error(err, "Unable to initialize Helm")
 		return nil, err
 	}
+
 	return actionConfig, nil
 }
 
@@ -265,6 +264,7 @@ func (chart *HelmChart) Install(ctx context.Context) error {
 	inst.Version = chart.ChartVersion
 	inst.PostRenderer = LabelPostRenderer{map[string]string{"app.kubernetes.io/created-by": "modela-operator"}}
 	inst.Replace = true
+	inst.ClientOnly = false
 
 	_, err = inst.Run(chart.crt, chart.Values)
 	if err != nil {
@@ -413,7 +413,6 @@ func IsChartInstalled(ctx context.Context, repoName, repoUrl string, url string,
 	if err := AddRepo(repoName, repoUrl, false); err != nil {
 		return false, err
 	}
-	fmt.Println("Added repo", repoName, repoUrl)
 
 	chart := NewHelmChart(repoName, repoUrl, url, ns, releaseName, versionName, false)
 	chartStatus, _ := chart.GetStatus(ctx)
