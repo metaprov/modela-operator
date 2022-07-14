@@ -1,6 +1,8 @@
 package kube
 
 import (
+	"encoding/base64"
+	"github.com/Masterminds/goutils"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
 	"strings"
 )
@@ -99,6 +101,44 @@ func (mi ManagedImageFilter) Filter(nodes []*yaml.RNode) ([]*yaml.RNode, error) 
 		if node.GetKind() == "ManagedImage" {
 			_ = node.PipeE(yaml.Lookup("spec", "tag"), yaml.Set(yaml.NewStringRNode(mi.Version)))
 		}
+	}
+	return nodes, nil
+}
+
+type JwtSecretFilter struct{}
+
+func (j JwtSecretFilter) Filter(nodes []*yaml.RNode) ([]*yaml.RNode, error) {
+	for _, node := range nodes {
+		if node.GetName() == "modela-auth-token" {
+			str, _ := goutils.RandomAlphaNumeric(32)
+			b64 := base64.StdEncoding.EncodeToString([]byte(str))
+			_ = node.PipeE(yaml.Lookup("data", "jwt-secret"), yaml.Set(yaml.NewStringRNode(b64)))
+		}
+	}
+	return nodes, nil
+}
+
+type OwnerReferenceFilter struct {
+	Owner          string
+	OwnerNamespace string
+	UID            string
+}
+
+func (o OwnerReferenceFilter) Filter(nodes []*yaml.RNode) ([]*yaml.RNode, error) {
+	for _, node := range nodes {
+		if o.OwnerNamespace != node.GetNamespace() {
+			continue
+		}
+		ownerReference := yaml.NewMapRNode(&map[string]string{
+			"apiVersion":         "management.modela.ai/v1alpha1",
+			"kind":               "Modela",
+			"name":               o.Owner,
+			"uid":                o.UID,
+			"blockOwnerDeletion": "true",
+			"controller":         "true",
+		})
+		_ = node.PipeE(yaml.LookupCreate(yaml.SequenceNode, "metadata", "ownerReferences"),
+			yaml.Append(ownerReference.YNode()))
 	}
 	return nodes, nil
 }

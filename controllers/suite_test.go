@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"github.com/metaprov/modela-operator/pkg/kube"
 	"os"
 	"path/filepath"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -25,7 +26,6 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -74,14 +74,13 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	err = managementv1alpha1.AddToScheme(scheme.Scheme)
+	err = managementv1alpha1.AddToScheme(kube.ClientScheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:scheme
 
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:    scheme.Scheme,
-		Namespace: "default",
+		Scheme: kube.ClientScheme,
 	})
 	Expect(err).ToNot(HaveOccurred())
 

@@ -113,34 +113,33 @@ func (u *ChartValues) DeepCopyInto(out *ChartValues) {
 // for Ingress resources to be created.
 type ModelaAccessSpec struct {
 	// IngressEnabled indicates if Ingress resources will be created to expose the Modela API gateway, proxy, and frontend.
-	// +kubebuilder:default:=true
+	// +kubebuilder:default:=false
 	Enabled bool `json:"enabled,omitempty"`
 	// Hostname specifies the host domain which will be used as the hostname for rules in Ingress resources managed
 	// by the Modela operator. By default, the hostname will default to a localhost alias.
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default:="localhost"
+	// +kubebuilder:default:=""
 	Hostname *string `json:"hostname,omitempty"`
 }
 
 type ApiGatewaySpec struct {
 	// Define the number of API Gateway replicas
-	// +kubebuilder:default:=1
+	// +kubebuilder:default:=0
 	// +kubebuilder:validation:Optional
 	Replicas *int32 `json:"replicas,omitempty"`
 	// +kubebuilder:validation:Optional
-
 }
 
 type ControlPlaneSpec struct {
 	// The number of Control Plane replicas
-	// +kubebuilder:default:=1
+	// +kubebuilder:default:=0
 	// +kubebuilder:validation:Optional
 	Replicas *int32 `json:"replicas,omitempty"`
 }
 
 type DataPlaneSpec struct {
 	// The number of Data Plane replicas
-	// +kubebuilder:default:=1
+	// +kubebuilder:default:=0
 	// +kubebuilder:validation:Optional
 	Replicas *int32 `json:"replicas,omitempty"`
 }
@@ -192,10 +191,10 @@ type ObservabilitySpec struct {
 	// Prometheus indicates if the Prometheus Helm Chart will be installed
 	// +kubebuilder:default:=false
 	//+kubebuilder:validation:Optional
-	Prometheus bool `json:"installPrometheus"`
+	Prometheus bool `json:"installPrometheus,omitempty"`
 	// +kubebuilder:default:="2.8.4"
 	//+kubebuilder:validation:Optional
-	PrometheusVersion string `json:"chartVersion"`
+	PrometheusVersion string `json:"chartVersion,omitempty"`
 	// ChartValues is the set of Helm values that is used to render the Prometheus Chart.
 	// Values are determined from https://artifacthub.io/packages/helm/prometheus-community/prometheus
 	// +kubebuilder:pruning:PreserveUnknownFields
@@ -205,9 +204,9 @@ type ObservabilitySpec struct {
 	// Loki indicates if the Loki Helm Chart will be installed
 	// +kubebuilder:default:=false
 	//+kubebuilder:validation:Optional
-	Loki bool `json:"installLoki"`
+	Loki bool `json:"installLoki,omitempty"`
 	//+kubebuilder:validation:Optional
-	LokiVersion string `json:"lokiChartVersion"`
+	LokiVersion string `json:"lokiChartVersion,omitempty"`
 	// ChartValues is the set of Helm values that is used to render the Loki Chart.
 	// Values are determined from https://artifacthub.io/packages/helm/grafana/loki
 	// +kubebuilder:pruning:PreserveUnknownFields
@@ -217,9 +216,9 @@ type ObservabilitySpec struct {
 	// Grafana indicates if the Grafana Helm Chart will be installed
 	// +kubebuilder:default:=false
 	//+kubebuilder:validation:Optional
-	Grafana bool `json:"installGrafana"`
+	Grafana bool `json:"installGrafana,omitempty"`
 	//+kubebuilder:validation:Optional
-	GrafanaVersion string `json:"grafanaChartVersion"`
+	GrafanaVersion string `json:"grafanaChartVersion,omitempty"`
 	// ChartValues is the set of Helm values that is used to render the Grafana Chart.
 	// Values are determined from https://artifacthub.io/packages/helm/grafana/grafana
 	// +kubebuilder:pruning:PreserveUnknownFields
@@ -240,13 +239,13 @@ type ModelaLicenseSpec struct {
 type TenantSpec struct {
 	// The name of the Tenant. This will determine the name of the namespace containing the Tenant's resources.
 	// +kubebuilder:validation:Required
-	Name string `json:"name"`
+	Name string `json:"name,omitempty"`
 
 	// The password for the default admin account (with the username "admin"). If empty, then the
 	// Modela Operator will generate a random, 16-character long password that will be logged to
 	// the output of the operator's container.
 	// +kubebuilder:validation:Optional
-	AdminPassword *string `json:"adminPassword"`
+	AdminPassword *string `json:"adminPassword,omitempty"`
 }
 
 type TenantStatus struct {
@@ -274,7 +273,7 @@ type ModelaSpec struct {
 
 	// Tenants contains the collection of tenants that will be installed
 	//+kubebuilder:validation:Optional
-	Tenants []TenantSpec `json:"defaultTenantChart,omitempty"`
+	Tenants []*TenantSpec `json:"tenants,omitempty"`
 
 	//+kubebuilder:validation:Optional
 	CertManager CertManagerSpec `json:"certManager,omitempty"`
@@ -282,12 +281,16 @@ type ModelaSpec struct {
 	//+kubebuilder:validation:Optional
 	ObjectStore ObjectStorageSpec `json:"objectStore,omitempty"`
 
+	//+kubebuilder:validation:Optional
 	SystemDatabase SystemDatabaseSpec `json:"systemDatabase,omitempty"`
 
+	//+kubebuilder:validation:Optional
 	ControlPlane ControlPlaneSpec `json:"controlPlane,omitempty"`
 
+	//+kubebuilder:validation:Optional
 	DataPlane DataPlaneSpec `json:"dataPlane,omitempty"`
 
+	//+kubebuilder:validation:Optional
 	ApiGateway ApiGatewaySpec `json:"apiGateway,omitempty"`
 }
 

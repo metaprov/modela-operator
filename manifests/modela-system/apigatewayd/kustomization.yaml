@@ -10,3 +10,4 @@ resources:
   - ./rbac.yaml
   - ./service.yaml
   - ./nodeport.yaml
+  - ./jwt-secret.yaml

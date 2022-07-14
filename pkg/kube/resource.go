@@ -27,7 +27,7 @@ import (
 
 var kustomizer = krusty.MakeKustomizer(krusty.MakeDefaultOptions())
 
-func LoadResources(folder string, filters []kio.Filter) ([]byte, int, error) {
+func LoadResources(folder string, filters []kio.Filter, loadAll bool) ([]byte, int, error) {
 	path, _ := filepath.Abs("../manifests")
 	resMap, err := kustomizer.Run(filesys.MakeFsOnDisk(), filepath.Join(path, folder))
 	if err != nil {
@@ -41,6 +41,9 @@ func LoadResources(folder string, filters []kio.Filter) ([]byte, int, error) {
 
 	var missing = 0
 	k8sclient, err := client.New(config.GetConfigOrDie(), client.Options{})
+	if loadAll {
+		goto skipFilter
+	}
 	for _, res := range resMap.Resources() {
 		obj := &unstructured.Unstructured{}
 		obj.SetGroupVersionKind(schema.GroupVersionKind{
@@ -56,6 +59,7 @@ func LoadResources(folder string, filters []kio.Filter) ([]byte, int, error) {
 		}
 	}
 
+skipFilter:
 	if yaml, err := resMap.AsYaml(); err == nil {
 		return yaml, missing, nil
 	} else {

@@ -20,6 +20,8 @@ import (
 	"context"
 	"github.com/metaprov/modela-operator/controllers/components"
 	"github.com/metaprov/modelaapi/pkg/util"
+	v1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"reflect"
 	"time"
@@ -134,7 +136,6 @@ func (r ModelaReconciler) updateStatus(ctx context.Context, oldStatus management
 			logger.Error(err, "unable to update Modela status")
 			return ctrl.Result{}, err
 		}
-		logger.Info("Updated Modela status")
 	}
 	return ctrl.Result{}, nil
 }
@@ -157,6 +158,7 @@ func (r ModelaReconciler) updatePhase(ctx context.Context, modela *managementv1a
 func (r ModelaReconciler) isStateEqual(old managementv1alpha1.ModelaStatus, new managementv1alpha1.ModelaStatus) bool {
 	return old.InstalledVersion == new.InstalledVersion &&
 		old.FailureMessage == new.FailureMessage &&
+		old.Phase == new.Phase &&
 		reflect.DeepEqual(old.LicenseToken, new.LicenseToken) &&
 		reflect.DeepEqual(old.Conditions, new.Conditions) &&
 		reflect.DeepEqual(old.Tenants, new.Tenants)
@@ -222,6 +224,11 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 		}, err
 	}
 
+	if modela.Status.InstalledVersion == "" {
+		modela.Status.InstalledVersion = modela.Spec.Distribution
+		return ctrl.Result{Requeue: true}, nil
+	}
+
 	if installed, err := modelaSystem.CatalogInstalled(ctx); !installed || err == managementv1alpha1.ComponentMissingResourcesError {
 		if result, _ := r.updatePhase(ctx, modela, managementv1alpha1.ModelaPhaseInstallingModela); result.Requeue {
 			return result, nil
@@ -247,15 +254,31 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 		return result, err
 	}
 
+	if modela.Spec.Distribution != modela.Status.InstalledVersion {
+		logger.Info("Applying new distribution", "version", modelaSystem.ModelaVersion)
+		if err := modelaSystem.InstallNewVersion(ctx, modela); err != nil {
+			return ctrl.Result{Requeue: true}, err
+		} else {
+			modela.Status.InstalledVersion = modela.Spec.Distribution
+		}
+	}
+
 	modela.Status.Phase = managementv1alpha1.ModelaPhaseReady
 	return ctrl.Result{}, err
-
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *ModelaReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&managementv1alpha1.Modela{}).
+		Owns(&appsv1.Deployment{}).
+		Owns(&v1.Service{}).
+		Owns(&v1.ServiceAccount{}).
+		Owns(&v1.Secret{}).
+		Owns(&rbacv1.ClusterRole{}).
+		Owns(&rbacv1.Role{}).
+		Owns(&rbacv1.ClusterRoleBinding{}).
+		Owns(&rbacv1.RoleBinding{}).
 		Complete(r)
 }
 
@@ -263,16 +286,16 @@ func (r *ModelaReconciler) reconcileTenants(ctx context.Context, modela *managem
 	logger := log.FromContext(ctx)
 
 	var tenants = make(map[string]bool)
-	for _, tenant := range modela.Spec.Tenants {
-		tenants[tenant.Name] = true
-		tenant := components.NewTenant(tenant.Name)
+	for _, tenantSpec := range modela.Spec.Tenants {
+		tenants[tenantSpec.Name] = true
+		tenant := components.NewTenant(tenantSpec.Name)
 		if installed, err := tenant.Installed(ctx); err != nil {
 			return ctrl.Result{}, err
 		} else if !installed {
 			if result, _ := r.updatePhase(ctx, modela, managementv1alpha1.ModelaPhaseInstallingTenant); result.Requeue {
 				return result, nil
 			}
-			if err := tenant.Install(ctx, modela); err != nil {
+			if err := tenant.Install(ctx, modela, tenantSpec); err != nil {
 				logger.Error(err, "Failed to install tenant", "name", tenant.Name)
 				return ctrl.Result{
 					Requeue:      true,

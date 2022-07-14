@@ -3,6 +3,8 @@ package kube
 import (
 	"context"
 	"fmt"
+	appsv1 "k8s.io/api/apps/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -17,9 +19,13 @@ import (
 	"strings"
 	"time"
 
+	catalog "github.com/metaprov/modelaapi/pkg/apis/catalog/v1alpha1"
 	infra "github.com/metaprov/modelaapi/pkg/apis/infra/v1alpha1"
+
 	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
+	nwv1 "k8s.io/api/networking/v1"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,11 +35,18 @@ import (
 )
 
 var (
-	clientScheme = runtime.NewScheme()
+	ClientScheme = runtime.NewScheme()
 )
 
 func init() {
-	utilruntime.Must(infra.AddKnownTypes(clientScheme))
+	utilruntime.Must(infra.AddKnownTypes(ClientScheme))
+	utilruntime.Must(catalog.AddKnownTypes(ClientScheme))
+
+	utilruntime.Must(appsv1.AddToScheme(ClientScheme))
+	utilruntime.Must(corev1.AddToScheme(ClientScheme))
+	utilruntime.Must(rbacv1.AddToScheme(ClientScheme))
+	utilruntime.Must(nwv1.AddToScheme(ClientScheme))
+
 }
 
 // check if a pod is running, return not nil error if not.
@@ -199,7 +212,7 @@ func GetSecretValuesAsString(ns string, name string) (map[string]string, error) 
 
 func CreateOrUpdateLicense(ns string, name string, license *infra.License) error {
 	k8sClient, err := client.New(config.GetConfigOrDie(), client.Options{
-		Scheme: clientScheme,
+		Scheme: ClientScheme,
 	})
 	if err != nil {
 		return err

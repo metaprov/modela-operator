@@ -34,12 +34,12 @@ spec:
             - name: data
               mountPath: /var/opt/modela/data
           resources:
-              requests:
-                memory: "100Mi"
-                cpu: "128m"
-              limits:
-                memory: "200Mi"
-                cpu: "256m"
+            requests:
+              memory: "100Mi"
+              cpu: "128m"
+            limits:
+              memory: "200Mi"
+              cpu: "256m"
           livenessProbe:
             httpGet:
               path: /healthz
@@ -53,6 +53,11 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 10
           env:
+            - name: PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: modela-auth-token
+                  key: jwt-secret
             - name: AUTH_HOST
               value: "modela-auth"
             - name: AUTH_PORT
@@ -60,7 +65,7 @@ spec:
             - name: FAKE
               value: "false"
             - name: HOST
-              value:  "0.0.0.0"
+              value: "0.0.0.0"
             - name: PORT
               value: "8080"
             - name: DEBUG
@@ -77,16 +82,7 @@ spec:
               value: modela-data-plane
             - name: DS_PORT
               value: "8080"
-            - name: PRIVATE_KEY
-              value: "mnfFeWDLKHwDOgJyCwh7n0acGLqZXgdl"  
-            #- name: GRPC_TRACE
-            #  value: "all"
-            #- name:  GRPC_VERBOSITY
-            #  value: "DEBUG"
-            #- name:  GRPC_GO_LOG_VERBOSITY_LEVEL
-            #  value: "99"
-            #- name:  GRPC_GO_LOG_SEVERITY_LEVEL
-            #  value: "info"  
+
 
         - name: cloudproxy
           image: ghcr.io/metaprov/modela-cloud-proxy
@@ -99,8 +95,8 @@ spec:
             - containerPort: 8008
               name: profiling
           volumeMounts:
-              - name: data
-                mountPath: /var/opt/modela/data
+            - name: data
+              mountPath: /var/opt/modela/data
           resources:
             limits:
               cpu: "1000m"
@@ -110,31 +106,31 @@ spec:
               memory: 256Mi
           readinessProbe:
             exec:
-              command: ["/bin/grpc_health_probe", "-addr=:8090"]
+              command: [ "/bin/grpc_health_probe", "-addr=:8090" ]
             initialDelaySeconds: 5
           livenessProbe:
-              exec:
-                command: ["/bin/grpc_health_probe", "-addr=:8090"]
-              initialDelaySeconds: 10
+            exec:
+              command: [ "/bin/grpc_health_probe", "-addr=:8090" ]
+            initialDelaySeconds: 10
           env:
-             - name: GRPC_TRACE
-               value: "all"
-             - name:  GRPC_VERBOSITY
-               value: "DEBUG"
-             - name:  GRPC_GO_LOG_VERBOSITY_LEVEL
-               value: "99"
-             - name:  GRPC_GO_LOG_SEVERITY_LEVEL
-               value: "info"
-             - name:   HOST
-               value:  "0.0.0.0"
-             - name:   PORT
-               value: "8090"
-             - name:   DEBUG
-               value: "false"
-             - name: ENV
-               value: "dev"
-             - name: CACHE_PATH
-               value: "/var/opt/modela/data"
+            - name: GRPC_TRACE
+              value: "all"
+            - name: GRPC_VERBOSITY
+              value: "DEBUG"
+            - name: GRPC_GO_LOG_VERBOSITY_LEVEL
+              value: "99"
+            - name: GRPC_GO_LOG_SEVERITY_LEVEL
+              value: "info"
+            - name: HOST
+              value: "0.0.0.0"
+            - name: PORT
+              value: "8090"
+            - name: DEBUG
+              value: "false"
+            - name: ENV
+              value: "dev"
+            - name: CACHE_PATH
+              value: "/var/opt/modela/data"
       volumes:
-       - name : data
-         emptyDir: {}
+        - name: data
+          emptyDir: { }

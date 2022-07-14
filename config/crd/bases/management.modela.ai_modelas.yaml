@@ -81,25 +81,6 @@ spec:
                     format: int32
                     type: integer
                 type: object
-              defaultTenantChart:
-                description: Tenants contains the collection of tenants that will
-                  be installed
-                items:
-                  properties:
-                    adminPassword:
-                      description: The password for the default admin account (with
-                        the username "admin"). If empty, then the Modela Operator
-                        will generate a random, 16-character long password that will
-                        be logged to the output of the operator's container.
-                      type: string
-                    name:
-                      description: The name of the Tenant. This will determine the
-                        name of the namespace containing the Tenant's resources.
-                      type: string
-                  required:
-                  - name
-                  type: object
-                type: array
               distribution:
                 default: latest
                 description: Distribution denotes the desired version of Modela. This
@@ -162,7 +143,7 @@ spec:
                     type: string
                   grafanaValues:
                     description: ChartValues is the set of Helm values that is used
-                      to render the Loki Chart.
+                      to render the Grafana Chart. Values are determined from https://artifacthub.io/packages/helm/grafana/grafana
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                   installGrafana:
@@ -183,12 +164,12 @@ spec:
                     type: string
                   lokiValues:
                     description: ChartValues is the set of Helm values that is used
-                      to render the Loki Chart.
+                      to render the Loki Chart. Values are determined from https://artifacthub.io/packages/helm/grafana/loki
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                   prometheusValues:
                     description: ChartValues is the set of Helm values that is used
-                      to render the Prometheus Chart.
+                      to render the Prometheus Chart. Values are determined from https://artifacthub.io/packages/helm/prometheus-community/prometheus
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                 type: object
@@ -205,6 +186,23 @@ spec:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                 type: object
+              tenants:
+                description: Tenants contains the collection of tenants that will
+                  be installed
+                items:
+                  properties:
+                    adminPassword:
+                      description: The password for the default admin account (with
+                        the username "admin"). If empty, then the Modela Operator
+                        will generate a random, 16-character long password that will
+                        be logged to the output of the operator's container.
+                      type: string
+                    name:
+                      description: The name of the Tenant. This will determine the
+                        name of the namespace containing the Tenant's resources.
+                      type: string
+                  type: object
+                type: array
             required:
             - distribution
             type: object

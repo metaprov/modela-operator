@@ -22,6 +22,10 @@ func NewTenant(name string) *Tenant {
 	}
 }
 
+func (t Tenant) GetInstallPhase() managementv1.ModelaPhase {
+	return managementv1.ModelaPhaseInstallingTenant
+}
+
 func (t Tenant) IsEnabled(_ managementv1.Modela) bool {
 	return true
 }
@@ -30,7 +34,7 @@ func (t Tenant) Installed(ctx context.Context) (bool, error) {
 	return kube.IsNamespaceCreated(t.Name)
 }
 
-func (t Tenant) Install(ctx context.Context, modela *managementv1.Modela) error {
+func (t Tenant) Install(ctx context.Context, modela *managementv1.Modela, tenant *managementv1.TenantSpec) error {
 	logger := log.FromContext(ctx)
 
 	if err := kube.CreateNamespace(t.Name, modela.Name); err != nil && !k8serr.IsAlreadyExists(err) {
@@ -41,7 +45,7 @@ func (t Tenant) Install(ctx context.Context, modela *managementv1.Modela) error 
 	yaml, _, err := kube.LoadResources(t.ManifestPath, []kio.Filter{
 		kube.LabelFilter{Labels: map[string]string{"management.modela.ai/operator": modela.Name}},
 		kube.NamespaceFilter{Namespace: t.Name},
-	})
+	}, false)
 	if err != nil {
 		return err
 	}
@@ -54,16 +58,21 @@ func (t Tenant) Install(ctx context.Context, modela *managementv1.Modela) error 
 	return nil
 }
 
-func (dt Tenant) Installing(ctx context.Context) (bool, error) {
-	installed, err := dt.Installed(ctx)
+func (t Tenant) Installing(ctx context.Context) (bool, error) {
+	installed, err := t.Installed(ctx)
 	if !installed {
 		return installed, err
 	}
 	return false, nil
 }
 
-func (d Tenant) Ready(ctx context.Context) (bool, error) {
-	return d.Installed(ctx)
+func (t Tenant) Ready(ctx context.Context) (bool, error) {
+	if _, missing, err := kube.LoadResources(t.ManifestPath, []kio.Filter{kube.NamespaceFilter{Namespace: t.Name}}, false); missing > 0 {
+		return false, managementv1.ComponentMissingResourcesError
+	} else if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func (d Tenant) Uninstall(ctx context.Context, modela *managementv1.Modela) error {

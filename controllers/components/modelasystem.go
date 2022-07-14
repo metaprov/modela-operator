@@ -54,7 +54,7 @@ func (ms ModelaSystem) Installed(ctx context.Context) (bool, error) {
 	if created, err := kube.IsNamespaceCreated("modela-system"); !created || err != nil {
 		return created, err
 	}
-	if _, missing, err := kube.LoadResources(ms.SystemManifestPath, nil); missing > 0 {
+	if _, missing, err := kube.LoadResources(ms.SystemManifestPath, nil, false); missing > 0 {
 		log.FromContext(ctx).Info("Resources detected as missing from the modela-system namespace", "count", missing)
 		return false, managementv1.ComponentMissingResourcesError
 	} else if err != nil {
@@ -67,7 +67,7 @@ func (ms ModelaSystem) CatalogInstalled(ctx context.Context) (bool, error) {
 	if created, err := kube.IsNamespaceCreated("modela-catalog"); !created || err != nil {
 		return created, err
 	}
-	if _, missing, err := kube.LoadResources(ms.CatalogManifestPath, nil); missing > 0 {
+	if _, missing, err := kube.LoadResources(ms.CatalogManifestPath, nil, false); missing > 0 {
 		log.FromContext(ctx).Info("Resources detected as missing from the modela-catalog namespace", "count", missing)
 		return false, managementv1.ComponentMissingResourcesError
 	} else if err != nil {
@@ -107,7 +107,7 @@ func (ms ModelaSystem) InstallCRD(ctx context.Context, modela *managementv1.Mode
 		}
 	}
 
-	if ms.ModelaVersion == "develop" {
+	if ms.ModelaVersion == "develop" || ms.ModelaVersion == "stable" {
 		finalVersion = "v1alpha1"
 	}
 
@@ -128,7 +128,7 @@ func (ms ModelaSystem) InstallManagedImages(ctx context.Context, modela *managem
 	yaml, _, err := kube.LoadResources(ms.CatalogManifestPath+"/managedimages", []kio.Filter{
 		kube.LabelFilter{Labels: map[string]string{"management.modela.ai/operator": modela.Name}},
 		kube.ManagedImageFilter{Version: ms.ModelaVersion},
-	})
+	}, true)
 	if err != nil {
 		return err
 	}
@@ -183,7 +183,7 @@ func (ms ModelaSystem) InstallCatalog(ctx context.Context, modela *managementv1.
 
 	yaml, _, err := kube.LoadResources(ms.CatalogManifestPath, []kio.Filter{
 		kube.LabelFilter{Labels: map[string]string{"management.modela.ai/operator": modela.Name}},
-	})
+	}, false)
 	if err != nil {
 		return err
 	}
@@ -218,7 +218,9 @@ func (ms ModelaSystem) Install(ctx context.Context, modela *managementv1.Modela)
 	yaml, _, err := kube.LoadResources(ms.SystemManifestPath, []kio.Filter{
 		kube.ContainerVersionFilter{ms.ModelaVersion},
 		kube.LabelFilter{Labels: map[string]string{"management.modela.ai/operator": modela.Name}},
-	})
+		kube.JwtSecretFilter{},
+		kube.OwnerReferenceFilter{Owner: modela.GetName(), OwnerNamespace: modela.GetNamespace(), UID: string(modela.GetUID())},
+	}, false)
 	if err != nil {
 		return err
 	}
@@ -228,7 +230,28 @@ func (ms ModelaSystem) Install(ctx context.Context, modela *managementv1.Modela)
 		return err
 	}
 
+	modela.Status.InstalledVersion = ms.ModelaVersion
 	return nil
+}
+
+func (ms ModelaSystem) InstallNewVersion(ctx context.Context, modela *managementv1.Modela) error {
+	logger := log.FromContext(ctx)
+
+	yaml, _, err := kube.LoadResources(ms.SystemManifestPath, []kio.Filter{
+		kube.ContainerVersionFilter{ms.ModelaVersion},
+		kube.LabelFilter{Labels: map[string]string{"management.modela.ai/operator": modela.Name}},
+		kube.JwtSecretFilter{},
+		kube.OwnerReferenceFilter{Owner: modela.GetName(), OwnerNamespace: modela.GetNamespace(), UID: string(modela.GetUID())},
+	}, true)
+	if err != nil {
+		return err
+	}
+
+	logger.Info("Applying modela-system resources", "length", len(yaml))
+	if err := kube.ApplyYaml(string(yaml)); err != nil {
+		return err
+	}
+	return ms.InstallManagedImages(ctx, modela)
 }
 
 func (ms ModelaSystem) Installing(ctx context.Context) (bool, error) {
