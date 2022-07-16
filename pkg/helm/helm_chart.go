@@ -45,7 +45,7 @@ func (lb LabelPostRenderer) Run(renderedManifests *bytes.Buffer) (modifiedManife
 	}
 	p := kio.Pipeline{
 		Inputs:  []kio.Reader{rw},
-		Filters: []kio.Filter{kube.LabelFilter{lb.Labels}},
+		Filters: []kio.Filter{kube.LabelFilter{Labels: lb.Labels}},
 		Outputs: []kio.Writer{rw},
 	}
 
@@ -70,14 +70,11 @@ type HelmChart struct {
 	Values          map[string]interface{}
 }
 
-func NewHelmChart(repoName, repoUrl, name, namespace, releaseName, versionName string, dryRun bool) *HelmChart {
+func NewHelmChart(name, namespace, releaseName string, dryRun bool) *HelmChart {
 	return &HelmChart{
-		RepoName:        repoName,
 		Name:            name,
 		Namespace:       namespace,
 		ReleaseName:     releaseName,
-		ChartVersion:    versionName,
-		RepoUrl:         repoUrl,
 		DryRun:          dryRun,
 		CreateNamespace: false,
 		Values:          make(map[string]interface{}),
@@ -112,20 +109,14 @@ func (chart *HelmChart) Load(ctx context.Context) error {
 	}
 
 	client := helmaction.NewInstall(config)
-	client.ChartPathOptions.RepoURL = chart.RepoUrl
 	client.Namespace = chart.Namespace
 	client.ReleaseName = chart.ReleaseName
-	name := chart.Name //chart.RepoName + "/" + chart.Name
+	name := "assets/config/assets/charts/" + chart.Name
 
-	chartFullPath, err := client.ChartPathOptions.LocateChart(name, settings)
-	if err != nil {
-		logger.Error(err, "Failed to locate Helm Chart", "name", chart.Name)
-		return fmt.Errorf("Failed to locate Helm Chart '%s' due to %s", chart.Name, err)
-	}
-	result, err := helmloader.Load(chartFullPath)
+	result, err := helmloader.Load(name)
 	if err != nil {
 		logger.Error(err, "Failed to load Helm Chart")
-		return errors.Wrapf(err, "Failed to load resources from %s", chartFullPath)
+		return errors.Wrapf(err, "Failed to load resources from %s", name)
 	}
 	chart.crt = result
 	return nil
@@ -368,9 +359,8 @@ func (chart *HelmChart) Uninstall(ctx context.Context) error {
 	return nil
 }
 
-func InstallChart(ctx context.Context, repoName, repoUrl, name string, ns string, releaseName string, versionName string, values map[string]interface{}) error {
-	chart := NewHelmChart(repoName, repoUrl, name, ns, releaseName, versionName, false)
-	chart.ChartVersion = versionName
+func InstallChart(ctx context.Context, name, ns, releaseName string, values map[string]interface{}) error {
+	chart := NewHelmChart(name, ns, releaseName, false)
 	chart.ReleaseName = releaseName
 	chart.Namespace = ns
 	chart.Values = values
@@ -388,9 +378,8 @@ func InstallChart(ctx context.Context, repoName, repoUrl, name string, ns string
 	return nil
 }
 
-func UninstallChart(ctx context.Context, repoName, repoUrl, name string, ns string, releaseName string, versionName string, values map[string]interface{}) error {
-	chart := NewHelmChart(repoName, repoUrl, name, ns, releaseName, versionName, false)
-	chart.ChartVersion = versionName
+func UninstallChart(ctx context.Context, name, ns, releaseName string, values map[string]interface{}) error {
+	chart := NewHelmChart(name, ns, releaseName, false)
 	chart.ReleaseName = releaseName
 	chart.Namespace = ns
 	chart.Values = values
@@ -408,13 +397,10 @@ func UninstallChart(ctx context.Context, repoName, repoUrl, name string, ns stri
 	return nil
 }
 
-func IsChartInstalled(ctx context.Context, repoName, repoUrl string, url string, ns string, releaseName string, versionName string) (bool, error) {
+func IsChartInstalled(ctx context.Context, name, ns, releaseName string) (bool, error) {
 	// TODO(liam): Refactor these methods into the helm chart struct
-	if err := AddRepo(repoName, repoUrl, false); err != nil {
-		return false, err
-	}
+	chart := NewHelmChart(name, ns, releaseName, false)
 
-	chart := NewHelmChart(repoName, repoUrl, url, ns, releaseName, versionName, false)
 	chartStatus, _ := chart.GetStatus(ctx)
 	if chartStatus == helmrelease.StatusUnknown {
 		return false, nil

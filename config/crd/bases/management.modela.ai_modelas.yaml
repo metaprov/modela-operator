@@ -44,42 +44,123 @@ spec:
               apiGateway:
                 properties:
                   replicas:
-                    default: 1
+                    default: 0
                     description: Define the number of API Gateway replicas
                     format: int32
                     type: integer
+                  resources:
+                    description: 'Resources specifies resource requests and limits
+                      for the data plane deployment. Default values: 100m CPU request,
+                      200m CPU limit, 128Mi memory request, 256Mi memory limit.'
+                    properties:
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Limits describes the maximum amount of compute
+                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Requests describes the minimum amount of compute
+                          resources required. If Requests is omitted for a container,
+                          it defaults to Limits if that is explicitly specified, otherwise
+                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                        type: object
+                    type: object
                 type: object
               certManager:
                 properties:
-                  chartVersion:
-                    default: v1.7.1
-                    type: string
                   install:
                     default: true
                     description: The chart version of the helm/cert-manager Helm Chart.
-                      https://artifacthub.io/packages/helm/cert-manager/cert-manager
                     type: boolean
                   values:
                     description: ChartValues is the set of Helm values that is used
-                      to render the Cert Manager Chart.
+                      to render the Cert Manager Chart. Values are determined from
+                      https://artifacthub.io/packages/helm/cert-manager/cert-manager.
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                 type: object
               controlPlane:
                 properties:
                   replicas:
-                    default: 1
+                    default: 0
                     description: The number of Control Plane replicas
                     format: int32
                     type: integer
+                  resources:
+                    description: 'Resources specifies resource requests and limits
+                      for the control plane deployment. Default values: 256m CPU request,
+                      512m CPU limit, 256Mi memory request, 512Mi memory limit.'
+                    properties:
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Limits describes the maximum amount of compute
+                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Requests describes the minimum amount of compute
+                          resources required. If Requests is omitted for a container,
+                          it defaults to Limits if that is explicitly specified, otherwise
+                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                        type: object
+                    type: object
                 type: object
               dataPlane:
                 properties:
                   replicas:
-                    default: 1
+                    default: 0
                     description: The number of Data Plane replicas
                     format: int32
                     type: integer
+                  resources:
+                    description: 'Resources specifies resource requests and limits
+                      for the data plane deployment. Default values: 100m CPU request,
+                      200m CPU limit, 256Mi memory request, 512Mi memory limit.'
+                    properties:
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Limits describes the maximum amount of compute
+                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Requests describes the minimum amount of compute
+                          resources required. If Requests is omitted for a container,
+                          it defaults to Limits if that is explicitly specified, otherwise
+                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                        type: object
+                    type: object
                 type: object
               distribution:
                 default: latest
@@ -92,12 +173,12 @@ spec:
                   resources that will expose Modela externally
                 properties:
                   enabled:
-                    default: true
+                    default: false
                     description: IngressEnabled indicates if Ingress resources will
                       be created to expose the Modela API gateway, proxy, and frontend.
                     type: boolean
                   hostname:
-                    default: localhost
+                    default: ""
                     description: Hostname specifies the host domain which will be
                       used as the hostname for rules in Ingress resources managed
                       by the Modela operator. By default, the hostname will default
@@ -120,27 +201,18 @@ spec:
                 type: object
               objectStore:
                 properties:
-                  chartVersion:
-                    description: The chart version of the bitnami/minio Helm Chart.
-                      https://artifacthub.io/packages/helm/bitnami/minio
-                    type: string
                   install:
                     default: true
                     type: boolean
                   values:
                     description: ChartValues is the set of Helm values that is used
-                      to render the Cert Manager Chart.
+                      to render the Minio Chart.
                     type: object
                 type: object
               observability:
                 description: Observability specifies the configuration to install
                   monitoring tools (Prometheus and Loki)
                 properties:
-                  chartVersion:
-                    default: 2.8.4
-                    type: string
-                  grafanaChartVersion:
-                    type: string
                   grafanaValues:
                     description: ChartValues is the set of Helm values that is used
                       to render the Grafana Chart. Values are determined from https://artifacthub.io/packages/helm/grafana/grafana
@@ -160,8 +232,6 @@ spec:
                     description: Prometheus indicates if the Prometheus Helm Chart
                       will be installed
                     type: boolean
-                  lokiChartVersion:
-                    type: string
                   lokiValues:
                     description: ChartValues is the set of Helm values that is used
                       to render the Loki Chart. Values are determined from https://artifacthub.io/packages/helm/grafana/loki
@@ -175,11 +245,6 @@ spec:
                 type: object
               systemDatabase:
                 properties:
-                  chartVersion:
-                    default: 10.9.2
-                    description: The chart version of the bitnami/postgres Helm Chart.
-                      https://artifacthub.io/packages/helm/bitnami/postgresql
-                    type: string
                   values:
                     description: ChartValues is the set of Helm values that is used
                       to render the Postgres Chart.

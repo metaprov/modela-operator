@@ -7,6 +7,7 @@
 package helm
 
 import (
+	"fmt"
 	"helm.sh/helm/v3/pkg/getter"
 	"helm.sh/helm/v3/pkg/repo"
 )
@@ -43,10 +44,12 @@ func (r *HelmRepo) DownloadIndex() error {
 		return err
 	}
 
+	fmt.Println("Beginning index file dl")
 	_, err = chartRepo.DownloadIndexFile()
 	if err != nil {
 		return err
 	}
+	fmt.Println("Finished download")
 	var f repo.File
 	f.Update(entry)
 
@@ -56,10 +59,5 @@ func (r *HelmRepo) DownloadIndex() error {
 }
 
 func AddRepo(name string, url string, dryrun bool) error {
-	helmRepo := NewHelmRepo(name, url, dryrun, true)
-	if err := helmRepo.DownloadIndex(); err != nil {
-		return err
-	}
-
 	return nil
 }

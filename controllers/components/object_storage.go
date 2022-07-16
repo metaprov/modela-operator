@@ -47,15 +47,7 @@ func (os ObjectStorage) Installed(ctx context.Context) (bool, error) {
 	if belonging, err := kube.IsDeploymentCreatedByModela(os.Namespace, "modela-storage-minio"); err == nil && !belonging {
 		return true, managementv1.ComponentNotInstalledByModelaError
 	}
-	if installed, err := helm.IsChartInstalled(
-		ctx,
-		os.RepoName,
-		os.RepoUrl,
-		os.Name,
-		os.Namespace,
-		os.ReleaseName,
-		os.Version,
-	); !installed {
+	if installed, err := helm.IsChartInstalled(ctx, os.Name, os.Namespace, os.ReleaseName); !installed {
 		return false, err
 	}
 
@@ -76,16 +68,7 @@ func (os ObjectStorage) Install(ctx context.Context, modela *managementv1.Modela
 	}
 
 	logger.Info("Applying Helm Chart", "version", os.Version)
-	return helm.InstallChart(
-		ctx,
-		os.RepoName,
-		os.RepoUrl,
-		os.Name,
-		os.Namespace,
-		os.ReleaseName,
-		os.Version,
-		map[string]interface{}{},
-	)
+	return helm.InstallChart(ctx, os.Name, os.Namespace, os.ReleaseName, map[string]interface{}{})
 }
 
 // Check if we are still installing the database
@@ -110,16 +93,7 @@ func (os ObjectStorage) Ready(ctx context.Context) (bool, error) {
 }
 
 func (os ObjectStorage) Uninstall(ctx context.Context, modela *managementv1.Modela) error {
-	return helm.UninstallChart(
-		ctx,
-		os.RepoName,
-		os.RepoUrl,
-		os.Name,
-		os.Namespace,
-		os.ReleaseName,
-		os.Version,
-		map[string]interface{}{},
-	)
+	return helm.UninstallChart(ctx, os.Name, os.Namespace, os.ReleaseName, map[string]interface{}{})
 }
 
 func (os ObjectStorage) PostInstall() error {

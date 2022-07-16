@@ -45,15 +45,7 @@ func (db Database) Installed(ctx context.Context) (bool, error) {
 	if belonging, err := kube.IsStatefulSetCreatedByModela(db.Namespace, "modela-postgresql"); err == nil && !belonging {
 		return true, managementv1.ComponentNotInstalledByModelaError
 	}
-	if installed, err := helm.IsChartInstalled(
-		ctx,
-		db.RepoName,
-		db.RepoUrl,
-		db.Url,
-		db.Namespace,
-		db.ReleaseName,
-		db.Version,
-	); !installed {
+	if installed, err := helm.IsChartInstalled(ctx, db.Name, db.Namespace, db.ReleaseName); !installed {
 		return false, err
 	}
 	return true, nil
@@ -72,16 +64,7 @@ func (db Database) Install(ctx context.Context, modela *managementv1.Modela) err
 		return err
 	}
 
-	return helm.InstallChart(
-		ctx,
-		db.RepoName,
-		db.RepoUrl,
-		db.Name,
-		db.Namespace,
-		db.ReleaseName,
-		db.Version,
-		map[string]interface{}{},
-	)
+	return helm.InstallChart(ctx, db.Name, db.Namespace, db.ReleaseName, map[string]interface{}{})
 }
 
 func (db Database) Installing(ctx context.Context) (bool, error) {
@@ -105,13 +88,5 @@ func (db Database) Ready(ctx context.Context) (bool, error) {
 }
 
 func (db Database) Uninstall(ctx context.Context, modela *managementv1.Modela) error {
-	return helm.UninstallChart(ctx,
-		db.RepoName,
-		db.RepoUrl,
-		db.Name,
-		db.Namespace,
-		db.ReleaseName,
-		db.Version,
-		map[string]interface{}{},
-	)
+	return helm.UninstallChart(ctx, db.Name, db.Namespace, db.ReleaseName, map[string]interface{}{})
 }

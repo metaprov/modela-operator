@@ -88,7 +88,7 @@ help: ## Display this help.
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	$(CONTROLLER_GEN) rbac:roleName=modela-manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN) rbac:roleName=modela-manager-role crd paths="./..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
@@ -116,8 +116,24 @@ build: generate fmt vet ## Build manager binary.
 run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./main.go
 
+.PHONY: docker-prepare
+docker-prepare:
+	mkdir -p ./out/config/assets/charts/
+	wget https://charts.jetstack.io/charts/cert-manager-v1.8.1.tgz -O ./cert-manager.tgz
+	wget https://charts.bitnami.com/bitnami/minio-11.7.10.tgz -O ./minio.tgz
+	wget https://charts.bitnami.com/bitnami/postgresql-11.6.16.tgz -O ./postgres.tgz
+	wget https://github.com/prometheus-community/helm-charts/releases/download/prometheus-15.10.4/prometheus-15.10.4.tgz -O ./prometheus.tgz
+	wget https://github.com/grafana/helm-charts/releases/download/loki-2.13.1/loki-2.13.1.tgz -O ./loki.tgz
+	wget https://github.com/grafana/helm-charts/releases/download/grafana-6.32.2/grafana-6.32.2.tgz -O ./grafana.tgz
+	tar -xf ./cert-manager.tgz -C ./out/config/assets/charts/
+	tar -xf ./minio.tgz -C ./out/config/assets/charts/
+	tar -xf ./postgres.tgz -C ./out/config/assets/charts/
+	tar -xf ./prometheus.tgz -C ./out/config/assets/charts/
+	tar -xf ./loki.tgz -C ./out/config/assets/charts/
+	tar -xf ./grafana.tgz -C ./out/config/assets/charts/
+
 .PHONY: docker-build
-docker-build: test ## Build docker image with the manager.
+docker-build: ## Build docker image with the manager.
 	docker build -t ${IMG} .
 
 .PHONY: docker-push

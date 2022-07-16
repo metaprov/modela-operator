@@ -286,10 +286,25 @@ var _ = Context("Inside the default namespace", func() {
 		})
 		When("Removing resources belonging to the Modela Operator", func() {
 			It("Should re-install the missing resources from the modela-system namespace", func() {
+				testModelaResource.Spec.CertManager.Install = true
+				testModelaResource.Spec.ObjectStore.Install = true
+				testModelaResource.Spec.Observability.Loki = true
+				testModelaResource.Spec.Observability.Grafana = true
+				testModelaResource.Spec.Observability.Prometheus = true
+				createModelaResource(testModelaResource)
 
-			})
-			It("Should re-install the missing resources from the modela-catalog namespace", func() {
+				By("Deleting the modela control plane")
+				var controlPlane appsv1.Deployment
+				Eventually(
+					deleteResourceFunc(context.Background(), client.ObjectKey{Name: "modela-control-plane", Namespace: ModelaNamespace}, &controlPlane),
+					time.Second*3, PollInterval).Should(BeNil())
 
+				time.Sleep(1 * time.Second)
+
+				By("Expecting it to be re-created")
+				Eventually(
+					getResourceFunc(context.Background(), client.ObjectKey{Name: "modela-control-plane", Namespace: ModelaNamespace}, &controlPlane),
+					TimeoutInterval, PollInterval).Should(BeNil())
 			})
 		})
 	})

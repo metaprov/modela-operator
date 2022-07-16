@@ -1,0 +1,15 @@
+# Install a base version of modela without any Helm Charts
+apiVersion: management.modela.ai/v1alpha1
+kind: Modela
+metadata:
+  name: modela
+spec:
+  distribution: 'develop'
+  certManager:
+    install: true
+  objectStore:
+    install: true
+  observability:
+    installPrometheus: true
+    installLoki: true
+    installGrafana: true

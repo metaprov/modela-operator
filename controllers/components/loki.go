@@ -42,15 +42,7 @@ func (m Loki) IsEnabled(modela managementv1.Modela) bool {
 }
 
 func (m Loki) Installed(ctx context.Context) (bool, error) {
-	return helm.IsChartInstalled(
-		ctx,
-		m.RepoName,
-		m.RepoUrl,
-		m.ReleaseName,
-		m.Namespace,
-		m.ReleaseName,
-		m.Version,
-	)
+	return helm.IsChartInstalled(ctx, m.Name, m.Namespace, m.ReleaseName)
 }
 
 func (m Loki) Install(ctx context.Context, modela *managementv1.Modela) error {
@@ -70,12 +62,9 @@ func (m Loki) Install(ctx context.Context, modela *managementv1.Modela) error {
 	logger.Info("Applying Helm Chart", "version", m.Version)
 	return helm.InstallChart(
 		ctx,
-		m.RepoName,
-		m.RepoUrl,
 		m.Name,
 		m.Namespace,
 		m.ReleaseName,
-		m.Version,
 		map[string]interface{}{},
 	)
 }
@@ -108,14 +97,5 @@ func (m Loki) Uninstall(ctx context.Context, modela *managementv1.Modela) error 
 	}
 
 	logger.Info("Added Helm Repo", "repo", m.RepoName)
-	return helm.UninstallChart(
-		ctx,
-		m.RepoName,
-		m.RepoUrl,
-		m.Name,
-		m.Namespace,
-		m.ReleaseName,
-		m.Version,
-		map[string]interface{}{},
-	)
+	return helm.UninstallChart(ctx, m.Name, m.Namespace, m.ReleaseName, map[string]interface{}{})
 }

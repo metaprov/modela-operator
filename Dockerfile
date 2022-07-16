@@ -21,15 +21,18 @@ RUN curl -L https://get.helm.sh/${HELM_FILENAME} | tar xz && mv linux-amd64/helm
 COPY main.go main.go
 COPY api/ api/
 COPY controllers/ controllers/
+COPY pkg/ pkg/
 
 # Build
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager main.go
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM ghcr.io/metaprov/modela-base
+FROM gcr.io/distroless/static
 WORKDIR /
 
+COPY manifests /workspace/manifests
+COPY assets /assets
 COPY --from=builder /workspace/manager .
 COPY --from=builder /usr/local/bin/kubectl /usr/local/bin/
 COPY --from=builder /bin/helm /usr/local/bin/

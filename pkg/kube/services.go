@@ -218,7 +218,7 @@ func CreateOrUpdateLicense(ns string, name string, license *infra.License) error
 		return err
 	}
 
-	if err = k8sClient.Get(context.Background(), client.ObjectKey{ns, name}, &infra.License{}); k8serr.IsNotFound(err) {
+	if err = k8sClient.Get(context.Background(), client.ObjectKey{Namespace: ns, Name: name}, &infra.License{}); k8serr.IsNotFound(err) {
 		err = k8sClient.Create(context.Background(), license)
 		if err != nil {
 			return err

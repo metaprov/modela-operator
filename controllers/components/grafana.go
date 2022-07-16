@@ -44,15 +44,7 @@ func (m Grafana) Installed(ctx context.Context) (bool, error) {
 	if belonging, err := kube.IsDeploymentCreatedByModela(m.Namespace, "grafana-stack"); err == nil && !belonging {
 		return true, managementv1.ComponentNotInstalledByModelaError
 	}
-	return helm.IsChartInstalled(
-		ctx,
-		m.RepoName,
-		m.RepoUrl,
-		m.Name,
-		m.Namespace,
-		m.ReleaseName,
-		m.Version,
-	)
+	return helm.IsChartInstalled(ctx, m.Name, m.Namespace, m.ReleaseName)
 }
 
 func (m Grafana) Install(ctx context.Context, modela *managementv1.Modela) error {
@@ -70,16 +62,7 @@ func (m Grafana) Install(ctx context.Context, modela *managementv1.Modela) error
 	}
 
 	logger.Info("Applying Helm Chart", "version", m.Version)
-	return helm.InstallChart(
-		ctx,
-		m.RepoName,
-		m.RepoUrl,
-		m.Name,
-		m.Namespace,
-		m.ReleaseName,
-		m.Version,
-		map[string]interface{}{},
-	)
+	return helm.InstallChart(ctx, m.Name, m.Namespace, m.ReleaseName, map[string]interface{}{})
 }
 
 func (m Grafana) Installing(ctx context.Context) (bool, error) {
@@ -110,14 +93,5 @@ func (m Grafana) Uninstall(ctx context.Context, modela *managementv1.Modela) err
 	}
 
 	logger.Info("Added Helm Repo", "repo", m.RepoName)
-	return helm.UninstallChart(
-		ctx,
-		m.RepoName,
-		m.RepoUrl,
-		m.Name,
-		m.Namespace,
-		m.ReleaseName,
-		m.Version,
-		map[string]interface{}{},
-	)
+	return helm.UninstallChart(ctx, m.Name, m.Namespace, m.ReleaseName, map[string]interface{}{})
 }

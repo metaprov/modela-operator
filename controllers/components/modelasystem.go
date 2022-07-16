@@ -216,7 +216,7 @@ func (ms ModelaSystem) Install(ctx context.Context, modela *managementv1.Modela)
 	}
 
 	yaml, _, err := kube.LoadResources(ms.SystemManifestPath, []kio.Filter{
-		kube.ContainerVersionFilter{ms.ModelaVersion},
+		kube.ContainerVersionFilter{Version: ms.ModelaVersion},
 		kube.LabelFilter{Labels: map[string]string{"management.modela.ai/operator": modela.Name}},
 		kube.JwtSecretFilter{},
 		kube.OwnerReferenceFilter{Owner: modela.GetName(), OwnerNamespace: modela.GetNamespace(), UID: string(modela.GetUID())},
@@ -238,7 +238,7 @@ func (ms ModelaSystem) InstallNewVersion(ctx context.Context, modela *management
 	logger := log.FromContext(ctx)
 
 	yaml, _, err := kube.LoadResources(ms.SystemManifestPath, []kio.Filter{
-		kube.ContainerVersionFilter{ms.ModelaVersion},
+		kube.ContainerVersionFilter{Version: ms.ModelaVersion},
 		kube.LabelFilter{Labels: map[string]string{"management.modela.ai/operator": modela.Name}},
 		kube.JwtSecretFilter{},
 		kube.OwnerReferenceFilter{Owner: modela.GetName(), OwnerNamespace: modela.GetNamespace(), UID: string(modela.GetUID())},

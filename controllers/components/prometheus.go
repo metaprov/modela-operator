@@ -48,15 +48,7 @@ func (m Prometheus) Installed(ctx context.Context) (bool, error) {
 	if belonging, err := kube.IsDeploymentCreatedByModela(m.Namespace, "kube-prometheus-server"); err == nil && !belonging {
 		return true, managementv1.ComponentNotInstalledByModelaError
 	}
-	return helm.IsChartInstalled(
-		ctx,
-		m.RepoName,
-		m.RepoUrl,
-		m.Name,
-		m.Namespace,
-		m.ReleaseName,
-		m.Version,
-	)
+	return helm.IsChartInstalled(ctx, m.Name, m.Namespace, m.ReleaseName)
 }
 
 func (m Prometheus) Install(ctx context.Context, modela *managementv1.Modela) error {
@@ -74,16 +66,7 @@ func (m Prometheus) Install(ctx context.Context, modela *managementv1.Modela) er
 	}
 
 	logger.Info("Applying Helm Chart", "version", m.Version)
-	return helm.InstallChart(
-		ctx,
-		m.RepoName,
-		m.RepoUrl,
-		m.Name,
-		m.Namespace,
-		m.ReleaseName,
-		m.Version,
-		map[string]interface{}{},
-	)
+	return helm.InstallChart(ctx, m.Name, m.Namespace, m.ReleaseName, map[string]interface{}{})
 }
 
 func (m Prometheus) Installing(ctx context.Context) (bool, error) {
@@ -109,12 +92,9 @@ func (m Prometheus) Ready(ctx context.Context) (bool, error) {
 func (m Prometheus) Uninstall(ctx context.Context, modela *managementv1.Modela) error {
 	return helm.UninstallChart(
 		ctx,
-		m.RepoName,
-		m.RepoUrl,
 		m.Name,
 		m.Namespace,
 		m.ReleaseName,
-		m.Version,
 		map[string]interface{}{},
 	)
 }

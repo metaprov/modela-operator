@@ -51,7 +51,7 @@ func LoadResources(folder string, filters []kio.Filter, loadAll bool) ([]byte, i
 			Version: res.GetGvk().Version,
 			Kind:    res.GetGvk().Kind,
 		})
-		err := k8sclient.Get(context.Background(), client.ObjectKey{res.GetNamespace(), res.GetName()}, obj)
+		err := k8sclient.Get(context.Background(), client.ObjectKey{Namespace: res.GetNamespace(), Name: res.GetName()}, obj)
 		if err != nil {
 			missing++
 		} else {

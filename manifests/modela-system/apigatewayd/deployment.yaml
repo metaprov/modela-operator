@@ -99,11 +99,11 @@ spec:
               mountPath: /var/opt/modela/data
           resources:
             limits:
-              cpu: "1000m"
-              memory: 512Mi
-            requests:
-              cpu: "500m"
+              cpu: "200m"
               memory: 256Mi
+            requests:
+              cpu: "100m"
+              memory: 128Mi
           readinessProbe:
             exec:
               command: [ "/bin/grpc_health_probe", "-addr=:8090" ]

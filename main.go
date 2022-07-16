@@ -19,8 +19,6 @@ package main
 import (
 	"flag"
 	"os"
-	"time"
-
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -44,7 +42,6 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
 	utilruntime.Must(managementv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
@@ -66,16 +63,13 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
-	syncPer := 1 * time.Minute
-
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
 		Port:                   9443,
-		SyncPeriod:             &syncPer,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "3b7dc84c.modela.ai",
+		LeaderElectionID:       "modela-operator-leader",
 		Namespace:              "",
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
@@ -102,14 +96,6 @@ func main() {
 	if err = modelaReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Modela")
 		os.Exit(1)
-	}
-
-	setupLog.Info("ENABLE_WEBHOOKS setting", "ENABLE_WEBHOOKS", os.Getenv("ENABLE_WEBHOOKS"))
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&managementv1alpha1.Modela{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Modela")
-			os.Exit(1)
-		}
 	}
 
 	//+kubebuilder:scaffold:builder

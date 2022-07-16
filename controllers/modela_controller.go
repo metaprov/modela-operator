@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"github.com/metaprov/modela-operator/controllers/components"
 	"github.com/metaprov/modelaapi/pkg/util"
 	v1 "k8s.io/api/core/v1"
@@ -82,6 +83,7 @@ func (r *ModelaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 	oldStatus := *modela.Status.DeepCopy()
 
+	fmt.Printf("Modela fetched: %v\n", modela.Spec)
 	result, err := r.Install(ctx, modela)
 	if err != nil {
 		modela.Status.FailureMessage = util.StrPtr(err.Error())
@@ -269,7 +271,7 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *ModelaReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
+	return ctrl.NewControllerManagedBy(mgr).Named("modela-controller").
 		For(&managementv1alpha1.Modela{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&v1.Service{}).
@@ -343,8 +345,9 @@ type ModelaComponent interface {
 
 func (r *ModelaReconciler) reconcileComponent(ctx context.Context, component ModelaComponent, modela *managementv1.Modela) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
+	fmt.Println("Checking installation", component.GetInstallPhase())
 	installed, err := component.Installed(ctx)
-	// fmt.Println(installed, err, component.GetInstallPhase())
+	fmt.Println(installed, err, component.GetInstallPhase())
 	if err != nil && err != managementv1alpha1.ComponentNotInstalledByModelaError && err != managementv1alpha1.ComponentMissingResourcesError {
 		logger.Error(err, "Failed to check if component is installed", "component", reflect.TypeOf(component).Name())
 		return ctrl.Result{}, err

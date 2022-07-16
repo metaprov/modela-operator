@@ -127,7 +127,11 @@ type ApiGatewaySpec struct {
 	// +kubebuilder:default:=0
 	// +kubebuilder:validation:Optional
 	Replicas *int32 `json:"replicas,omitempty"`
+
 	// +kubebuilder:validation:Optional
+	// Resources specifies resource requests and limits for the data plane deployment.
+	// Default values: 100m CPU request, 200m CPU limit, 128Mi memory request, 256Mi memory limit.
+	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 type ControlPlaneSpec struct {
@@ -135,6 +139,10 @@ type ControlPlaneSpec struct {
 	// +kubebuilder:default:=0
 	// +kubebuilder:validation:Optional
 	Replicas *int32 `json:"replicas,omitempty"`
+
+	// Resources specifies resource requests and limits for the control plane deployment.
+	// Default values: 256m CPU request, 512m CPU limit, 256Mi memory request, 512Mi memory limit.
+	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 type DataPlaneSpec struct {
@@ -142,19 +150,20 @@ type DataPlaneSpec struct {
 	// +kubebuilder:default:=0
 	// +kubebuilder:validation:Optional
 	Replicas *int32 `json:"replicas,omitempty"`
+
+	// Resources specifies resource requests and limits for the data plane deployment.
+	// Default values: 100m CPU request, 200m CPU limit, 256Mi memory request, 512Mi memory limit.
+	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 type CertManagerSpec struct {
 	// The chart version of the helm/cert-manager Helm Chart.
-	// https://artifacthub.io/packages/helm/cert-manager/cert-manager
 	// +kubebuilder:default:=true
 	// +kubebuilder:validation:Optional
 	Install bool `json:"install"`
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default:="v1.7.1"
-	CertManagerChartVersion string `json:"chartVersion,omitempty"`
 
 	// ChartValues is the set of Helm values that is used to render the Cert Manager Chart.
+	// Values are determined from https://artifacthub.io/packages/helm/cert-manager/cert-manager.
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// +kubebuilder:validation:Optional
 	Values ChartValues `json:"values,omitempty"`
@@ -165,22 +174,11 @@ type ObjectStorageSpec struct {
 	// +kubebuilder:validation:Optional
 	Install bool `json:"install"`
 
-	// The chart version of the bitnami/minio Helm Chart.
-	// https://artifacthub.io/packages/helm/bitnami/minio
-	// +kubebuilder:validation:Optional
-	MinioChartVersion string `json:"chartVersion,omitempty"`
-
-	// ChartValues is the set of Helm values that is used to render the Cert Manager Chart.
+	// ChartValues is the set of Helm values that is used to render the Minio Chart.
 	Values ChartValues `json:"values,omitempty"`
 }
 
 type SystemDatabaseSpec struct {
-	// The chart version of the bitnami/postgres Helm Chart.
-	// https://artifacthub.io/packages/helm/bitnami/postgresql
-	// +kubebuilder:default:="10.9.2"
-	// +kubebuilder:validation:Optional
-	PostgresChartVersion string `json:"chartVersion,omitempty"`
-
 	// ChartValues is the set of Helm values that is used to render the Postgres Chart.
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// +kubebuilder:validation:Optional
@@ -192,9 +190,6 @@ type ObservabilitySpec struct {
 	// +kubebuilder:default:=false
 	//+kubebuilder:validation:Optional
 	Prometheus bool `json:"installPrometheus,omitempty"`
-	// +kubebuilder:default:="2.8.4"
-	//+kubebuilder:validation:Optional
-	PrometheusVersion string `json:"chartVersion,omitempty"`
 	// ChartValues is the set of Helm values that is used to render the Prometheus Chart.
 	// Values are determined from https://artifacthub.io/packages/helm/prometheus-community/prometheus
 	// +kubebuilder:pruning:PreserveUnknownFields
@@ -205,8 +200,6 @@ type ObservabilitySpec struct {
 	// +kubebuilder:default:=false
 	//+kubebuilder:validation:Optional
 	Loki bool `json:"installLoki,omitempty"`
-	//+kubebuilder:validation:Optional
-	LokiVersion string `json:"lokiChartVersion,omitempty"`
 	// ChartValues is the set of Helm values that is used to render the Loki Chart.
 	// Values are determined from https://artifacthub.io/packages/helm/grafana/loki
 	// +kubebuilder:pruning:PreserveUnknownFields
@@ -217,8 +210,6 @@ type ObservabilitySpec struct {
 	// +kubebuilder:default:=false
 	//+kubebuilder:validation:Optional
 	Grafana bool `json:"installGrafana,omitempty"`
-	//+kubebuilder:validation:Optional
-	GrafanaVersion string `json:"grafanaChartVersion,omitempty"`
 	// ChartValues is the set of Helm values that is used to render the Grafana Chart.
 	// Values are determined from https://artifacthub.io/packages/helm/grafana/grafana
 	// +kubebuilder:pruning:PreserveUnknownFields
