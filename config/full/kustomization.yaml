@@ -16,4 +16,4 @@ bases:
 - ../crd
 - ../rbac
 - ../manager
-- ../samples/modela_full.yaml
+- ../samples

@@ -1,3 +1,2 @@
-## Append samples you want in your CSV to this file as resources ##
 resources:
-- modela_base.yaml
+- modela_full.yaml
