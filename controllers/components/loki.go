@@ -20,10 +20,9 @@ type Loki struct {
 	Dryrun        bool
 }
 
-func NewLoki(version string) *Loki {
+func NewLoki() *Loki {
 	return &Loki{
 		Namespace:     "loki",
-		Version:       version,
 		ReleaseName:   "loki",
 		RepoName:      "grafana",
 		Name:          "loki",

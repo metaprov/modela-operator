@@ -20,10 +20,9 @@ type Database struct {
 	PodNamePrefix string
 }
 
-func NewDatabase(version string) *Database {
+func NewDatabase() *Database {
 	return &Database{
 		Namespace:     "modela-system",
-		Version:       version,
 		ReleaseName:   "modela-postgresql",
 		RepoUrl:       "https://charts.bitnami.com/bitnami",
 		Name:          "postgresql",

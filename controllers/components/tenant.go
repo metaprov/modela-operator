@@ -42,9 +42,16 @@ func (t Tenant) Install(ctx context.Context, modela *managementv1.Modela, tenant
 		return err
 	}
 
+	var accessKey, secretKey string
+	if values, err := kube.GetSecretValuesAsString("modela-system", "modela-storage-minio"); err == nil {
+		accessKey, _ = values["root-user"]
+		secretKey, _ = values["root-password"]
+	}
 	yaml, _, err := kube.LoadResources(t.ManifestPath, []kio.Filter{
 		kube.LabelFilter{Labels: map[string]string{"management.modela.ai/operator": modela.Name}},
 		kube.NamespaceFilter{Namespace: t.Name},
+		kube.TenantFilter{TenantName: t.Name},
+		kube.MinioSecretFilter{AccessKey: accessKey, SecretKey: secretKey},
 	}, false)
 	if err != nil {
 		return err

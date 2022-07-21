@@ -13,7 +13,7 @@ import (
 const ObjectVersion = ""
 
 var _ = Describe("Object storage installer", func() {
-	objectStorage := NewObjectStorage("")
+	objectStorage := NewObjectStorage()
 
 	It("Should install minio", func() {
 		if installed, err := objectStorage.Installed(context.Background()); err == v1alpha1.ComponentNotInstalledByModelaError || installed {

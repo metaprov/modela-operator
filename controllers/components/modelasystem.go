@@ -44,7 +44,7 @@ func NewModelaSystem(version string) *ModelaSystem {
 		CatalogNamespace:    "modela-catalog",
 		SystemManifestPath:  "modela-system",
 		CatalogManifestPath: "modela-catalog",
-		CrdUrl:              "github.com/metaprov/modelaapi/manifests/%s/base/crd",
+		CrdUrl:              "assets/crds/manifests/%s/base/crd",
 		VersionMatrixUrl:    "https://raw.githubusercontent.com/metaprov/modelaapi/main/version_matrix.json",
 		PodNamePrefix:       "modela-control-plane",
 	}

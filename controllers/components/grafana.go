@@ -19,10 +19,9 @@ type Grafana struct {
 	Dryrun        bool
 }
 
-func NewGrafana(version string) *Grafana {
+func NewGrafana() *Grafana {
 	return &Grafana{
 		Namespace:     "grafana",
-		Version:       version,
 		ReleaseName:   "grafana-stack",
 		RepoName:      "grafana",
 		Name:          "grafana",

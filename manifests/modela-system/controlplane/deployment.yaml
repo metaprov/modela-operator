@@ -98,11 +98,6 @@ spec:
             requests:
               cpu: "100m"
               memory: 64Mi
-          readinessProbe:
-            exec:
-              command: [ "/bin/grpc_health_probe", "-addr=:8091" ]
-            initialDelaySeconds: 5
-
           env:
             - name: DB_HOST
               valueFrom:

@@ -9,7 +9,7 @@ import (
 )
 
 var _ = Describe("Loki installer", func() {
-	loki := NewLoki("")
+	loki := NewLoki()
 
 	It("Should install Loki", func() {
 		if installed, err := loki.Installed(context.Background()); err == v1alpha1.ComponentNotInstalledByModelaError || installed {

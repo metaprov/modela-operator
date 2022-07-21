@@ -1,8 +1,9 @@
-# Install a base version of modela without any Helm Charts
+# Install Modela with all Helm Charts enabled
 apiVersion: management.modela.ai/v1alpha1
 kind: Modela
 metadata:
   name: modela
+  namespace: modela-system
 spec:
   distribution: 'develop'
   certManager:
@@ -13,3 +14,6 @@ spec:
     installPrometheus: true
     installLoki: true
     installGrafana: true
+  tenants:
+    - name: 'modela'
+      adminPassword: 'admin'

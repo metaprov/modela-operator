@@ -362,11 +362,6 @@ spec:
                   fetch the license of their account in the case that will it will
                   expire.
                 type: string
-              observedGeneration:
-                description: ObservedGeneration is the last generation that was acted
-                  on
-                format: int64
-                type: integer
               phase:
                 description: The current phase of a Modela installation
                 type: string

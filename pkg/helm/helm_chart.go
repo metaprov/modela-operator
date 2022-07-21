@@ -111,7 +111,7 @@ func (chart *HelmChart) Load(ctx context.Context) error {
 	client := helmaction.NewInstall(config)
 	client.Namespace = chart.Namespace
 	client.ReleaseName = chart.ReleaseName
-	name := "assets/config/assets/charts/" + chart.Name
+	name := "assets/charts/" + chart.Name
 
 	result, err := helmloader.Load(name)
 	if err != nil {
@@ -210,6 +210,7 @@ func (chart *HelmChart) GetStatus(ctx context.Context) (helmrelease.Status, erro
 	if err != nil {
 		return helmrelease.StatusUnknown, errors.Wrapf(err, "chart does not exist")
 	}
+
 	return existingRelease.Info.Status, nil
 
 }
@@ -406,7 +407,7 @@ func IsChartInstalled(ctx context.Context, name, ns, releaseName string) (bool, 
 		return false, nil
 	}
 	if chartStatus != helmrelease.StatusDeployed {
-		return false, errors.New("chart " + releaseName + " is not in deployed state")
+		return false, nil
 	}
 	return true, nil
 }

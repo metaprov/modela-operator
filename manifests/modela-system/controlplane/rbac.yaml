@@ -6,17 +6,6 @@ metadata:
     app.kubernetes.io/part-of: modela
   name: modela-control-plane
 rules:
-  - apiGroups: [ "management.modela.ai" ] #
-    resources:
-      - "*"
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - patch
-      - delete
   - apiGroups: ["catalog.modela.ai"] #
     resources:
       - "*"
@@ -38,51 +27,27 @@ rules:
       - create
       - update
       - patch
-      - delete      
+      - delete
   - apiGroups: ["data.modela.ai"]
     resources:
       - "*"
     verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - patch
-      - delete
+      - "*"
   - apiGroups: ["inference.modela.ai"]
     resources:
       - "*"
     verbs:
-       - get
-       - list
-       - watch
-       - create
-       - update
-       - patch
-       - delete
+      - "*"
   - apiGroups: ["infra.modela.ai"]
     resources:
-        - "*"
+      - "*"
     verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - patch
-      - delete
+      - "*"
   - apiGroups: ["training.modela.ai"]
     resources:
       - "*"
     verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - patch
-      - delete
+      - "*"
   - apiGroups: ["apiextensions.k8s.io"]
     resources:
       - customresourcedefinitions
@@ -136,7 +101,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
-    app.kubernetes.io/name: modela-control-plane
+    app.kubernetes.io/name: modled-control-plane
     app.kubernetes.io/part-of: modela
   name: modela-control-plane
 roleRef:

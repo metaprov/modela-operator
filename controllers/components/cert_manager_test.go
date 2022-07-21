@@ -14,7 +14,7 @@ import (
 )
 
 var _ = Describe("Cert manager installer", func() {
-	certmanager := NewCertManager("v1.7.1")
+	certmanager := NewCertManager()
 
 	It("Should install cert-manager", func() {
 		if installed, err := certmanager.Installed(context.Background()); err == v1alpha1.ComponentNotInstalledByModelaError || installed {

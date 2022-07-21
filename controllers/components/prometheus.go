@@ -22,10 +22,9 @@ type Prometheus struct {
 	Dryrun        bool
 }
 
-func NewPrometheus(version string) *Prometheus {
+func NewPrometheus() *Prometheus {
 	return &Prometheus{
 		Namespace:     "prometheus-community",
-		Version:       version,
 		ReleaseName:   "kube-prometheus",
 		RepoName:      "prometheus-community",
 		Name:          "prometheus",

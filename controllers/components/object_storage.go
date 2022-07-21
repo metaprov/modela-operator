@@ -22,10 +22,9 @@ type ObjectStorage struct {
 	Dryrun        bool
 }
 
-func NewObjectStorage(version string) *ObjectStorage {
+func NewObjectStorage() *ObjectStorage {
 	return &ObjectStorage{
 		Namespace:   "modela-system",
-		Version:     version,
 		ReleaseName: "modela-storage",
 		RepoName:    "bitnami",
 		Name:        "minio",

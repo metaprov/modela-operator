@@ -239,16 +239,11 @@ type TenantSpec struct {
 	AdminPassword *string `json:"adminPassword,omitempty"`
 }
 
-type TenantStatus struct {
-	Name      string `json:"name"`
-	Installed bool   `json:"installed"`
-}
-
 // ModelaSpec defines the desired state of Modela
 type ModelaSpec struct {
 	// Distribution denotes the desired version of Modela. This version will determine the
 	// Docker image tags for all Modela images provided by Metaprov
-	// +kubebuilder:default:="latest"
+	// +kubebuilder:default:="develop"
 	// +kubebuilder:validation:Required
 	Distribution string `json:"distribution"`
 
@@ -303,10 +298,6 @@ type ModelaStatus struct {
 	LinkLicenseUrl *string `json:"linkLicenseUrl,omitempty"`
 
 	Phase ModelaPhase `json:"phase,omitempty"`
-
-	// ObservedGeneration is the last generation that was acted on
-	//+kubebuilder:validation:Optional
-	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 
 	// The Modela resource controller will update FailureMessage with an error message in the case of a failure
 	FailureMessage *string `json:"failureMessage,omitempty"`

@@ -11,7 +11,7 @@ import (
 )
 
 var _ = Describe("Postgres installer", func() {
-	database := NewDatabase("")
+	database := NewDatabase()
 
 	It("Should install postgres", func() {
 		if installed, err := database.Installed(context.Background()); err == v1alpha1.ComponentNotInstalledByModelaError || installed {

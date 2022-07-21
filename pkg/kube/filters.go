@@ -92,6 +92,42 @@ func (nf NamespaceFilter) Filter(nodes []*yaml.RNode) ([]*yaml.RNode, error) {
 	return nodes, nil
 }
 
+type TenantFilter struct {
+	TenantName string
+}
+
+func (t TenantFilter) Filter(nodes []*yaml.RNode) ([]*yaml.RNode, error) {
+	for _, node := range nodes {
+		switch node.GetKind() {
+		case "Lab":
+			_ = node.SetName(t.TenantName + "-lab")
+		case "ServingSite":
+			_ = node.SetName(t.TenantName + "-serving-site")
+		case "Tenant":
+			_ = node.SetName(t.TenantName)
+			_ = node.SetNamespace("modela-system")
+
+			_ = node.PipeE(
+				yaml.Lookup("spec", "defaultLabRef", "namespace"),
+				yaml.Set(yaml.NewStringRNode(t.TenantName)))
+
+			_ = node.PipeE(
+				yaml.Lookup("spec", "defaultLabRef", "name"),
+				yaml.Set(yaml.NewStringRNode(t.TenantName+"-lab")))
+
+			_ = node.PipeE(
+				yaml.Lookup("spec", "defaultServingSiteRef", "namespace"),
+				yaml.Set(yaml.NewStringRNode(t.TenantName)))
+
+			_ = node.PipeE(
+				yaml.Lookup("spec", "defaultServingSiteRef", "name"),
+				yaml.Set(yaml.NewStringRNode(t.TenantName+"-serving-site")))
+
+		}
+	}
+	return nodes, nil
+}
+
 type ManagedImageFilter struct {
 	Version string
 }
@@ -113,6 +149,27 @@ func (j JwtSecretFilter) Filter(nodes []*yaml.RNode) ([]*yaml.RNode, error) {
 			str, _ := goutils.RandomAlphaNumeric(32)
 			b64 := base64.StdEncoding.EncodeToString([]byte(str))
 			_ = node.PipeE(yaml.Lookup("data", "jwt-secret"), yaml.Set(yaml.NewStringRNode(b64)))
+		}
+	}
+	return nodes, nil
+}
+
+type MinioSecretFilter struct {
+	AccessKey string
+	SecretKey string
+}
+
+func (m MinioSecretFilter) Filter(nodes []*yaml.RNode) ([]*yaml.RNode, error) {
+	for _, node := range nodes {
+		if node.GetName() == "default-minio-secret" {
+			_ = node.PipeE(
+				yaml.Lookup("data", "accessKey"),
+				yaml.Set(yaml.NewStringRNode(base64.StdEncoding.EncodeToString([]byte(m.AccessKey)))),
+			)
+			_ = node.PipeE(
+				yaml.Lookup("data", "secretKey"),
+				yaml.Set(yaml.NewStringRNode(base64.StdEncoding.EncodeToString([]byte(m.SecretKey)))),
+			)
 		}
 	}
 	return nodes, nil

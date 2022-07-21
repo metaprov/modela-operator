@@ -116,8 +116,22 @@ build: generate fmt vet ## Build manager binary.
 run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./main.go
 
+.PHONY: prepare-crds
+prepare-crds:
+	if [ ! -d "./assets/crds" ]; then \
+		mkdir ./assets/crds; \
+		cd ./assets/crds; \
+		git init; \
+		git remote add -f origin https://github.com/metaprov/modelaapi.git; \
+		git config core.sparseCheckout true; \
+		echo "manifests" >> .git/info/sparse-checkout; \
+		cd ../..; \
+	fi;
+	cd ./assets/crds
+	git pull origin main --depth 1
+
 .PHONY: docker-prepare
-docker-prepare:
+docker-prepare: prepare-crds
 	mkdir -p ./out/config/assets/charts/
 	wget https://charts.jetstack.io/charts/cert-manager-v1.8.1.tgz -O ./cert-manager.tgz
 	wget https://charts.bitnami.com/bitnami/minio-11.7.10.tgz -O ./minio.tgz
@@ -125,12 +139,13 @@ docker-prepare:
 	wget https://github.com/prometheus-community/helm-charts/releases/download/prometheus-15.10.4/prometheus-15.10.4.tgz -O ./prometheus.tgz
 	wget https://github.com/grafana/helm-charts/releases/download/loki-2.13.1/loki-2.13.1.tgz -O ./loki.tgz
 	wget https://github.com/grafana/helm-charts/releases/download/grafana-6.32.2/grafana-6.32.2.tgz -O ./grafana.tgz
-	tar -xf ./cert-manager.tgz -C ./out/config/assets/charts/
-	tar -xf ./minio.tgz -C ./out/config/assets/charts/
-	tar -xf ./postgres.tgz -C ./out/config/assets/charts/
-	tar -xf ./prometheus.tgz -C ./out/config/assets/charts/
-	tar -xf ./loki.tgz -C ./out/config/assets/charts/
-	tar -xf ./grafana.tgz -C ./out/config/assets/charts/
+	tar -xf ./cert-manager.tgz -C ./assets/charts/
+	tar -xf ./minio.tgz -C ./assets/charts/
+	tar -xf ./postgres.tgz -C ./assets/charts/
+	tar -xf ./prometheus.tgz -C ./assets/charts/
+	tar -xf ./loki.tgz -C ./assets/charts/
+	tar -xf ./grafana.tgz -C ./assets/charts/
+
 
 .PHONY: docker-build
 docker-build: ## Build docker image with the manager.

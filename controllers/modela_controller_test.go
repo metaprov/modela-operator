@@ -53,11 +53,11 @@ var _ = Context("Inside the default namespace", func() {
 		},
 	}
 
-	certManagerController := components.NewCertManager("")
-	minioController := components.NewObjectStorage("")
-	lokiController := components.NewObjectStorage("")
-	grafanaController := components.NewGrafana("")
-	prometheusController := components.NewObjectStorage("")
+	certManagerController := components.NewCertManager()
+	minioController := components.NewObjectStorage()
+	lokiController := components.NewObjectStorage()
+	grafanaController := components.NewGrafana()
+	prometheusController := components.NewObjectStorage()
 	modelaSystemController := components.NewModelaSystem("develop")
 
 	Describe("Modela Operator Controller", func() {
@@ -121,7 +121,7 @@ var _ = Context("Inside the default namespace", func() {
 				Eventually(getComponentInstalled(ctx, prometheusController), time.Minute*3, PollInterval).Should(BeNil())
 			})
 			It("Should install the system database", func() {
-				databaseController := components.NewDatabase("")
+				databaseController := components.NewDatabase()
 
 				By("Installing postgres and changing the status")
 				Eventually(getModelaStatus(ctx), TimeoutInterval, PollInterval).Should(Equal(v1alpha1.ModelaPhaseInstallingDatabase))

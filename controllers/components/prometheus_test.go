@@ -11,7 +11,7 @@ import (
 )
 
 var _ = Describe("Prometheus installer", func() {
-	prometheus := NewPrometheus("15.10.4")
+	prometheus := NewPrometheus()
 
 	It("Should install Prometheus", func() {
 		if installed, err := prometheus.Installed(context.Background()); err == v1alpha1.ComponentNotInstalledByModelaError || installed {

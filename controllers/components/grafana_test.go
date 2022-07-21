@@ -11,7 +11,7 @@ import (
 )
 
 var _ = Describe("Grafana installer", func() {
-	grafana := NewGrafana("15.10.4")
+	grafana := NewGrafana()
 
 	It("Should install grafana", func() {
 		if installed, err := grafana.Installed(context.Background()); err == v1alpha1.ComponentNotInstalledByModelaError || installed {

@@ -18,8 +18,8 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"github.com/metaprov/modela-operator/controllers/components"
+	"github.com/metaprov/modela-operator/pkg/kube"
 	"github.com/metaprov/modelaapi/pkg/util"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -46,23 +46,27 @@ type ModelaReconciler struct {
 	Scheme *runtime.Scheme
 }
 
+//+kubebuilder:rbac:groups=management.modela.ai,resources=modelas,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=management.modela.ai,resources=modelas/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=management.modela.ai,resources=modelas/finalizers,verbs=update
 //+kubebuilder:rbac:groups=catalog.modela.ai,resources=*,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=team.modela.ai,resources=*,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=data.modela.ai,resources=*,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=inference.modela.ai,resources=*,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=infra.modela.ai,resources=*,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=training.modela.ai,resources=*,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=management.modela.ai,resources=modelas,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=management.modela.ai,resources=modelas/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=management.modela.ai,resources=modelas/finalizers,verbs=update
 //+kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=*,verbs=*
 //+kubebuilder:rbac:groups="extensions",resources=*,verbs=*
 //+kubebuilder:rbac:groups="apps",resources=*,verbs=*
 //+kubebuilder:rbac:groups="core",resources=*,verbs=*
+//+kubebuilder:rbac:groups="batch",resources=*,verbs=*
+//+kubebuilder:rbac:groups=cert-manager.io,resources=*,verbs=*
+//+kubebuilder:rbac:groups=issuers.cert-manager.io,resources=*,verbs=*
+//+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=*,verbs=get;list;watch;create;update;delete;patch
+//+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=*,verbs=get;list;watch;create;update;delete;patch
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;delete;patch
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=services,verbs=get;list;watch;create;update;delete;patch
-//+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=*,verbs=get;list;watch;create;update;delete;patch
-//+kubebuilder:rbac:groups=cert-manager.io/v1,resources=*,verbs=get;list;watch;create;update;delete;patch
+//+kubebuilder:rbac:groups=policy,resources=podsecuritypolicies,verbs=get;list;watch;create;update;delete;patch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -71,7 +75,7 @@ type ModelaReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.1/pkg/reconcile
 func (r *ModelaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	logger.Info("Starting requeue again")
+	logger.Info("Requeue initiated")
 
 	var modela = new(managementv1alpha1.Modela)
 	if err := r.Get(ctx, req.NamespacedName, modela); err != nil {
@@ -83,7 +87,6 @@ func (r *ModelaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 	oldStatus := *modela.Status.DeepCopy()
 
-	fmt.Printf("Modela fetched: %v\n", modela.Spec)
 	result, err := r.Install(ctx, modela)
 	if err != nil {
 		modela.Status.FailureMessage = util.StrPtr(err.Error())
@@ -124,8 +127,7 @@ updateStatus:
 
 func (r ModelaReconciler) updateStatus(ctx context.Context, oldStatus managementv1alpha1.ModelaStatus, modela managementv1alpha1.Modela) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	if !r.isStateEqual(modela.Status, oldStatus) || modela.Generation > modela.Status.ObservedGeneration {
-		modela.Status.ObservedGeneration = modela.Generation
+	if !r.isStateEqual(modela.Status, oldStatus) {
 		now := metav1.Now()
 		modela.Status.LastUpdated = &now
 
@@ -171,42 +173,42 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 	logger := log.FromContext(ctx)
 
 	// Cert Manager
-	certManager := components.NewCertManager(modela.Spec.CertManager.CertManagerChartVersion)
+	certManager := components.NewCertManager()
 	result, err := r.reconcileComponent(ctx, certManager, modela)
 	if err != nil || result.Requeue {
 		return result, err
 	}
 
 	// Object Storage (Minio)
-	objectStore := components.NewObjectStorage(modela.Spec.ObjectStore.MinioChartVersion)
+	objectStore := components.NewObjectStorage()
 	result, err = r.reconcileComponent(ctx, objectStore, modela)
 	if err != nil || result.Requeue {
 		return result, err
 	}
 
 	// Loki
-	loki := components.NewLoki(modela.Spec.Observability.LokiVersion)
+	loki := components.NewLoki()
 	result, err = r.reconcileComponent(ctx, loki, modela)
 	if err != nil || result.Requeue {
 		return result, err
 	}
 
 	// Grafana
-	grafana := components.NewGrafana(modela.Spec.Observability.GrafanaVersion)
+	grafana := components.NewGrafana()
 	result, err = r.reconcileComponent(ctx, grafana, modela)
 	if err != nil || result.Requeue {
 		return result, err
 	}
 
 	// Prometheus
-	prom := components.NewPrometheus(modela.Spec.Observability.PrometheusVersion)
+	prom := components.NewPrometheus()
 	result, err = r.reconcileComponent(ctx, prom, modela)
 	if err != nil || result.Requeue {
 		return result, err
 	}
 
 	// PostgreSQL
-	database := components.NewDatabase(modela.Spec.SystemDatabase.PostgresChartVersion)
+	database := components.NewDatabase()
 	result, err = r.reconcileComponent(ctx, database, modela)
 	if err != nil || result.Requeue {
 		return result, err
@@ -299,9 +301,10 @@ func (r *ModelaReconciler) reconcileTenants(ctx context.Context, modela *managem
 			}
 			if err := tenant.Install(ctx, modela, tenantSpec); err != nil {
 				logger.Error(err, "Failed to install tenant", "name", tenant.Name)
+				_ = kube.DeleteNamespace(tenantSpec.Name)
 				return ctrl.Result{
 					Requeue:      true,
-					RequeueAfter: 5 * time.Minute,
+					RequeueAfter: 5 * time.Second,
 				}, err
 			}
 			modela.Status.Tenants = append(modela.Status.Tenants, tenant.Name)
@@ -345,9 +348,7 @@ type ModelaComponent interface {
 
 func (r *ModelaReconciler) reconcileComponent(ctx context.Context, component ModelaComponent, modela *managementv1.Modela) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	fmt.Println("Checking installation", component.GetInstallPhase())
 	installed, err := component.Installed(ctx)
-	fmt.Println(installed, err, component.GetInstallPhase())
 	if err != nil && err != managementv1alpha1.ComponentNotInstalledByModelaError && err != managementv1alpha1.ComponentMissingResourcesError {
 		logger.Error(err, "Failed to check if component is installed", "component", reflect.TypeOf(component).Name())
 		return ctrl.Result{}, err
