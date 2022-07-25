@@ -19,6 +19,7 @@ package components
 import (
 	"context"
 	"os"
+	"path/filepath"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"testing"
 
@@ -51,6 +52,9 @@ func TestAPIs(t *testing.T) {
 
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+
+	wd, _ := os.Getwd()
+	_ = os.Chdir(filepath.Dir(filepath.Dir(wd)))
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{

@@ -139,12 +139,14 @@ docker-prepare: prepare-crds
 	wget https://github.com/prometheus-community/helm-charts/releases/download/prometheus-15.10.4/prometheus-15.10.4.tgz -O ./prometheus.tgz
 	wget https://github.com/grafana/helm-charts/releases/download/loki-2.13.1/loki-2.13.1.tgz -O ./loki.tgz
 	wget https://github.com/grafana/helm-charts/releases/download/grafana-6.32.2/grafana-6.32.2.tgz -O ./grafana.tgz
+	wget https://github.com/kubernetes/ingress-nginx/releases/download/helm-chart-4.2.0/ingress-nginx-4.2.0.tgz -O ./nginx.tgz
 	tar -xf ./cert-manager.tgz -C ./assets/charts/
 	tar -xf ./minio.tgz -C ./assets/charts/
 	tar -xf ./postgres.tgz -C ./assets/charts/
 	tar -xf ./prometheus.tgz -C ./assets/charts/
 	tar -xf ./loki.tgz -C ./assets/charts/
 	tar -xf ./grafana.tgz -C ./assets/charts/
+	tar -xf ./nginx.tgz -C ./assets/charts
 
 
 .PHONY: docker-build

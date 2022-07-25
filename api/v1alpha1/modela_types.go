@@ -30,6 +30,7 @@ type ModelaPhase string
 const (
 	ModelaPhaseInstallingCertManager   = "InstallingCertManager"
 	ModelaPhaseInstallingObjectStorage = "InstallingObjectStorage"
+	ModelaPhaseInstallingNginx         = "InstallingNginx"
 	ModelaPhaseInstallingPrometheus    = "InstallingPrometheus"
 	ModelaPhaseInstallingGrafana       = "InstallingGrafana"
 	ModelaPhaseInstallingLoki          = "InstallingLoki"
@@ -114,10 +115,15 @@ func (u *ChartValues) DeepCopyInto(out *ChartValues) {
 type ModelaAccessSpec struct {
 	// IngressEnabled indicates if Ingress resources will be created to expose the Modela API gateway, proxy, and frontend.
 	// +kubebuilder:default:=false
-	Enabled *bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled,omitempty"`
 	// +kubebuilder:default:=false
 	// InstallNginx indicates if the NGINX Ingress Controller will be installed
-	InstallNginx *bool `json:"installNginx,omitempty"`
+	InstallNginx bool `json:"installNginx,omitempty"`
+	// NginxValues is the set of Helm values that is used to render the Nginx Ingress Chart.
+	// Values are determined from https://artifacthub.io/packages/helm/ingress-nginx/ingress-nginx
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:Optional
+	NginxValues ChartValues `json:"nginxValues,omitempty"`
 	// Hostname specifies the host domain which will be used as the hostname for rules in Ingress resources managed
 	// by the Modela operator. By default, the hostname will default to a localhost alias.
 	// +kubebuilder:validation:Optional

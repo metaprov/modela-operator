@@ -163,7 +163,7 @@ spec:
                     type: object
                 type: object
               distribution:
-                default: latest
+                default: develop
                 description: Distribution denotes the desired version of Modela. This
                   version will determine the Docker image tags for all Modela images
                   provided by Metaprov
@@ -184,6 +184,17 @@ spec:
                       by the Modela operator. By default, the hostname will default
                       to a localhost alias.
                     type: string
+                  installNginx:
+                    default: false
+                    description: InstallNginx indicates if the NGINX Ingress Controller
+                      will be installed
+                    type: boolean
+                  nginxValues:
+                    description: NginxValues is the set of Helm values that is used
+                      to render the Nginx Ingress Chart. Values are determined from
+                      https://artifacthub.io/packages/helm/ingress-nginx/ingress-nginx
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
                 type: object
               license:
                 description: License specifies the license information that will be

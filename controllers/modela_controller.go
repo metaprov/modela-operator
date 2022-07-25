@@ -20,13 +20,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/metaprov/modela-operator/controllers/common"
 	"github.com/metaprov/modela-operator/controllers/components"
 	"github.com/metaprov/modela-operator/pkg/kube"
 	"github.com/metaprov/modelaapi/pkg/util"
 	v1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sync"
 	"time"
 
@@ -77,6 +80,7 @@ type ModelaReconciler struct {
 //+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=*,verbs=get;list;watch;create;update;delete;patch
 //+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=*,verbs=get;list;watch;create;update;delete;patch
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;delete;patch
+//+kubebuilder:rbac:groups=networking.k8s.io,resources=ingressclasses,verbs=get;list;watch;create;update;delete;patch
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=services,verbs=get;list;watch;create;update;delete;patch
 //+kubebuilder:rbac:groups=policy,resources=podsecuritypolicies,verbs=get;list;watch;create;update;delete;patch
 
@@ -181,9 +185,6 @@ func (r ModelaReconciler) updatePhase(ctx context.Context, modela *managementv1a
 }
 
 func (r ModelaReconciler) isStateEqual(old managementv1alpha1.ModelaStatus, new managementv1alpha1.ModelaStatus) bool {
-	fmt.Println(old.InstalledVersion == new.InstalledVersion,
-		old.Phase == new.Phase, reflect.DeepEqual(old.FailureMessage, new.FailureMessage), reflect.DeepEqual(old.LicenseToken, new.LicenseToken),
-		reflect.DeepEqual(old.Conditions, new.Conditions), reflect.DeepEqual(old.Tenants, new.Tenants))
 	return old.InstalledVersion == new.InstalledVersion &&
 		old.Phase == new.Phase &&
 		reflect.DeepEqual(old.FailureMessage, new.FailureMessage) &&
@@ -205,6 +206,7 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 		components.NewGrafana(),
 		components.NewPrometheus(),
 		components.NewDatabase(),
+		components.NewNginx(),
 		components.NewModelaSystem(modela.Spec.Distribution),
 	}
 
@@ -246,7 +248,6 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 
 	modelaSystem := components.NewModelaSystem(modela.Spec.Distribution)
 	if ready, err := modelaSystem.Ready(ctx); err != nil || !ready {
-		fmt.Println("Modelasystem", err)
 		return ctrl.Result{
 			Requeue:      true,
 			RequeueAfter: 5 * time.Second,
@@ -292,7 +293,6 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 		}
 	}
 
-	fmt.Println("Ready phase")
 	modela.Status.Phase = managementv1alpha1.ModelaPhaseReady
 	return ctrl.Result{}, err
 }
@@ -309,7 +309,28 @@ func (r *ModelaReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&rbacv1.Role{}).
 		Owns(&rbacv1.ClusterRoleBinding{}).
 		Owns(&rbacv1.RoleBinding{}).
+		Owns(&networkingv1.Ingress{}).
 		Complete(r)
+}
+
+func (r *ModelaReconciler) updateFrontendConfig(configMap v1.ConfigMap) error {
+	var frontendDeployment appsv1.Deployment
+
+	if err := r.Update(context.TODO(), &configMap); err != nil {
+		return err
+	}
+
+	frontendIdentifier := types.NamespacedName{
+		Name:      "modela-frontend",
+		Namespace: "modela-system",
+	}
+
+	if err := r.Get(context.TODO(), frontendIdentifier, &frontendDeployment); err == nil {
+		frontendDeployment.Annotations["kubectl.kubernetes.io/restartedAt"] = metav1.Now().String()
+		_ = r.Update(context.TODO(), &frontendDeployment)
+	}
+
+	return nil
 }
 
 func (r *ModelaReconciler) reconcileIngress(ctx context.Context, modela *managementv1.Modela) (ctrl.Result, error) {
@@ -325,30 +346,75 @@ func (r *ModelaReconciler) reconcileIngress(ctx context.Context, modela *managem
 		return ctrl.Result{Requeue: true}, nil
 	}
 
-	var updateFrontendConfig bool
 	apiUrl, _ := frontendConfigMap.Data["apiUrl"]
 	dataUrl, _ := frontendConfigMap.Data["dataUrl"]
 
-	if modela.Spec.Ingress.Enabled == nil || !*modela.Spec.Ingress.Enabled {
-		if apiUrl != defaultApiUrl {
+	if !modela.Spec.Ingress.Enabled {
+		if apiUrl != defaultApiUrl || dataUrl != defaultDataUrl {
 			frontendConfigMap.Data["apiUrl"] = defaultApiUrl
-			updateFrontendConfig = true
-		}
-		if dataUrl != defaultDataUrl {
-			frontendConfigMap.Data["apiUrl"] = defaultDataUrl
-			updateFrontendConfig = true
-		}
-		if updateFrontendConfig {
-			if err := r.Update(ctx, &frontendConfigMap); err != nil {
+			frontendConfigMap.Data["dataUrl"] = defaultDataUrl
+			if err := r.updateFrontendConfig(frontendConfigMap); err != nil {
 				logger.Error(err, "error updating frontend config")
 				return ctrl.Result{Requeue: true}, nil
 			}
 		}
+
 		return ctrl.Result{}, nil
 	}
 
-	//desiredApiUrl = fmt.Sprintf("https://modela-api.%s", modela.Spec.H)
+	var hostname string
+	if modela.Spec.Ingress.Hostname == nil {
+		hostname = "localhost"
+	} else {
+		hostname = *modela.Spec.Ingress.Hostname
+	}
 
+	desiredApiUrl := fmt.Sprintf("http://modela-api.%s", hostname)
+	desiredDataUrl := fmt.Sprintf("http://modela-api.%s/upload", hostname)
+
+	if apiUrl != desiredApiUrl || dataUrl != desiredDataUrl {
+		frontendConfigMap.Data["apiUrl"] = desiredApiUrl
+		frontendConfigMap.Data["dataUrl"] = desiredDataUrl
+		if err := r.updateFrontendConfig(frontendConfigMap); err != nil {
+			logger.Error(err, "error updating frontend config")
+			return ctrl.Result{Requeue: true}, nil
+		}
+	}
+
+	frontendIngress, err := common.BuildFrontendIngress(hostname, *modela)
+	if err != nil {
+		logger.Error(err, "unable to generate ingress")
+		return ctrl.Result{}, err
+	}
+
+	var liveIngress networkingv1.Ingress
+	if err := r.Get(ctx, types.NamespacedName{
+		Namespace: frontendIngress.GetNamespace(),
+		Name:      frontendIngress.GetName(),
+	}, &liveIngress); err != nil {
+		if err := r.createIngress(frontendIngress, modela); err != nil {
+			logger.Error(err, "failed to create ingress")
+		}
+	} else {
+		// TODO: update hostname on change
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *ModelaReconciler) createIngress(ingress *networkingv1.Ingress, modela *managementv1alpha1.Modela) error {
+	if err := controllerutil.SetControllerReference(modela, ingress, r.Scheme); err != nil {
+		return err
+	}
+
+	if err := r.Create(context.TODO(), ingress); err != nil {
+		if k8serr.IsAlreadyExists(err) {
+			return nil
+		}
+		return err
+	}
+
+	return nil
 }
 
 func (r *ModelaReconciler) reconcileTenants(ctx context.Context, modela *managementv1.Modela) (ctrl.Result, error) {
@@ -423,7 +489,7 @@ func (r *ModelaReconciler) reconcileComponent(ctx context.Context, component Mod
 			logger.Error(err, "Failed to uninstall component", "component", reflect.TypeOf(component).Name())
 			return ctrl.Result{Requeue: true}, err
 		}
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{}, nil
 	}
 
 	installing, err := component.Installing(ctx)
@@ -448,7 +514,7 @@ func (r *ModelaReconciler) reconcileComponent(ctx context.Context, component Mod
 				RequeueAfter: 5 * time.Minute,
 			}, err
 		}
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{}, nil
 	}
 }
 

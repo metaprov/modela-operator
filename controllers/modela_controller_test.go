@@ -11,6 +11,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/networking/v1"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -68,6 +69,7 @@ var _ = Context("Inside the default namespace", func() {
 	grafanaController := components.NewGrafana()
 	prometheusController := components.NewObjectStorage()
 	modelaSystemController := components.NewModelaSystem("develop")
+	nginxController := components.NewNginx()
 
 	Describe("Modela Operator Controller", func() {
 		Context("Modela CRD", func() {
@@ -287,6 +289,33 @@ var _ = Context("Inside the default namespace", func() {
 					}
 					return nil
 				}, time.Minute*3, PollInterval).ShouldNot(BeNil())
+			})
+			It("Should install ingress", func() {
+				createModelaResource(testModelaResource)
+
+				Eventually(getComponentReady(ctx, modelaSystemController), time.Minute*3, PollInterval).Should(BeNil())
+
+				By("Enabling ingress updating the resource")
+				Expect(updateObject(testModelaResource, func(object client.Object) error {
+					modela := object.(*v1alpha1.Modela)
+					modela.Spec.Ingress.Hostname = util.StrPtr("localhost")
+					modela.Spec.Ingress.Enabled = true
+					modela.Spec.Ingress.InstallNginx = true
+					modela.SetAnnotations(map[string]string{
+						"kubernetes.io/ingress.class": "nginx",
+					})
+					return nil
+				})).To(Succeed())
+
+				By("Checking if nginx was installed")
+				Eventually(getComponentInstalled(ctx, nginxController), time.Minute*3, PollInterval).Should(BeNil())
+
+				var ingress v1.Ingress
+				By("Checking if the Ingress resource was created")
+				Eventually(
+					getResourceFunc(context.Background(), client.ObjectKey{Name: "modela-frontend-ingress", Namespace: "modela-system"}, &ingress),
+					time.Minute*3, PollInterval).Should(BeNil())
+
 			})
 			It("Should modify the number of replicas when changing the deployment specs", func() {
 

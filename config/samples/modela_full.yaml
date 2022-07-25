@@ -2,6 +2,9 @@
 apiVersion: management.modela.ai/v1alpha1
 kind: Modela
 metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+
   name: modela
   namespace: modela-system
 spec:
@@ -17,3 +20,7 @@ spec:
   tenants:
     - name: 'modela'
       adminPassword: 'admin'
+  ingress:
+    enabled: true
+    installNginx: true
+    hostname: 'localhost'

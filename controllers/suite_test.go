@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"github.com/metaprov/modela-operator/pkg/kube"
 	"os"
 	"path/filepath"
@@ -58,9 +57,8 @@ var _ = BeforeSuite(func() {
 
 	By("bootstrapping test environment")
 	wd, _ := os.Getwd()
-	fmt.Println(filepath.Dir(wd))
-	os.Chdir(filepath.Dir(wd))
-	//Expect(os.Chdir(filepath.Dir(wd))).To(Succeed())
+	_ = os.Chdir(filepath.Dir(wd))
+
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths:     []string{filepath.Join("config", "crd", "bases")},
 		ErrorIfCRDPathMissing: true,
