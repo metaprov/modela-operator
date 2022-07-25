@@ -64,7 +64,7 @@ func (m Loki) Install(ctx context.Context, modela *managementv1.Modela) error {
 		m.Name,
 		m.Namespace,
 		m.ReleaseName,
-		map[string]interface{}{},
+		modela.Spec.Observability.LokiValues.Object,
 	)
 }
 

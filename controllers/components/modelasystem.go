@@ -54,7 +54,7 @@ func (ms ModelaSystem) Installed(ctx context.Context) (bool, error) {
 	if created, err := kube.IsNamespaceCreated("modela-system"); !created || err != nil {
 		return created, err
 	}
-	if _, missing, err := kube.LoadResources(ms.SystemManifestPath, nil, false); missing > 0 {
+	if _, missing, err := kube.LoadResources(ms.SystemManifestPath, []kio.Filter{kube.SkipCertManagerFilter{}}, false); missing > 0 {
 		log.FromContext(ctx).Info("Resources detected as missing from the modela-system namespace", "count", missing)
 		return false, managementv1.ComponentMissingResourcesError
 	} else if err != nil {
@@ -112,7 +112,7 @@ func (ms ModelaSystem) InstallCRD(ctx context.Context, modela *managementv1.Mode
 	}
 
 	// Check if the version is already installed
-	if version := kube.GetCRDVersion("tenants.infra.modela.ai"); version == finalVersion {
+	if version, _ := kube.GetCRDVersion("tenants.infra.modela.ai"); version == finalVersion {
 		logger.Info(fmt.Sprintf("CRD version %s already installed; skipping CRD installation", finalVersion))
 		return nil
 	}
@@ -216,6 +216,7 @@ func (ms ModelaSystem) Install(ctx context.Context, modela *managementv1.Modela)
 	}
 
 	yaml, _, err := kube.LoadResources(ms.SystemManifestPath, []kio.Filter{
+		kube.SkipCertManagerFilter{},
 		kube.ContainerVersionFilter{Version: ms.ModelaVersion},
 		kube.LabelFilter{Labels: map[string]string{"management.modela.ai/operator": modela.Name}},
 		kube.JwtSecretFilter{},
@@ -270,6 +271,8 @@ func (ms ModelaSystem) Ready(ctx context.Context) (bool, error) {
 	installing, err := ms.Installing(ctx)
 	if err != nil {
 		return false, err
+	} else if err == managementv1.ComponentMissingResourcesError {
+		return false, nil
 	}
 	return !installing, nil
 }

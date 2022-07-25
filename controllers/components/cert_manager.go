@@ -63,9 +63,12 @@ func (cm CertManager) Install(ctx context.Context, modela *managementv1.Modela) 
 	}
 
 	logger.Info("Applying Helm Chart", "version", cm.Version)
-	return helm.InstallChart(ctx, cm.Name, cm.Namespace, cm.ReleaseName, map[string]interface{}{
-		"installCRDs": "true",
-	})
+	values := modela.Spec.CertManager.Values.Object
+	if values == nil {
+		values = make(map[string]interface{})
+	}
+	values["installCRDs"] = "true"
+	return helm.InstallChart(ctx, cm.Name, cm.Namespace, cm.ReleaseName, values)
 
 }
 

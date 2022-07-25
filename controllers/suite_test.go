@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"github.com/metaprov/modela-operator/pkg/kube"
 	"os"
 	"path/filepath"
@@ -56,8 +57,12 @@ var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	By("bootstrapping test environment")
+	wd, _ := os.Getwd()
+	fmt.Println(filepath.Dir(wd))
+	os.Chdir(filepath.Dir(wd))
+	//Expect(os.Chdir(filepath.Dir(wd))).To(Succeed())
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "config", "crd", "bases")},
+		CRDDirectoryPaths:     []string{filepath.Join("config", "crd", "bases")},
 		ErrorIfCRDPathMissing: true,
 		UseExistingCluster: func() *bool {
 			var use = false

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/metaprov/modela-operator/api/v1alpha1"
 	"github.com/metaprov/modela-operator/controllers/components"
+	"github.com/metaprov/modela-operator/pkg/kube"
 	"github.com/metaprov/modelaapi/pkg/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -39,13 +40,21 @@ var _ = Context("Inside the default namespace", func() {
 		},
 		Status: v1alpha1.ModelaStatus{},
 		Spec: v1alpha1.ModelaSpec{
-			Distribution:   "develop",
-			Observability:  v1alpha1.ObservabilitySpec{},
-			Ingress:        v1alpha1.ModelaAccessSpec{},
-			License:        v1alpha1.ModelaLicenseSpec{},
-			Tenants:        nil,
-			CertManager:    v1alpha1.CertManagerSpec{},
-			ObjectStore:    v1alpha1.ObjectStorageSpec{},
+			Distribution: "develop",
+			Observability: v1alpha1.ObservabilitySpec{
+				Loki:       true,
+				Prometheus: true,
+				Grafana:    true,
+			},
+			Ingress: v1alpha1.ModelaAccessSpec{},
+			License: v1alpha1.ModelaLicenseSpec{},
+			Tenants: nil,
+			CertManager: v1alpha1.CertManagerSpec{
+				Install: true,
+			},
+			ObjectStore: v1alpha1.ObjectStorageSpec{
+				Install: true,
+			},
 			SystemDatabase: v1alpha1.SystemDatabaseSpec{},
 			ControlPlane:   v1alpha1.ControlPlaneSpec{},
 			DataPlane:      v1alpha1.DataPlaneSpec{},
@@ -83,11 +92,6 @@ var _ = Context("Inside the default namespace", func() {
 			})*/
 
 			It("Should install the enabled Helm Charts", func() {
-				testModelaResource.Spec.CertManager.Install = true
-				testModelaResource.Spec.ObjectStore.Install = true
-				testModelaResource.Spec.Observability.Loki = true
-				testModelaResource.Spec.Observability.Grafana = true
-				testModelaResource.Spec.Observability.Prometheus = true
 				createModelaResource(testModelaResource)
 
 				By("Installing cert-manager and changing the status")
@@ -149,12 +153,25 @@ var _ = Context("Inside the default namespace", func() {
 		})
 		When("Changing the spec", func() {
 			It("Should uninstall components after changing the spec", func() {
-				testModelaResource.Spec.CertManager.Install = false
-				testModelaResource.Spec.ObjectStore.Install = false
-				testModelaResource.Spec.Observability.Loki = false
-				testModelaResource.Spec.Observability.Grafana = false
-				testModelaResource.Spec.Observability.Prometheus = false
 				createModelaResource(testModelaResource)
+				Expect(updateObject(testModelaResource, func(object client.Object) error {
+					modela := object.(*v1alpha1.Modela)
+					modela.Spec.Observability.Grafana = true
+					return nil
+				})).To(Succeed())
+
+				By("Checking if grafana was installed")
+				Eventually(getComponentInstalled(ctx, grafanaController), time.Minute*3, PollInterval).Should(BeNil())
+
+				Expect(updateObject(testModelaResource, func(object client.Object) error {
+					modela := object.(*v1alpha1.Modela)
+					modela.Spec.CertManager.Install = false
+					modela.Spec.ObjectStore.Install = false
+					modela.Spec.Observability.Loki = false
+					modela.Spec.Observability.Grafana = false
+					modela.Spec.Observability.Prometheus = false
+					return nil
+				})).To(Succeed())
 
 				By("Changing the status to uninstalling")
 				Eventually(getModelaStatus(ctx), TimeoutInterval, PollInterval).Should(Equal(v1alpha1.ModelaPhaseUninstalling))
@@ -184,7 +201,7 @@ var _ = Context("Inside the default namespace", func() {
 				testModelaResource.Spec.Observability.Grafana = true
 				testModelaResource.Spec.Observability.Prometheus = true
 				testModelaResource.Status.InstalledVersion = "develop"
-				createModelaResource(testModelaResource)
+				//createModelaResource(testModelaResource)
 
 				Eventually(getComponentReady(ctx, modelaSystemController), time.Minute*3, PollInterval).Should(BeNil())
 				Eventually(getModelaVersion(ctx), TimeoutInterval, PollInterval).Should(Equal("develop"))
@@ -202,11 +219,6 @@ var _ = Context("Inside the default namespace", func() {
 					time.Minute*3, PollInterval).Should(BeTrue())
 			})
 			It("Should install tenants added to the spec", func() {
-				testModelaResource.Spec.CertManager.Install = true
-				testModelaResource.Spec.ObjectStore.Install = true
-				testModelaResource.Spec.Observability.Loki = true
-				testModelaResource.Spec.Observability.Grafana = true
-				testModelaResource.Spec.Observability.Prometheus = true
 				createModelaResource(testModelaResource)
 
 				Eventually(getComponentReady(ctx, modelaSystemController), time.Minute*3, PollInterval).Should(BeNil())
@@ -224,6 +236,7 @@ var _ = Context("Inside the default namespace", func() {
 				tenantController := components.NewTenant("default-tenant")
 				Eventually(func() error {
 					ready, err := tenantController.Ready(context.Background())
+					fmt.Println(ready, err)
 					if err != nil {
 						return err
 					} else if !ready {
@@ -233,11 +246,6 @@ var _ = Context("Inside the default namespace", func() {
 				}, time.Minute*3, PollInterval).Should(BeNil())
 			})
 			It("Should uninstall the tenant when removed from the spec", func() {
-				testModelaResource.Spec.CertManager.Install = true
-				testModelaResource.Spec.ObjectStore.Install = true
-				testModelaResource.Spec.Observability.Loki = true
-				testModelaResource.Spec.Observability.Grafana = true
-				testModelaResource.Spec.Observability.Prometheus = true
 				createModelaResource(testModelaResource)
 
 				Eventually(getComponentReady(ctx, modelaSystemController), time.Minute*3, PollInterval).Should(BeNil())
@@ -286,11 +294,6 @@ var _ = Context("Inside the default namespace", func() {
 		})
 		When("Removing resources belonging to the Modela Operator", func() {
 			It("Should re-install the missing resources from the modela-system namespace", func() {
-				testModelaResource.Spec.CertManager.Install = true
-				testModelaResource.Spec.ObjectStore.Install = true
-				testModelaResource.Spec.Observability.Loki = true
-				testModelaResource.Spec.Observability.Grafana = true
-				testModelaResource.Spec.Observability.Prometheus = true
 				createModelaResource(testModelaResource)
 
 				By("Deleting the modela control plane")
@@ -312,6 +315,7 @@ var _ = Context("Inside the default namespace", func() {
 
 func createObject(obj client.Object) error {
 	err := k8sClient.Create(context.Background(), obj)
+	obj.SetResourceVersion("")
 	if k8serr.IsAlreadyExists(err) {
 		err = nil
 	}
@@ -410,6 +414,7 @@ func expectDeploymentTagVersion(ns, name, version string) func() bool {
 }
 
 func createModelaResource(modela *v1alpha1.Modela) {
+	_ = kube.CreateNamespace("modela-system", "modela")
 	By("Creating a new Modela resource")
 	Expect(createObject(modela)).Should(Succeed())
 

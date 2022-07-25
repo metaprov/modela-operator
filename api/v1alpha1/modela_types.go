@@ -114,7 +114,10 @@ func (u *ChartValues) DeepCopyInto(out *ChartValues) {
 type ModelaAccessSpec struct {
 	// IngressEnabled indicates if Ingress resources will be created to expose the Modela API gateway, proxy, and frontend.
 	// +kubebuilder:default:=false
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
+	// +kubebuilder:default:=false
+	// InstallNginx indicates if the NGINX Ingress Controller will be installed
+	InstallNginx *bool `json:"installNginx,omitempty"`
 	// Hostname specifies the host domain which will be used as the hostname for rules in Ingress resources managed
 	// by the Modela operator. By default, the hostname will default to a localhost alias.
 	// +kubebuilder:validation:Optional

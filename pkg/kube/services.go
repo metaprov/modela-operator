@@ -92,18 +92,18 @@ func IsStatefulSetCreatedByModela(ns string, name string) (bool, error) {
 	return false, nil
 }
 
-func GetCRDVersion(name string) string {
+func GetCRDVersion(name string) (string, error) {
 	clientSet := apiextensions.NewForConfigOrDie(ctrl.GetConfigOrDie())
 	crd, err := clientSet.ApiextensionsV1().CustomResourceDefinitions().Get(context.Background(), name, metav1.GetOptions{})
 	if err != nil {
-		return ""
+		return "", err
 	}
 	for _, version := range crd.Spec.Versions {
 		if version.Storage {
-			return version.Name
+			return version.Name, nil
 		}
 	}
-	return ""
+	return "", nil
 }
 
 func CreateNamespace(name string, operatorName string) error {

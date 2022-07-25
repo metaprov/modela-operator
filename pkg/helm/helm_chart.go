@@ -58,12 +58,10 @@ func (lb LabelPostRenderer) Run(renderedManifests *bytes.Buffer) (modifiedManife
 }
 
 type HelmChart struct {
-	RepoName        string
 	Name            string // chart name
 	Namespace       string // chart namespace
 	ReleaseName     string // release name
 	ChartVersion    string // chart version
-	RepoUrl         string // repo url
 	DryRun          bool
 	CreateNamespace bool
 	crt             *helmchart.Chart

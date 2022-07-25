@@ -61,7 +61,7 @@ func (m Grafana) Install(ctx context.Context, modela *managementv1.Modela) error
 	}
 
 	logger.Info("Applying Helm Chart", "version", m.Version)
-	return helm.InstallChart(ctx, m.Name, m.Namespace, m.ReleaseName, map[string]interface{}{})
+	return helm.InstallChart(ctx, m.Name, m.Namespace, m.ReleaseName, modela.Spec.Observability.GrafanaValues.Object)
 }
 
 func (m Grafana) Installing(ctx context.Context) (bool, error) {

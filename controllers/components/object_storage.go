@@ -5,7 +5,6 @@ import (
 	managementv1 "github.com/metaprov/modela-operator/api/v1alpha1"
 	"github.com/metaprov/modela-operator/pkg/helm"
 	"github.com/metaprov/modela-operator/pkg/kube"
-	"github.com/pkg/errors"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -67,7 +66,7 @@ func (os ObjectStorage) Install(ctx context.Context, modela *managementv1.Modela
 	}
 
 	logger.Info("Applying Helm Chart", "version", os.Version)
-	return helm.InstallChart(ctx, os.Name, os.Namespace, os.ReleaseName, map[string]interface{}{})
+	return helm.InstallChart(ctx, os.Name, os.Namespace, os.ReleaseName, modela.Spec.ObjectStore.Values.Object)
 }
 
 // Check if we are still installing the database
@@ -93,40 +92,4 @@ func (os ObjectStorage) Ready(ctx context.Context) (bool, error) {
 
 func (os ObjectStorage) Uninstall(ctx context.Context, modela *managementv1.Modela) error {
 	return helm.UninstallChart(ctx, os.Name, os.Namespace, os.ReleaseName, map[string]interface{}{})
-}
-
-func (os ObjectStorage) PostInstall() error {
-
-	values, err := kube.GetSecretValuesAsString("modela-system", "modela-storage-minio")
-
-	// build the minio url
-	accessKey, ok := values["root-user"]
-	if !ok {
-		return errors.New("key root-user is missing in the minio secret")
-	}
-	secertKey, ok := values["root-password"]
-	if !ok {
-		return errors.New("key root-password is missing in the minio secret")
-	}
-	// create a connection and update the fields.
-	connection, err := kube.GetConnection("default-tenant", "default-minio")
-	if err != nil {
-		return err
-	}
-	host := "modela-storage-minio.modela-system.svc.cluster.local:9000"
-	connection.Spec.Minio.Host = &host
-	// save the connection
-	err = kube.CreateOrUpdateConnection("default-tenant", connection.Name, connection)
-	if err != nil {
-		return err
-	}
-	defaultSecret, err := kube.GetSecret("default-tenant", "default-minio-secret")
-	if err != nil {
-		return err
-	}
-	values = make(map[string]string)
-	values["accessKey"] = accessKey
-	values["secretKey"] = secertKey
-	err = kube.CreateOrUpdateSecret(defaultSecret.Namespace, defaultSecret.Name, values)
-	return err
 }

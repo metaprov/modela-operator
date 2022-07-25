@@ -30,6 +30,13 @@ spec:
               cpu: "200m"
               memory: "512Mi"
             requests:
-              cpu: "100m"
-              memory: "256Mi"    
+              cpu: "50m"
+              memory: "128Mi"
+          volumeMounts:
+            - name: config-volume
+              mountPath: /dist/config
+      volumes:
+        - name: config-volume
+          configMap:
+            name: frontend-config
 

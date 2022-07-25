@@ -3,6 +3,7 @@ package kube
 import (
 	"encoding/base64"
 	"github.com/Masterminds/goutils"
+	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
 	"strings"
 )
@@ -198,4 +199,20 @@ func (o OwnerReferenceFilter) Filter(nodes []*yaml.RNode) ([]*yaml.RNode, error)
 			yaml.Append(ownerReference.YNode()))
 	}
 	return nodes, nil
+}
+
+type SkipCertManagerFilter struct{}
+
+func (o SkipCertManagerFilter) Filter(nodes []*yaml.RNode) ([]*yaml.RNode, error) {
+	var outNodes []*yaml.RNode
+	_, err := GetCRDVersion("issuers.cert-manager.io")
+	var certManagerMissing = k8serr.IsNotFound(err)
+	for _, node := range nodes {
+		if certManagerMissing && node.GetApiVersion() == "cert-manager.io/v1" {
+			continue
+		}
+		outNodes = append(outNodes, node)
+	}
+
+	return outNodes, nil
 }

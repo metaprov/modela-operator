@@ -74,7 +74,7 @@ func (t Tenant) Installing(ctx context.Context) (bool, error) {
 }
 
 func (t Tenant) Ready(ctx context.Context) (bool, error) {
-	if _, missing, err := kube.LoadResources(t.ManifestPath, []kio.Filter{kube.NamespaceFilter{Namespace: t.Name}}, false); missing > 0 {
+	if _, missing, err := kube.LoadResources(t.ManifestPath, []kio.Filter{kube.NamespaceFilter{Namespace: t.Name}, kube.TenantFilter{TenantName: t.Name}}, false); missing > 0 {
 		return false, managementv1.ComponentMissingResourcesError
 	} else if err != nil {
 		return false, err

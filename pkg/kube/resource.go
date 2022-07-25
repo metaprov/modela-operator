@@ -28,7 +28,7 @@ import (
 var kustomizer = krusty.MakeKustomizer(krusty.MakeDefaultOptions())
 
 func LoadResources(folder string, filters []kio.Filter, loadAll bool) ([]byte, int, error) {
-	path, _ := filepath.Abs("../manifests")
+	path, _ := filepath.Abs("./manifests")
 	resMap, err := kustomizer.Run(filesys.MakeFsOnDisk(), filepath.Join(path, folder))
 	if err != nil {
 		return nil, 0, err

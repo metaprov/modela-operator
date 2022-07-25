@@ -63,7 +63,7 @@ func (db Database) Install(ctx context.Context, modela *managementv1.Modela) err
 		return err
 	}
 
-	return helm.InstallChart(ctx, db.Name, db.Namespace, db.ReleaseName, map[string]interface{}{})
+	return helm.InstallChart(ctx, db.Name, db.Namespace, db.ReleaseName, modela.Spec.SystemDatabase.Values.Object)
 }
 
 func (db Database) Installing(ctx context.Context) (bool, error) {
