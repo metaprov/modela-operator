@@ -17,3 +17,4 @@ resources:
   - modela-prediction-router.yaml
   - modela-prediction-server.yaml  
   - modela-workload.yaml
+  - modela-publisher.yaml

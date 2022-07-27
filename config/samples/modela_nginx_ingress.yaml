@@ -1,0 +1,27 @@
+# Install Modela with all Helm Charts enabled and NGINX
+apiVersion: management.modela.ai/v1alpha1
+kind: Modela
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.org/client-max-body-size: 100m
+    nginx.ingress.kubernetes.io/proxy-body-size: 100m
+  name: modela
+  namespace: modela-system
+spec:
+  distribution: 'develop'
+  certManager:
+    install: true
+  objectStore:
+    install: true
+  observability:
+    installPrometheus: true
+    installLoki: true
+    installGrafana: true
+  tenants:
+    - name: 'modela'
+      adminPassword: 'admin'
+  ingress:
+    enabled: true
+    installNginx: true
+    hostname: 'localhost'

@@ -396,7 +396,16 @@ func (r *ModelaReconciler) reconcileIngress(ctx context.Context, modela *managem
 			logger.Error(err, "failed to create ingress")
 		}
 	} else {
-		// TODO: update hostname on change
+		if liveIngress.Spec.Rules[0].Host != frontendIngress.Spec.Rules[0].Host ||
+			liveIngress.Spec.Rules[1].Host != frontendIngress.Spec.Rules[1].Host ||
+			!reflect.DeepEqual(liveIngress.Annotations, frontendIngress.Annotations) {
+			liveIngress.Spec.Rules[0].Host = frontendIngress.Spec.Rules[0].Host
+			liveIngress.Spec.Rules[1].Host = frontendIngress.Spec.Rules[1].Host
+			liveIngress.Annotations = frontendIngress.Annotations
+			if err := r.Update(ctx, &liveIngress); err != nil {
+				logger.Error(err, "unable to update ingress")
+			}
+		}
 	}
 
 	return ctrl.Result{}, nil
@@ -519,7 +528,7 @@ func (r *ModelaReconciler) reconcileComponent(ctx context.Context, component Mod
 }
 
 func (r *ModelaReconciler) reconcileApiGateway(ctx context.Context, modela *managementv1alpha1.Modela) (ctrl.Result, error) {
-	if modela.Spec.ApiGateway.Replicas == nil || *modela.Spec.ApiGateway.Replicas <= 0 {
+	if modela.Spec.ApiGateway.Replicas == nil && modela.Spec.ApiGateway.Resources == nil {
 		return ctrl.Result{}, nil
 	}
 	var deployment appsv1.Deployment
@@ -533,11 +542,24 @@ func (r *ModelaReconciler) reconcileApiGateway(ctx context.Context, modela *mana
 		return ctrl.Result{}, err
 	}
 
-	if *deployment.Spec.Replicas != *modela.Spec.ApiGateway.Replicas {
-		deployment.Spec.Replicas = modela.Spec.ApiGateway.Replicas
-		err := r.Update(ctx, &deployment)
-		if err != nil {
-			return ctrl.Result{}, err
+	var updateDeployment bool
+	if modela.Spec.ApiGateway.Replicas != nil {
+		if *deployment.Spec.Replicas != *modela.Spec.ApiGateway.Replicas && *modela.Spec.ApiGateway.Replicas > 0 {
+			deployment.Spec.Replicas = modela.Spec.ApiGateway.Replicas
+			updateDeployment = true
+		}
+	}
+
+	if modela.Spec.ApiGateway.Resources != nil {
+		if !reflect.DeepEqual(*modela.Spec.ApiGateway.Resources, deployment.Spec.Template.Spec.Containers[0].Resources) {
+			deployment.Spec.Template.Spec.Containers[0].Resources = *modela.Spec.ApiGateway.Resources
+			updateDeployment = true
+		}
+	}
+
+	if updateDeployment {
+		if err := r.Update(ctx, &deployment); err != nil {
+			return ctrl.Result{Requeue: true}, err
 		}
 	}
 
@@ -545,7 +567,7 @@ func (r *ModelaReconciler) reconcileApiGateway(ctx context.Context, modela *mana
 }
 
 func (r *ModelaReconciler) reconcileControlPlane(ctx context.Context, modela *managementv1alpha1.Modela) (ctrl.Result, error) {
-	if modela.Spec.ControlPlane.Replicas == nil || *modela.Spec.ControlPlane.Replicas <= 0 {
+	if modela.Spec.ControlPlane.Replicas == nil && modela.Spec.ControlPlane.Resources == nil {
 		return ctrl.Result{}, nil
 	}
 	var deployment appsv1.Deployment
@@ -559,11 +581,24 @@ func (r *ModelaReconciler) reconcileControlPlane(ctx context.Context, modela *ma
 		return ctrl.Result{}, err
 	}
 
-	if *deployment.Spec.Replicas != *modela.Spec.ControlPlane.Replicas {
-		deployment.Spec.Replicas = modela.Spec.ControlPlane.Replicas
-		err := r.Update(ctx, &deployment)
-		if err != nil {
-			return ctrl.Result{}, err
+	var updateDeployment bool
+	if modela.Spec.ControlPlane.Replicas != nil {
+		if *deployment.Spec.Replicas != *modela.Spec.ControlPlane.Replicas && *modela.Spec.ControlPlane.Replicas > 0 {
+			deployment.Spec.Replicas = modela.Spec.ControlPlane.Replicas
+			updateDeployment = true
+		}
+	}
+
+	if modela.Spec.ControlPlane.Resources != nil {
+		if !reflect.DeepEqual(*modela.Spec.ControlPlane.Resources, deployment.Spec.Template.Spec.Containers[0].Resources) {
+			deployment.Spec.Template.Spec.Containers[0].Resources = *modela.Spec.ControlPlane.Resources
+			updateDeployment = true
+		}
+	}
+
+	if updateDeployment {
+		if err := r.Update(ctx, &deployment); err != nil {
+			return ctrl.Result{Requeue: true}, err
 		}
 	}
 
@@ -571,7 +606,7 @@ func (r *ModelaReconciler) reconcileControlPlane(ctx context.Context, modela *ma
 }
 
 func (r *ModelaReconciler) reconcileDataPlane(ctx context.Context, modela *managementv1alpha1.Modela) (ctrl.Result, error) {
-	if modela.Spec.DataPlane.Replicas == nil || *modela.Spec.DataPlane.Replicas <= 0 {
+	if modela.Spec.DataPlane.Replicas == nil && modela.Spec.DataPlane.Resources == nil {
 		return ctrl.Result{}, nil
 	}
 	var deployment appsv1.Deployment
@@ -585,11 +620,24 @@ func (r *ModelaReconciler) reconcileDataPlane(ctx context.Context, modela *manag
 		return ctrl.Result{}, err
 	}
 
-	if *deployment.Spec.Replicas != *modela.Spec.DataPlane.Replicas {
-		deployment.Spec.Replicas = modela.Spec.DataPlane.Replicas
-		err := r.Update(ctx, &deployment)
-		if err != nil {
-			return ctrl.Result{}, err
+	var updateDeployment bool
+	if modela.Spec.DataPlane.Replicas != nil {
+		if *deployment.Spec.Replicas != *modela.Spec.DataPlane.Replicas && *modela.Spec.DataPlane.Replicas > 0 {
+			deployment.Spec.Replicas = modela.Spec.DataPlane.Replicas
+			updateDeployment = true
+		}
+	}
+
+	if modela.Spec.DataPlane.Resources != nil {
+		if !reflect.DeepEqual(*modela.Spec.DataPlane.Resources, deployment.Spec.Template.Spec.Containers[0].Resources) {
+			deployment.Spec.Template.Spec.Containers[0].Resources = *modela.Spec.DataPlane.Resources
+			updateDeployment = true
+		}
+	}
+
+	if updateDeployment {
+		if err := r.Update(ctx, &deployment); err != nil {
+			return ctrl.Result{Requeue: true}, err
 		}
 	}
 

@@ -222,7 +222,7 @@ spec:
                 type: object
               observability:
                 description: Observability specifies the configuration to install
-                  monitoring tools (Prometheus and Loki)
+                  monitoring tools (Prometheus, Loki, Grafana)
                 properties:
                   grafanaValues:
                     description: ChartValues is the set of Helm values that is used

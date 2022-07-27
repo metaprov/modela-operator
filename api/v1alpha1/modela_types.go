@@ -256,7 +256,7 @@ type ModelaSpec struct {
 	// +kubebuilder:validation:Required
 	Distribution string `json:"distribution"`
 
-	// Observability specifies the configuration to install monitoring tools (Prometheus and Loki)
+	// Observability specifies the configuration to install monitoring tools (Prometheus, Loki, Grafana)
 	Observability ObservabilitySpec `json:"observability,omitempty"`
 
 	// Ingress specifies the configuration to install Ingress resources that will expose Modela externally

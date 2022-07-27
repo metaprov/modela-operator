@@ -11,9 +11,13 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/networking/v1"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 	"time"
@@ -317,7 +321,48 @@ var _ = Context("Inside the default namespace", func() {
 					time.Minute*3, PollInterval).Should(BeNil())
 
 			})
-			It("Should modify the number of replicas when changing the deployment specs", func() {
+			It("Should modify replicas/resources when changing the deployment specs", func() {
+				createModelaResource(testModelaResource)
+
+				Eventually(getComponentReady(ctx, modelaSystemController), time.Minute*3, PollInterval).Should(BeNil())
+
+				resources := corev1.ResourceRequirements{
+					Requests: map[corev1.ResourceName]resource.Quantity{
+						corev1.ResourceMemory: func() resource.Quantity { q, _ := resource.ParseQuantity("506Mi"); return q }(),
+						corev1.ResourceCPU:    func() resource.Quantity { q, _ := resource.ParseQuantity("213m"); return q }(),
+					},
+				}
+
+				By("Enabling ingress updating the resource")
+				Expect(updateObject(testModelaResource, func(object client.Object) error {
+					modela := object.(*v1alpha1.Modela)
+					modela.Spec.ApiGateway.Replicas = util.Int32Ptr(2)
+					modela.Spec.ApiGateway.Resources = &resources
+					modela.Spec.ControlPlane.Replicas = util.Int32Ptr(2)
+					modela.Spec.ControlPlane.Resources = &resources
+					modela.Spec.DataPlane.Replicas = util.Int32Ptr(2)
+					modela.Spec.DataPlane.Resources = &resources
+					return nil
+				})).To(Succeed())
+
+				Eventually(func() error {
+					for _, nsname := range []types.NamespacedName{
+						{Namespace: "modela-system", Name: "modela-control-plane"},
+						{Namespace: "modela-system", Name: "modela-data-plane"},
+						{Namespace: "modela-system", Name: "modela-api-gateway"},
+					} {
+						var deployment appsv1.Deployment
+						if err := k8sClient.Get(context.Background(), nsname, &deployment); err != nil {
+							return err
+						}
+
+						if *deployment.Spec.Replicas != 2 && !reflect.DeepEqual(deployment.Spec.Template.Spec.Containers[0].Resources, resources) {
+							return errors.New("mismatch")
+						}
+					}
+
+					return nil
+				}, time.Minute*3, PollInterval).Should(BeNil())
 
 			})
 		})

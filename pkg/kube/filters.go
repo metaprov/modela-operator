@@ -100,29 +100,57 @@ type TenantFilter struct {
 func (t TenantFilter) Filter(nodes []*yaml.RNode) ([]*yaml.RNode, error) {
 	for _, node := range nodes {
 		switch node.GetKind() {
+		case "DataProduct":
+			if err := node.PipeE(
+				yaml.Lookup("spec", "labName"),
+				yaml.Set(yaml.NewStringRNode(t.TenantName+"-lab"))); err != nil {
+				return nil, err
+			}
+
+			if err := node.PipeE(
+				yaml.Lookup("spec", "servingSiteName"),
+				yaml.Set(yaml.NewStringRNode(t.TenantName+"-serving-site"))); err != nil {
+				return nil, err
+			}
 		case "Lab":
-			_ = node.SetName(t.TenantName + "-lab")
+			if err := node.SetName(t.TenantName + "-lab"); err != nil {
+				return nil, err
+			}
 		case "ServingSite":
-			_ = node.SetName(t.TenantName + "-serving-site")
+			if err := node.SetName(t.TenantName + "-serving-site"); err != nil {
+				return nil, err
+			}
 		case "Tenant":
-			_ = node.SetName(t.TenantName)
-			_ = node.SetNamespace("modela-system")
+			if err := node.SetName(t.TenantName); err != nil {
+				return nil, err
+			}
+			if err := node.SetNamespace("modela-system"); err != nil {
+				return nil, err
+			}
 
-			_ = node.PipeE(
+			if err := node.PipeE(
 				yaml.Lookup("spec", "defaultLabRef", "namespace"),
-				yaml.Set(yaml.NewStringRNode(t.TenantName)))
+				yaml.Set(yaml.NewStringRNode(t.TenantName))); err != nil {
+				return nil, err
+			}
 
-			_ = node.PipeE(
+			if err := node.PipeE(
 				yaml.Lookup("spec", "defaultLabRef", "name"),
-				yaml.Set(yaml.NewStringRNode(t.TenantName+"-lab")))
+				yaml.Set(yaml.NewStringRNode(t.TenantName+"-lab"))); err != nil {
+				return nil, err
+			}
 
-			_ = node.PipeE(
+			if err := node.PipeE(
 				yaml.Lookup("spec", "defaultServingSiteRef", "namespace"),
-				yaml.Set(yaml.NewStringRNode(t.TenantName)))
+				yaml.Set(yaml.NewStringRNode(t.TenantName))); err != nil {
+				return nil, err
+			}
 
-			_ = node.PipeE(
+			if err := node.PipeE(
 				yaml.Lookup("spec", "defaultServingSiteRef", "name"),
-				yaml.Set(yaml.NewStringRNode(t.TenantName+"-serving-site")))
+				yaml.Set(yaml.NewStringRNode(t.TenantName+"-serving-site"))); err != nil {
+				return nil, err
+			}
 
 		}
 	}
