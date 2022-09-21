@@ -178,7 +178,7 @@ rules:
 - apiGroups:
   - policy
   resources:
-  - podsecuritypolicies
+  - poddisruptionbudgets
   verbs:
   - create
   - delete
@@ -217,3 +217,17 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+    - monitoring.grafana.com
+  resources:
+    - '*'
+  verbs:
+    - '*'
+- apiGroups:
+    - monitoring.coreos.com
+  resources:
+    - '*'
+  verbs:
+    - '*'
+
+

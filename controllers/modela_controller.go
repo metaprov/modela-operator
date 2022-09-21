@@ -394,6 +394,7 @@ func (r *ModelaReconciler) reconcileIngress(ctx context.Context, modela *managem
 	}, &liveIngress); err != nil {
 		if err := r.createIngress(frontendIngress, modela); err != nil {
 			logger.Error(err, "failed to create ingress")
+			return ctrl.Result{Requeue: true}, nil
 		}
 	} else {
 		if liveIngress.Spec.Rules[0].Host != frontendIngress.Spec.Rules[0].Host ||

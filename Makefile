@@ -131,15 +131,15 @@ prepare-crds:
 	git pull origin main --depth 1
 
 .PHONY: docker-prepare
-docker-prepare: prepare-crds
+docker-prepare:
 	mkdir -p ./out/config/assets/charts/
-	wget https://charts.jetstack.io/charts/cert-manager-v1.8.1.tgz -O ./cert-manager.tgz
+	wget https://charts.jetstack.io/charts/cert-manager-v1.9.1.tgz -O ./cert-manager.tgz
 	wget https://charts.bitnami.com/bitnami/minio-11.7.10.tgz -O ./minio.tgz
 	wget https://charts.bitnami.com/bitnami/postgresql-11.6.16.tgz -O ./postgres.tgz
 	wget https://github.com/prometheus-community/helm-charts/releases/download/prometheus-15.10.4/prometheus-15.10.4.tgz -O ./prometheus.tgz
-	wget https://github.com/grafana/helm-charts/releases/download/loki-2.13.1/loki-2.13.1.tgz -O ./loki.tgz
-	wget https://github.com/grafana/helm-charts/releases/download/grafana-6.32.2/grafana-6.32.2.tgz -O ./grafana.tgz
-	wget https://github.com/kubernetes/ingress-nginx/releases/download/helm-chart-4.2.0/ingress-nginx-4.2.0.tgz -O ./nginx.tgz
+	wget https://github.com/grafana/helm-charts/releases/download/helm-loki-3.0.7/loki-3.0.7.tgz -O ./loki.tgz
+	wget https://github.com/grafana/helm-charts/releases/download/grafana-6.38.4/grafana-6.38.4.tgz -O ./grafana.tgz
+	wget https://github.com/kubernetes/ingress-nginx/releases/download/helm-chart-4.2.5/ingress-nginx-4.2.5.tgz -O ./nginx.tgz
 	tar -xf ./cert-manager.tgz -C ./assets/charts/
 	tar -xf ./minio.tgz -C ./assets/charts/
 	tar -xf ./postgres.tgz -C ./assets/charts/

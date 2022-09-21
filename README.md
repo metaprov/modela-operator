@@ -37,7 +37,7 @@ kubectl create -k "https://github.com/metaprov/modela-operator/config/default"
 | modela_nginx_ingress.yaml | Install & configure NGINX (recommended)|
 
 ```sh
-kubectl create -f "https://github.com/metaprov/modela-operator/config/samples/modela_nginx_ingress.yaml" 
+kubectl create -f "https://raw.githubusercontent.com/metaprov/modela-operator/main/config/samples/modela_nginx_ingress.yaml" 
 ```
 
 ### Access Modela
