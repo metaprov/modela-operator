@@ -96,7 +96,6 @@ func ApplyYaml(yaml string) error {
 		Recorder:      genericclioptions.NoopRecorder{},
 		ToPrinter: func(string) (printers.ResourcePrinter, error) {
 			return &printers.NamePrinter{Operation: "serverside-applied"}, nil
-
 		},
 		DeleteOptions: &k8sdelete.DeleteOptions{
 			FilenameOptions: resource.FilenameOptions{

@@ -11,25 +11,25 @@ webhooks:
     sideEffects: None
     timeoutSeconds: 5
     admissionReviewVersions:
-        - v1beta1
-        - v1alpha1
+      - v1beta1
+      - v1alpha1
     rules:
-        - apiGroups:
-            - "data.modela.ai"
-          apiVersions:
-            - v1alpha1
-            - v1beta1
-          operations:
-            - CREATE
-            - UPDATE
-          resources:
-            - dataproducts
+      - apiGroups:
+          - "data.modela.ai"
+        apiVersions:
+          - v1alpha1
+          - v1beta1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - dataproducts
     clientConfig:
-        service:
-          namespace: modela-system
-          name: modela-control-plane-webhook
-          path: /validate-data-modela-ai-v1alpha1-dataproduct
-        caBundle: CERT
+      service:
+        namespace: modela-system
+        name: modela-control-plane-webhook
+        path: /validate-data-modela-ai-v1alpha1-dataproduct
+      caBundle: CERT
 
   - name: dataproductversion.data.modela.ai
     failurePolicy: Fail
@@ -156,7 +156,7 @@ webhooks:
         path: /validate-data-modela-ai-v1alpha1-entity
       caBundle: CERT
 
-  - name: feature.data.modela.ai
+  - name: featuregroup.data.modela.ai
     failurePolicy: Fail
     sideEffects: None
     timeoutSeconds: 5
@@ -178,134 +178,8 @@ webhooks:
       service:
         namespace: modela-system
         name: modela-control-plane-webhook
-        path: /validate-data-modela-ai-v1alpha1-feature
+        path: /validate-data-modela-ai-v1alpha1-featuregroup
       caBundle: CERT
-
-  - name: featurepipeline.data.modela.ai
-    sideEffects: None
-    timeoutSeconds: 5
-    failurePolicy: Fail
-    admissionReviewVersions:
-      - v1beta1
-      - v1alpha1
-    rules:
-      - apiGroups:
-          - "data.modela.ai"
-        apiVersions:
-          - v1alpha1
-          - v1beta1
-        operations:
-          - CREATE
-          - UPDATE
-        resources:
-          - featurepipelines
-    clientConfig:
-      service:
-        namespace: modela-system
-        name: modela-control-plane-webhook
-        path: /validate-data-modela-ai-v1alpha1-featurepipeline
-      caBundle: CERT
-
-  - name: featurepipelinerun.data.modela.ai
-    sideEffects: None
-    timeoutSeconds: 5
-    failurePolicy: Fail
-    admissionReviewVersions:
-      - v1beta1
-      - v1alpha1
-    rules:
-      - apiGroups:
-          - "data.modela.ai"
-        apiVersions:
-          - v1alpha1
-          - v1beta1
-        operations:
-          - CREATE
-          - UPDATE
-        resources:
-          - featurepipelineruns
-    clientConfig:
-      service:
-        namespace: modela-system
-        name: modela-control-plane-webhook
-        path: /validate-data-modela-ai-v1alpha1-featurepipelinerun
-      caBundle: CERT
-
-  - name: featureset.data.modela.ai
-    sideEffects: None
-    timeoutSeconds: 5
-    failurePolicy: Fail
-    admissionReviewVersions:
-      - v1beta1
-      - v1alpha1
-    rules:
-      - apiGroups:
-          - "data.modela.ai"
-        apiVersions:
-          - v1alpha1
-          - v1beta1
-        operations:
-          - CREATE
-          - UPDATE
-        resources:
-          - featuresets
-    clientConfig:
-      service:
-        namespace: modela-system
-        name: modela-control-plane-webhook
-        path: /validate-data-modela-ai-v1alpha1-featureset
-      caBundle: CERT
-
-  - name: labelingpipeline.data.modela.ai
-    sideEffects: None
-    timeoutSeconds: 5
-    failurePolicy: Fail
-    admissionReviewVersions:
-      - v1beta1
-      - v1alpha1
-    rules:
-      - apiGroups:
-          - "data.modela.ai"
-        apiVersions:
-          - v1alpha1
-          - v1beta1
-        operations:
-          - CREATE
-          - UPDATE
-        resources:
-          - labelingpipelines
-    clientConfig:
-      service:
-        namespace: modela-system
-        name: modela-control-plane-webhook
-        path: /validate-data-modela-ai-v1alpha1-labelingpipeline
-      caBundle: CERT
-
-  - name: labelingpipelinerun.data.modela.ai
-    sideEffects: None
-    timeoutSeconds: 5
-    failurePolicy: Fail
-    admissionReviewVersions:
-      - v1beta1
-      - v1alpha1
-    rules:
-      - apiGroups:
-          - "data.modela.ai"
-        apiVersions:
-          - v1alpha1
-          - v1beta1
-        operations:
-          - CREATE
-          - UPDATE
-        resources:
-          - labelingpipelineruns
-    clientConfig:
-      service:
-        namespace: modela-system
-        name: modela-control-plane-webhook
-        path: /validate-data-modela-ai-v1alpha1-labelingpipelineruns
-      caBundle: CERT
-
 
   - name: recipe.data.modela.ai
     sideEffects: None
@@ -356,7 +230,6 @@ webhooks:
         name: modela-control-plane-webhook
         path: /validate-data-modela-ai-v1alpha1-reciperun
       caBundle: CERT
-
 
   - name: sqlquery.data.modela.ai
     sideEffects: None
@@ -493,32 +366,6 @@ webhooks:
         path: /validate-inference-modela-ai-v1alpha1-prediction
       caBundle: CERT
 
-  - name: cronprediction.inference.modela.ai
-    sideEffects: None
-    timeoutSeconds: 5
-    failurePolicy: Fail
-    admissionReviewVersions:
-      - v1beta1
-      - v1alpha1
-    rules:
-      - apiGroups:
-          - "inference.modela.ai"
-        apiVersions:
-          - v1alpha1
-          - v1beta1
-        operations:
-          - CREATE
-          - UPDATE
-        resources:
-          - cronpredictions
-    clientConfig:
-      service:
-        namespace: modela-system
-        name: modela-control-plane-webhook
-        path: /validate-inference-modela-ai-v1alpha1-cronprediction
-      caBundle: CERT
-
-
   - name: predictor.inference.modela.ai
     sideEffects: None
     timeoutSeconds: 5
@@ -542,31 +389,6 @@ webhooks:
         namespace: modela-system
         name: modela-control-plane-webhook
         path: /validate-inference-modela-ai-v1alpha1-predictor
-      caBundle: CERT
-
-  - name: curtain.inference.modela.ai
-    sideEffects: None
-    timeoutSeconds: 5
-    failurePolicy: Fail
-    admissionReviewVersions:
-      - v1beta1
-      - v1alpha1
-    rules:
-      - apiGroups:
-          - "inference.modela.ai"
-        apiVersions:
-          - v1alpha1
-          - v1beta1
-        operations:
-          - CREATE
-          - UPDATE
-        resources:
-          - curtains
-    clientConfig:
-      service:
-        namespace: modela-system
-        name: modela-control-plane-webhook
-        path: /validate-inference-modela-ai-v1alpha1-curtain
       caBundle: CERT
 
 ---
@@ -1013,55 +835,56 @@ webhooks:
         path: /validate-training-modela-ai-v1alpha1-report
       caBundle: CERT
 
-  - name: cronreport.training.modela.ai
+  - name: modelclass.training.modela.ai
     failurePolicy: Fail
     sideEffects: None
     timeoutSeconds: 5
     admissionReviewVersions:
-        - v1beta1
-        - v1alpha1
+      - v1beta1
+      - v1alpha1
     rules:
-        - apiGroups:
-            - "training.modela.ai"
-          apiVersions:
-            - v1alpha1
-            - v1beta1
-          operations:
-            - CREATE
-            - UPDATE
-          resources:
-            - cronreports
+      - apiGroups:
+          - "training.modela.ai"
+        apiVersions:
+          - v1alpha1
+          - v1beta1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - modelclasses
     clientConfig:
-        service:
-          namespace: modela-system
-          name: modela-control-plane-webhook
-          path: /validate-training-modela-ai-v1alpha1-cronreport
-        caBundle: CERT
+      service:
+        namespace: modela-system
+        name: modela-control-plane-webhook
+        path: /validate-training-modela-ai-v1alpha1-modelclass
+      caBundle: CERT
+
 
   - name: modelautobuilder.training.modela.ai
     failurePolicy: Fail
     sideEffects: None
     timeoutSeconds: 5
     admissionReviewVersions:
-        - v1beta1
-        - v1alpha1
+      - v1beta1
+      - v1alpha1
     rules:
-        - apiGroups:
-            - "training.modela.ai"
-          apiVersions:
-            - v1alpha1
-            - v1beta1
-          operations:
-            - CREATE
-            - UPDATE
-          resources:
-            - modelautobuilders
+      - apiGroups:
+          - "training.modela.ai"
+        apiVersions:
+          - v1alpha1
+          - v1beta1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - modelautobuilders
     clientConfig:
-        service:
-          namespace: modela-system
-          name: modela-control-plane-webhook
-          path: /validate-training-modela-ai-v1alpha1-modelautobuilder
-        caBundle: CERT
+      service:
+        namespace: modela-system
+        name: modela-control-plane-webhook
+        path: /validate-training-modela-ai-v1alpha1-modelautobuilder
+      caBundle: CERT
 
 
 ---
@@ -1173,4 +996,3 @@ webhooks:
         path: /validate-team-modela-ai-v1alpha1-runbook
       caBundle: CERT
 
-  

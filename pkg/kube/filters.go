@@ -204,6 +204,23 @@ func (m MinioSecretFilter) Filter(nodes []*yaml.RNode) ([]*yaml.RNode, error) {
 	return nodes, nil
 }
 
+type RedisSecretFilter struct {
+	Password string
+}
+
+func (r RedisSecretFilter) Filter(nodes []*yaml.RNode) ([]*yaml.RNode, error) {
+	for _, node := range nodes {
+		if node.GetName() == "redis-secret" {
+			_ = node.PipeE(
+				yaml.Lookup("data", "redis-password"),
+				yaml.Set(yaml.NewStringRNode(base64.StdEncoding.EncodeToString([]byte(r.Password)))),
+			)
+		}
+	}
+
+	return nodes, nil
+}
+
 type OwnerReferenceFilter struct {
 	Owner          string
 	OwnerNamespace string

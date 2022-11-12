@@ -207,6 +207,7 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 		components.NewPrometheus(),
 		components.NewDatabase(),
 		components.NewNginx(),
+		components.NewOnlineStore(),
 		components.NewModelaSystem(modela.Spec.Distribution),
 	}
 
@@ -285,8 +286,15 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 	}
 
 	if modela.Spec.Distribution != modela.Status.InstalledVersion {
+		var err error
 		logger.Info("Applying new distribution", "version", modelaSystem.ModelaVersion)
-		if err := modelaSystem.InstallNewVersion(ctx, modela); err != nil {
+		err = modelaSystem.InstallNewVersion(ctx, modela)
+		if err != nil && modela.Spec.OnlineStore.Install {
+			onlineStore := components.NewOnlineStore()
+			err = onlineStore.InstallNewVersion(ctx, modela)
+		}
+
+		if err != nil {
 			return ctrl.Result{Requeue: true}, err
 		} else {
 			modela.Status.InstalledVersion = modela.Spec.Distribution

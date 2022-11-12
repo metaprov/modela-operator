@@ -30,6 +30,7 @@ type ModelaPhase string
 const (
 	ModelaPhaseInstallingCertManager   = "InstallingCertManager"
 	ModelaPhaseInstallingObjectStorage = "InstallingObjectStorage"
+	ModelaPhaseInstallingOnlineStore   = "InstallingOnlineStore"
 	ModelaPhaseInstallingNginx         = "InstallingNginx"
 	ModelaPhaseInstallingPrometheus    = "InstallingPrometheus"
 	ModelaPhaseInstallingGrafana       = "InstallingGrafana"
@@ -166,7 +167,7 @@ type DataPlaneSpec struct {
 }
 
 type CertManagerSpec struct {
-	// The chart version of the helm/cert-manager Helm Chart.
+	// Indicates if cert-manager should be installed.
 	// +kubebuilder:default:=true
 	// +kubebuilder:validation:Optional
 	Install bool `json:"install"`
@@ -179,6 +180,7 @@ type CertManagerSpec struct {
 }
 
 type ObjectStorageSpec struct {
+	// Indicates if Minio should be installed.
 	// +kubebuilder:default:=true
 	// +kubebuilder:validation:Optional
 	Install bool `json:"install"`
@@ -189,6 +191,18 @@ type ObjectStorageSpec struct {
 
 type SystemDatabaseSpec struct {
 	// ChartValues is the set of Helm values that is used to render the Postgres Chart.
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:Optional
+	Values ChartValues `json:"values,omitempty"`
+}
+
+type OnlineStoreSpec struct {
+	// Indicates if Redis should be installed as part of the built-in online store.
+	// +kubebuilder:default:=true
+	// +kubebuilder:validation:Optional
+	Install bool `json:"install"`
+
+	// ChartValues is the set of Helm values that is used to render the Redis Chart.
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// +kubebuilder:validation:Optional
 	Values ChartValues `json:"values,omitempty"`
@@ -280,6 +294,9 @@ type ModelaSpec struct {
 	SystemDatabase SystemDatabaseSpec `json:"systemDatabase,omitempty"`
 
 	//+kubebuilder:validation:Optional
+	OnlineStore OnlineStoreSpec `json:"onlineStore,omitempty"`
+
+	//+kubebuilder:validation:Optional
 	ControlPlane ControlPlaneSpec `json:"controlPlane,omitempty"`
 
 	//+kubebuilder:validation:Optional
@@ -322,8 +339,8 @@ type ModelaStatus struct {
 }
 
 // Modela defines the configuration of the Modela operator
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:resource:path=modelas,singular=modela,shortName="md",categories={data,modela,all}
 type Modela struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -334,7 +351,7 @@ type Modela struct {
 }
 
 // ModelaList contains a list of Modela
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 type ModelaList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
