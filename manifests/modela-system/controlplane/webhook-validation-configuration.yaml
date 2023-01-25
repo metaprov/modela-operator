@@ -173,7 +173,7 @@ webhooks:
           - CREATE
           - UPDATE
         resources:
-          - features
+          - featuregroups
     clientConfig:
       service:
         namespace: modela-system
@@ -685,105 +685,6 @@ webhooks:
         path: /validate-training-modela-ai-v1alpha1-model
       caBundle: CERT
 
-  - name: notebook.training.modela.ai
-    failurePolicy: Fail
-    sideEffects: None
-    timeoutSeconds: 5
-    admissionReviewVersions:
-      - v1beta1
-      - v1alpha1
-    rules:
-      - apiGroups:
-          - "training.modela.ai"
-        apiVersions:
-          - v1alpha1
-          - v1beta1
-        operations:
-          - CREATE
-          - UPDATE
-        resources:
-          - notebooks
-    clientConfig:
-      service:
-        namespace: modela-system
-        name: modela-control-plane-webhook
-        path: /validate-training-modela-ai-v1alpha1-notebook
-      caBundle: CERT
-
-  - name: notebookrun.training.modela.ai
-    failurePolicy: Fail
-    sideEffects: None
-    timeoutSeconds: 5
-    admissionReviewVersions:
-      - v1beta1
-      - v1alpha1
-    rules:
-      - apiGroups:
-          - "training.modela.ai"
-        apiVersions:
-          - v1alpha1
-          - v1beta1
-        operations:
-          - CREATE
-          - UPDATE
-        resources:
-          - notebookruns
-    clientConfig:
-      service:
-        namespace: modela-system
-        name: modela-control-plane-webhook
-        path: /validate-training-modela-ai-v1alpha1-notebookrun
-      caBundle: CERT
-
-  - name: modelpipeline.training.modela.ai
-    failurePolicy: Fail
-    sideEffects: None
-    timeoutSeconds: 5
-    admissionReviewVersions:
-      - v1beta1
-      - v1alpha1
-    rules:
-      - apiGroups:
-          - "training.modela.ai"
-        apiVersions:
-          - v1alpha1
-          - v1beta1
-        operations:
-          - CREATE
-          - UPDATE
-        resources:
-          - pipelines
-    clientConfig:
-      service:
-        namespace: modela-system
-        name: modela-control-plane-webhook
-        path: /validate-training-modela-ai-v1alpha1-modelpipeline
-      caBundle: CERT
-
-  - name: modelpipelinerun.training.modela.ai
-    failurePolicy: Fail
-    sideEffects: None
-    timeoutSeconds: 5
-    admissionReviewVersions:
-      - v1beta1
-      - v1alpha1
-    rules:
-      - apiGroups:
-          - "training.modela.ai"
-        apiVersions:
-          - v1alpha1
-          - v1beta1
-        operations:
-          - CREATE
-          - UPDATE
-        resources:
-          - pipelineruns
-    clientConfig:
-      service:
-        namespace: modela-system
-        name: modela-control-plane-webhook
-        path: /validate-training-modela-ai-v1alpha1-modelpipelinerun
-      caBundle: CERT
 
   - name: study.training.modela.ai
     failurePolicy: Fail

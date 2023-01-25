@@ -138,7 +138,7 @@ docker-prepare:
 	wget https://charts.bitnami.com/bitnami/postgresql-11.6.16.tgz -O ./postgres.tgz
 	wget https://github.com/prometheus-community/helm-charts/releases/download/prometheus-15.10.4/prometheus-15.10.4.tgz -O ./prometheus.tgz
 	wget https://github.com/grafana/helm-charts/releases/download/helm-loki-3.0.7/loki-3.0.7.tgz -O ./loki.tgz
-	wget https://github.com/grafana/helm-charts/releases/download/grafana-6.38.4/grafana-6.38.4.tgz -O ./grafana.tgz
+	wget https://github.com/grafana/helm-charts/releases/download/grafana-6.45.1/grafana-6.45.1.tgz -O ./grafana.tgz
 	wget https://github.com/kubernetes/ingress-nginx/releases/download/helm-chart-4.2.5/ingress-nginx-4.2.5.tgz -O ./nginx.tgz
 	wget https://charts.bitnami.com/bitnami/redis-17.3.8.tgz -O ./redis.tgz
 	tar -xf ./cert-manager.tgz -C ./assets/charts/

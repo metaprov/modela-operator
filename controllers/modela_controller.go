@@ -358,15 +358,6 @@ func (r *ModelaReconciler) reconcileIngress(ctx context.Context, modela *managem
 	dataUrl, _ := frontendConfigMap.Data["dataUrl"]
 
 	if !modela.Spec.Ingress.Enabled {
-		if apiUrl != defaultApiUrl || dataUrl != defaultDataUrl {
-			frontendConfigMap.Data["apiUrl"] = defaultApiUrl
-			frontendConfigMap.Data["dataUrl"] = defaultDataUrl
-			if err := r.updateFrontendConfig(frontendConfigMap); err != nil {
-				logger.Error(err, "error updating frontend config")
-				return ctrl.Result{Requeue: true}, nil
-			}
-		}
-
 		return ctrl.Result{}, nil
 	}
 

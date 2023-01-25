@@ -41,11 +41,11 @@ spec:
           readinessProbe:
             exec:
               command: ["/bin/grpc_health_probe", "-addr=:8080"]
-            initialDelaySeconds: 5
+            initialDelaySeconds: 60
           livenessProbe:
               exec:
                 command: ["/bin/grpc_health_probe", "-addr=:8080"]
-              initialDelaySeconds: 10              
+              initialDelaySeconds: 60
           env:
             - name: HOST
               value:  "0.0.0.0"
@@ -76,11 +76,11 @@ spec:
           readinessProbe:
             exec:
               command: ["/bin/grpc_health_probe", "-addr=:8090"]
-            initialDelaySeconds: 5
+            initialDelaySeconds: 60
           livenessProbe:
             exec:
               command: ["/bin/grpc_health_probe", "-addr=:8090"]
-            initialDelaySeconds: 10
+            initialDelaySeconds: 60
           resources:
             limits:
               cpu: "200m"

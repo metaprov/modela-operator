@@ -1,0 +1,562 @@
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+  labels:
+    app.kubernetes.io/part-of: modela
+  name: ada-boost-regressor
+  namespace: modela-catalog
+spec:
+  frameworkName: scikit-learn
+  ranges:
+  - high: 500
+    low: 50
+    name: ada_n_estimators
+    type: int
+  - high: 1.0
+    log: true
+    low: 0.01
+    name: ada_learning_rate
+    type: float
+  tasks:
+  - regression
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+  labels:
+    app.kubernetes.io/part-of: modela
+  name: decision-tree-regressor
+  namespace: modela-catalog
+spec:
+  frameworkName: scikit-learn
+  ranges:
+  - choices:
+    - mse
+    - mae
+    name: dt_criterion
+    type: categorical
+  - choices:
+    - best
+    - random
+    name: dt_splitter
+    type: categorical
+  - high: 20
+    low: 2
+    name: dt_min_samples_split
+    type: int
+  - high: 20
+    low: 1
+    name: dt_min_samples_leaf
+    type: int
+  tasks:
+  - regression
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+  labels:
+    app.kubernetes.io/part-of: modela
+  name: elasticnet-regressor
+  namespace: modela-catalog
+spec:
+  frameworkName: scikit-learn
+  ranges:
+  - high: 100.0
+    log: true
+    low: 1.0e-05
+    name: en_alpha
+    type: float
+  - high: 1
+    log: true
+    low: 0.01
+    name: en_l1_ratio
+    type: float
+  tasks:
+  - regression
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+  labels:
+    app.kubernetes.io/part-of: modela
+  name: extra-tree-regressor
+  namespace: modela-catalog
+spec:
+  frameworkName: scikit-learn
+  ranges:
+  - high: 1.0
+    log: true
+    low: 0.1
+    name: et_max_features
+    type: float
+  - high: 20
+    low: 2
+    name: et_min_samples_split
+    type: int
+  - high: 20
+    low: 1
+    name: et_min_samples_leaf
+    type: int
+  tasks:
+  - regression
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+  labels:
+    app.kubernetes.io/part-of: modela
+  name: gradient-boosting-regressor
+  namespace: modela-catalog
+spec:
+  frameworkName: scikit-learn
+  ranges:
+  - high: 0.2
+    log: true
+    low: 0.001
+    name: gb_learning_rate
+    type: float
+  - high: 200
+    low: 100
+    name: gb_n_estimators
+    type: int
+  - high: 7
+    low: 2
+    name: gb_max_leaf_nodes
+    type: int
+  - high: 9
+    low: 1
+    name: gb_min_samples_leaf
+    type: int
+  - high: 10
+    low: 1
+    name: gb_max_depth
+    type: int
+  - high: 10
+    low: 2
+    name: gb_min_samples_split
+    type: int
+  tasks:
+  - regression
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+  labels:
+    app.kubernetes.io/part-of: modela
+  name: hist-regressor
+  namespace: modela-catalog
+spec:
+  frameworkName: scikit-learn
+  ranges:
+  - high: 0.2
+    log: true
+    low: 0.001
+    name: hist_learning_rate
+    type: float
+  - high: 2000
+    low: 100
+    name: hist_max_iter
+    type: int
+  - high: 7
+    low: 2
+    name: hist_max_leaf_nodes
+    type: int
+  - high: 9
+    low: 1
+    name: hist_min_samples_leaf
+    type: int
+  tasks:
+  - regression
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+  labels:
+    app.kubernetes.io/part-of: modela
+  name: huber-regressor
+  namespace: modela-catalog
+spec:
+  frameworkName: scikit-learn
+  ranges: []
+  tasks:
+  - regression
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+  labels:
+    app.kubernetes.io/part-of: modela
+  name: knn-regressor
+  namespace: modela-catalog
+spec:
+  frameworkName: scikit-learn
+  ranges:
+  - high: 20
+    low: 1
+    name: knn_n_neighbors
+    type: int
+  - choices:
+    - uniform
+    - distance
+    name: knn_weights
+    type: categorical
+  tasks:
+  - regression
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+  labels:
+    app.kubernetes.io/part-of: modela
+  name: lasso-regressor
+  namespace: modela-catalog
+spec:
+  frameworkName: scikit-learn
+  ranges:
+  - choices:
+    - cyclic
+    - random
+    name: lasso_selection
+    type: categorical
+  tasks:
+  - regression
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+  labels:
+    app.kubernetes.io/part-of: modela
+  name: lightgbm-regressor
+  namespace: modela-catalog
+spec:
+  frameworkName: scikit-learn
+  ranges:
+  - choices:
+    - gbdt
+    - dart
+    name: lgbm_boosting_type
+    type: categorical
+  - high: 10
+    low: 1
+    name: lgbm_max_depth
+    type: int
+  - high: 1.0
+    log: true
+    low: 0.02
+    name: lgbm_learning_rate
+    type: float
+  - high: 1000
+    low: 50
+    name: lgbm_n_estimators
+    type: int
+  - high: 0.01
+    low: 0.001
+    name: lgbm_min_child_weight
+    type: float
+  - high: 30
+    low: 5
+    name: lgbm_min_child_samples
+    type: int
+  - high: 1
+    log: true
+    low: 0.01
+    name: lgbm_subsample
+    type: float
+  - high: 5
+    low: 0
+    name: lgbm_subsample_freq
+    type: int
+  - high: 1.0
+    log: true
+    low: 0.01
+    name: lgbm_colsample_bytree
+    type: float
+  - high: 1.0
+    log: true
+    low: 0.0
+    name: lgbm_reg_alpha
+    type: float
+  - high: 1.0
+    log: true
+    low: 0.0
+    name: lgbm_reg_lambda
+    type: float
+  tasks:
+  - regression
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+  labels:
+    app.kubernetes.io/part-of: modela
+  name: linear-regression
+  namespace: modela-catalog
+spec:
+  frameworkName: scikit-learn
+  ranges:
+  - choices:
+    - 'True'
+    - 'False'
+    name: lreg_fit_intercept
+    type: categorical
+  - choices:
+    - 'True'
+    - 'False'
+    name: lreg_copy_X
+    type: categorical
+  tasks:
+  - regression
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+  labels:
+    app.kubernetes.io/part-of: modela
+  name: linear-svr
+  namespace: modela-catalog
+spec:
+  frameworkName: scikit-learn
+  ranges:
+  - high: 32768
+    log: true
+    low: 0.03125
+    name: svr_C
+    type: float
+  - high: 5
+    low: 2
+    name: svr_degree
+    type: int
+  - high: 8
+    log: true
+    low: 3.0517578125e-05
+    name: svr_gamma
+    type: float
+  - high: 1
+    log: true
+    low: -1
+    name: svr_coef0
+    type: float
+  tasks:
+  - regression
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+  labels:
+    app.kubernetes.io/part-of: modela
+  name: passive-aggressive-regressor
+  namespace: modela-catalog
+spec:
+  frameworkName: scikit-learn
+  ranges:
+  - high: 10
+    log: true
+    low: 0.03125
+    name: pa_C
+    type: float
+  - choices:
+    - epsilon_insensitive
+    - squared_epsilon_insensitive
+    name: pa_loss
+    type: categorical
+  - choices:
+    - 'False'
+    - 'True'
+    name: pa_average
+    type: categorical
+  - high: 0.1
+    log: true
+    low: 1.0e-05
+    name: pa_tol
+    type: float
+  tasks:
+  - regression
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+  labels:
+    app.kubernetes.io/part-of: modela
+  name: runsac-regressor
+  namespace: modela-catalog
+spec:
+  frameworkName: scikit-learn
+  ranges: []
+  tasks:
+  - regression
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+  labels:
+    app.kubernetes.io/part-of: modela
+  name: random-forest-regressor
+  namespace: modela-catalog
+spec:
+  frameworkName: scikit-learn
+  ranges:
+  - high: 2000
+    low: 200
+    name: rf_n_estimators
+    type: int
+  - high: 20
+    low: 2
+    name: rf_min_samples_split
+    type: int
+  - high: 1.0
+    log: true
+    low: 0.1
+    name: rf_max_features
+    type: float
+  - high: 20
+    low: 1
+    name: rf_min_samples_leaf
+    type: int
+  tasks:
+  - regression
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+  labels:
+    app.kubernetes.io/part-of: modela
+  name: ridge-regressor
+  namespace: modela-catalog
+spec:
+  frameworkName: scikit-learn
+  ranges:
+  - high: 10.0
+    log: true
+    low: 1.0e-05
+    name: ridge_alpha
+    type: float
+  - high: 0.1
+    log: true
+    low: 1.0e-05
+    name: ridge_tol
+    type: float
+  tasks:
+  - regression
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+  labels:
+    app.kubernetes.io/part-of: modela
+  name: sgd-regressor
+  namespace: modela-catalog
+spec:
+  frameworkName: scikit-learn
+  ranges:
+  - high: 0.1
+    log: true
+    low: 1.0e-07
+    name: sgd_alpha
+    type: float
+  - choices:
+    - squared_loss
+    - huber
+    - epsilon_insensitive
+    - squared_epsilon_insensitive
+    name: sgd_loss
+    type: categorical
+  - choices:
+    - l1
+    - l2
+    - elasticnet
+    name: sgd_penalty
+    type: categorical
+  - choices:
+    - optimal
+    - invscaling
+    - constant
+    name: sgd_learning_rate
+    type: categorical
+  - high: 1
+    log: true
+    low: 1.0e-09
+    name: sgd_l1_ratio
+    type: float
+  - high: 0.1
+    log: true
+    low: 1.0e-07
+    name: sgd_eta0
+    type: float
+  - high: 1
+    log: true
+    low: 1.0e-05
+    name: sgd_power_t
+    type: float
+  tasks:
+  - regression
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+  labels:
+    app.kubernetes.io/part-of: modela
+  name: tailsen-regressor
+  namespace: modela-catalog
+spec:
+  frameworkName: scikit-learn
+  ranges: []
+  tasks:
+  - regression
+
+---
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+  labels:
+    app.kubernetes.io/part-of: modela
+  name: xgb-regressor
+  namespace: modela-catalog
+spec:
+  frameworkName: xgboost
+  ranges:
+  - high: 1
+    log: true
+    low: 0
+    name: xgb_learning_rate
+    type: float
+  - high: 10
+    low: 1
+    name: xgb_max_depth
+    type: int
+  - high: 1
+    log: true
+    low: 0.5
+    name: xgb_subsample
+    type: float
+  - high: 0.8
+    low: 0.3
+    name: xgb_colsample_bytree
+    type: float
+  - high: 500
+    low: 50
+    name: xgb_n_estimators
+    type: int
+  - high: 0.1
+    log: true
+    low: 1.0e-07
+    name: xgb_alpha
+    type: float
+  tasks:
+  - regression

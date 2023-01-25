@@ -81,44 +81,6 @@ spec:
                   name: controlplane-configmap
                   key: cache-path
 
-        - name: db-proxy
-          image: ghcr.io/metaprov/modela-database-proxy:develop
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 8091
-              name: http
-            - containerPort: 9090
-              name: metrics
-            - containerPort: 8008
-              name: profiling
-          resources:
-            limits:
-              cpu: "200m"
-              memory: 128Mi
-            requests:
-              cpu: "100m"
-              memory: 64Mi
-          env:
-            - name: DB_HOST
-              valueFrom:
-                configMapKeyRef:
-                  name: controlplane-configmap
-                  key: db-host
-            - name: DB_PORT
-              valueFrom:
-                configMapKeyRef:
-                  name: controlplane-configmap
-                  key: db-port
-            - name: DB_USERNAME
-              valueFrom:
-                configMapKeyRef:
-                  name: controlplane-configmap
-                  key: db-username
-            - name: DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: modela-postgresql
-                  key: postgres-password
       volumes:
         - name: data
           emptyDir: { }

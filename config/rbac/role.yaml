@@ -229,5 +229,11 @@ rules:
     - '*'
   verbs:
     - '*'
+- apiGroups:
+    - policy
+  resources:
+    - '*'
+  verbs:
+    - '*'
 
 

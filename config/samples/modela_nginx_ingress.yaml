@@ -11,17 +11,17 @@ metadata:
 spec:
   distribution: 'develop'
   certManager:
-    install: true
+    install: false
   objectStore:
     install: true
   observability:
-    installPrometheus: true
-    installLoki: true
-    installGrafana: true
+    installPrometheus: false
+    installLoki: false
+    installGrafana: false
   tenants:
     - name: 'modela'
       adminPassword: 'admin'
   ingress:
     enabled: true
-    installNginx: true
-    hostname: 'localhost'
+    installNginx: false
+    hostname: 'createblox.dev'

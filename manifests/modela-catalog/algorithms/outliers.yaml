@@ -1,0 +1,33 @@
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+  name: elliptic-envelope
+  namespace: modela-catalog
+spec:
+  tasks:
+    - outlier-detection
+  frameworkName: sklearn
+
+---
+
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+  name: one-class-svm
+  namespace: modela-catalog
+spec:
+  tasks:
+    - outlier-detection
+  frameworkName: sklearn
+
+---
+
+apiVersion: catalog.modela.ai/v1alpha1
+kind: Algorithm
+metadata:
+   name: isolation-forest
+   namespace: modela-catalog
+spec:
+   tasks:
+      - outlier-detection
+   frameworkName: sklearn

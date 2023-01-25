@@ -11,7 +11,7 @@ spec:
   objectStore:
     install: true
   observability:
-    installPrometheus: true
+    installPrometheus: false
     installLoki: false
     installGrafana: false
   tenants:

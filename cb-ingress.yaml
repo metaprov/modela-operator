@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: digitalocean-dns
+  namespace: modela-system
+type: Opaque
+data:
+  access-token: >-
+    ZG9wX3YxX2EyNTdjOTI3YTI5Yjk2ODcxYTU2ZWViYWVjNTE5MWJkY2MxMzYzZDc1MzU0ODAxYzA3N2U5MTJlMTVhZDc4MDI=
