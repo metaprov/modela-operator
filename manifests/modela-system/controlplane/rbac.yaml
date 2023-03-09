@@ -93,13 +93,7 @@ rules:
     resources:
       - "*"
     verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - patch
-      - delete
+      - '*'
   - apiGroups:
       - "extensions"
       - "networking.k8s.io"

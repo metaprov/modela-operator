@@ -28,6 +28,7 @@ import (
 type ModelaPhase string
 
 const (
+	ModelaPhaseInstallingVault         = "InstallingVault"
 	ModelaPhaseInstallingCertManager   = "InstallingCertManager"
 	ModelaPhaseInstallingObjectStorage = "InstallingObjectStorage"
 	ModelaPhaseInstallingOnlineStore   = "InstallingOnlineStore"
@@ -179,6 +180,31 @@ type CertManagerSpec struct {
 	Values ChartValues `json:"values,omitempty"`
 }
 
+type VaultSpec struct {
+	// Indicates if Vault should be installed. Enabling installation will initialize Vault on the modela-system
+	// namespace and configure it with the appropriate secret engine and policies. This option is not recommended
+	// for production environments as the root token and vault keys will be stored inside Kubernetes secrets.
+	// When installed this way, the Modela Operator will automatically unseal the Vault when necessary.
+	// +kubebuilder:default:=true
+	// +kubebuilder:validation:Optional
+	Install bool `json:"install"`
+
+	// MountPath specifies the path where secrets consumed by Modela will be stored.
+	// +kubebuilder:default:="modela/secrets"
+	MountPath string `json:"mountPath,omitempty"`
+
+	// VaultAddress specifies the address for an external Vault server. If specified, the Vault server
+	// must be configured with a KVv2 secret engine mounted at MountPath. It must also be configured to
+	// authorize the modela-operator-controller-manager ServiceAccount with read/write permissions
+	// +kubebuilder:validation:Optional
+	VaultAddress *string `json:"vaultAddress,omitempty"`
+
+	// ChartValues is the set of Helm values that are used to render the Vault Chart.
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:Optional
+	Values ChartValues `json:"values,omitempty"`
+}
+
 type ObjectStorageSpec struct {
 	// Indicates if Minio should be installed.
 	// +kubebuilder:default:=true
@@ -304,6 +330,9 @@ type ModelaSpec struct {
 
 	//+kubebuilder:validation:Optional
 	ApiGateway ApiGatewaySpec `json:"apiGateway,omitempty"`
+
+	//+kubebuilder:validation:Optional
+	Vault VaultSpec `json:"vault,omitempty"`
 }
 
 // ModelaStatus defines the observed state of Modela

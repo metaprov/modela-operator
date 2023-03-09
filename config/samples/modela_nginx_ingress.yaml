@@ -11,7 +11,7 @@ metadata:
 spec:
   distribution: 'develop'
   certManager:
-    install: false
+    install: true
   objectStore:
     install: true
   observability:
@@ -23,5 +23,5 @@ spec:
       adminPassword: 'admin'
   ingress:
     enabled: true
-    installNginx: false
-    hostname: 'createblox.dev'
+    installNginx: true
+    hostname: 'localhost'

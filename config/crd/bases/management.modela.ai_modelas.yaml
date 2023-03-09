@@ -81,7 +81,7 @@ spec:
                 properties:
                   install:
                     default: true
-                    description: The chart version of the helm/cert-manager Helm Chart.
+                    description: Indicates if cert-manager should be installed.
                     type: boolean
                   values:
                     description: ChartValues is the set of Helm values that is used
@@ -214,6 +214,7 @@ spec:
                 properties:
                   install:
                     default: true
+                    description: Indicates if Minio should be installed.
                     type: boolean
                   values:
                     description: ChartValues is the set of Helm values that is used
@@ -254,6 +255,19 @@ spec:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                 type: object
+              onlineStore:
+                properties:
+                  install:
+                    default: true
+                    description: Indicates if Redis should be installed as part of
+                      the built-in online store.
+                    type: boolean
+                  values:
+                    description: ChartValues is the set of Helm values that is used
+                      to render the Redis Chart.
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                type: object
               systemDatabase:
                 properties:
                   values:
@@ -279,6 +293,36 @@ spec:
                       type: string
                   type: object
                 type: array
+              vault:
+                properties:
+                  install:
+                    default: true
+                    description: Indicates if Vault should be installed. Enabling
+                      installation will initialize Vault on the modela-system namespace
+                      and configure it with the appropriate secret engine and policies.
+                      This option is not recommended for production environments as
+                      the root token and vault keys will be stored inside Kubernetes
+                      secrets. When installed this way, the Modela Operator will automatically
+                      unseal the Vault when necessary.
+                    type: boolean
+                  mountPath:
+                    default: modela/secrets
+                    description: MountPath specifies the path where secrets consumed
+                      by Modela will be stored.
+                    type: string
+                  values:
+                    description: ChartValues is the set of Helm values that are used
+                      to render the Vault Chart.
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                  vaultAddress:
+                    description: VaultAddress specifies the address for an external
+                      Vault server. If specified, the Vault server must be configured
+                      with a KVv2 secret engine mounted at MountPath. It must also
+                      be configured to authorize the modela-operator-controller-manager
+                      ServiceAccount with read/write permissions
+                    type: string
+                type: object
             required:
             - distribution
             type: object
