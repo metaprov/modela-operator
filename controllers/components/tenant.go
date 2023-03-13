@@ -2,7 +2,9 @@ package components
 
 import (
 	"context"
+	"fmt"
 	"github.com/metaprov/modela-operator/pkg/kube"
+	"github.com/metaprov/modela-operator/pkg/vault"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/kustomize/kyaml/kio"
@@ -47,6 +49,7 @@ func (t Tenant) Install(ctx context.Context, modela *managementv1.Modela, tenant
 		accessKey, _ = values["root-user"]
 		secretKey, _ = values["root-password"]
 	}
+
 	yaml, _, err := kube.LoadResources(t.ManifestPath, []kio.Filter{
 		kube.LabelFilter{Labels: map[string]string{"management.modela.ai/operator": modela.Name}},
 		kube.NamespaceFilter{Namespace: t.Name},
@@ -60,6 +63,17 @@ func (t Tenant) Install(ctx context.Context, modela *managementv1.Modela, tenant
 	logger.Info("Applying tenant resources", "tenant", t.Name, "length", len(yaml))
 	if err := kube.ApplyYaml(string(yaml)); err != nil {
 		return err
+	}
+
+	if values, err := kube.GetSecretValuesAsString("modela-system", "modela-storage-minio"); err == nil {
+		accessKey, _ = values["root-user"]
+		secretKey, _ = values["root-password"]
+
+		logger.Info("Applying minio secret")
+		return vault.ApplySecret(modela, fmt.Sprintf("tenant/%s/minio-secret", t.Name), map[string]interface{}{
+			"access-key": accessKey,
+			"secret-key": secretKey,
+		})
 	}
 
 	return nil

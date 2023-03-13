@@ -1,0 +1,11 @@
+apiVersion: infra.modela.ai/v1alpha1
+kind: Lab
+metadata:
+  name: default-lab
+  namespace: default-tenant
+spec:
+  owner: admin
+  tenantRef:
+    name: default-tenant
+    namespace: modela-system
+

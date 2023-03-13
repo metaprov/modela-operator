@@ -18,10 +18,11 @@ spec:
     installPrometheus: false
     installLoki: false
     installGrafana: false
+  vault:
+    install: true
+    mountPath: 'modela/secrets'
   tenants:
     - name: 'modela'
       adminPassword: 'admin'
   ingress:
     enabled: true
-    installNginx: true
-    hostname: 'localhost'

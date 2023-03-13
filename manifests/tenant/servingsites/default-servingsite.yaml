@@ -1,0 +1,15 @@
+apiVersion: infra.modela.ai/v1alpha1
+kind: ServingSite
+metadata:
+  name: default-serving-site
+  namespace: default-tenant
+spec:
+  owner: admin
+  description: test
+  tenantRef:
+    name: default-tenant
+    namespace: modela-system
+  ingress:
+    fqdn: serving.localhost
+    grpc: false  
+    rest: false  

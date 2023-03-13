@@ -208,7 +208,7 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 		components.NewDatabase(),
 		components.NewNginx(),
 		components.NewOnlineStore(),
-		components.NewModelaSystem(modela.Spec.Distribution),
+		components.NewVault(),
 	}
 
 	for _, component := range componentList {
@@ -247,7 +247,26 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 		}
 	}
 
+	vault := components.NewVault()
+	if err := vault.ConfigureVault(ctx, modela); err != nil {
+		return ctrl.Result{
+			Requeue:      true,
+			RequeueAfter: 5 * time.Second,
+		}, err
+	}
+
 	modelaSystem := components.NewModelaSystem(modela.Spec.Distribution)
+	if installed, err := modelaSystem.Installed(ctx); !installed {
+		if err := modelaSystem.Install(ctx, modela); err != nil {
+			return ctrl.Result{
+				Requeue:      true,
+				RequeueAfter: 5 * time.Second,
+			}, err
+		}
+	} else if err != nil {
+		return ctrl.Result{Requeue: true, RequeueAfter: 5 * time.Second}, err
+	}
+
 	if ready, err := modelaSystem.Ready(ctx); err != nil || !ready {
 		return ctrl.Result{
 			Requeue:      true,

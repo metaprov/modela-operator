@@ -9,4 +9,3 @@ resources:
   - ./metrics.yaml
   - ./rbac.yaml
   - ./service.yaml
-  - ./jwt-secret.yaml

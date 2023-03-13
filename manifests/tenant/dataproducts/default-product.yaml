@@ -1,0 +1,64 @@
+apiVersion: data.modela.ai/v1alpha1
+kind: DataProduct
+metadata:
+  namespace: default-tenant
+  name: default-product
+spec:
+  color: blue
+  gitLocation:
+    gitConnectionName: default-git-repository
+    url: ""
+  tenantRef:
+    name: default-tenant
+    namespace: modela-system
+  imageLocation:
+    name: metaprov/iris-product
+    registryConnectionName: default-dockerhub-connection
+  location:
+    bucketName: default-minio-bucket
+    path: modela/live/dataproducts/iris
+  servingSiteName: default-serving-site
+  labName: default-lab
+  task: binary-classification  
+  trainingResources: 
+    cpuImage:
+      name:  modela-cpu-trainer-latest
+      namespace: modela-catalog 
+    gpuImage:
+      name:  modela-gpu-trainer-latest
+      namespace: modela-catalog       
+    requirements:
+      requests:
+        memory: "512Mi"
+        cpu: "2"
+      limits:
+        memory: "1024Mi"
+        cpu: "3"     
+  servingResources: 
+    cpuImage:
+      name:  modela-cpu-trainer-latest
+      namespace: modela-catalog 
+    gpuImage:
+      name:  modela-gpu-trainer-latest
+      namespace: modela-catalog       
+    requirements:
+      requests:
+        memory: "512Mi"
+        cpu: "2"
+      limits:
+        memory: "1024Mi"
+        cpu: "3"       
+  owner: admin
+  notification:
+    errorTTL: 3600
+    notifierName: "default-slack-notifier"
+    successTTL: 3600
+  permissions:
+    stakeholders:
+      - account: admin
+        roles:
+          - name: administrator
+            namespace: default-tenant  
+
+
+

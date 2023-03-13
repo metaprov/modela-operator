@@ -1,0 +1,81 @@
+apiVersion: infra.modela.ai/v1alpha1
+kind: UserRoleClass
+metadata:
+  name: administrator
+  namespace: default-tenant
+spec:
+    rules:
+      - resource: "tenants"
+        verbs: ["*"]  
+      - resource: "accounts"
+        verbs: ["*"]  
+      - resource: "alerts"
+        verbs: ["*"]  
+      - resource: "attachments"
+        verbs: ["*"]  
+      - resource: "connections"
+        verbs: ["*"]  
+      - resource: "labs"
+        verbs: ["*"]  
+      - resource: "licenses"
+        verbs: ["*"]  
+      - resource: "modelasystems"
+        verbs: ["*"]  
+      - resource: "notifiers"
+        verbs: ["*"]  
+      - resource: "servingsites"
+        verbs: ["*"]  
+      - resource: "userroleclasses"
+        verbs: ["*"]  
+      - resource: "virtualbuckets"
+        verbs: ["*"]
+      - resource: "dataproducts"
+        verbs: ["*"]
+      - resource: "dataproductversions"
+        verbs: ["*"]  
+      - resource: "datapipelines"
+        verbs: ["*"]  
+      - resource: "datapipelineruns"
+        verbs: ["*"]    
+      - resource: "datasets"
+        verbs: ["*"]  
+      - resource: "datasources"
+        verbs: ["*"]  
+      - resource: "recipes"
+        verbs: ["*"]  
+      - resource: "reciperuns"
+        verbs: ["*"]          
+      - resource: "models"
+        verbs: ["*"]
+      - resource: "modelautobuilders"
+        verbs: ["*"]
+      - resource: "studies"
+        verbs: ["*"]        
+      - resource: "reports"
+        verbs: ["*"]        
+      - resource: "modelpipelines"
+        verbs: ["*"]  
+      - resource: "modelpipelineruns"
+        verbs: ["*"]          
+      - resource: "predictors"
+        verbs: ["*"]        
+      - resource: "predictions"
+        verbs: ["*"]        
+      - resource: "cronpredictions"
+        verbs: ["*"]        
+      - resource: "dataapps"
+        verbs: ["*"]        
+      - resource: "reviews"
+        verbs: ["*"]        
+      - resource: "todos"
+        verbs: ["*"]        
+      - resource: "meetings"
+        verbs: ["*"]        
+      - resource: "runbooks"
+        verbs: ["*"]        
+      - resource: "postmortems"
+        verbs: ["*"]        
+      - resource: "secrets"
+        verbs: ["*"]        
+      - resource: "deployments"
+        verbs: ["*"]        

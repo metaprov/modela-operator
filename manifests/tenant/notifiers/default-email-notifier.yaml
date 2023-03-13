@@ -1,0 +1,15 @@
+apiVersion: infra.modela.ai/v1alpha1
+kind: Notifier
+metadata:
+  name: default-email-notifier
+  namespace: default-tenant
+spec:
+  channels:
+    - connectionName: default-smtp-connection
+      enabled: true
+      error: true
+      info: true  
+  tenantRef:
+    name: default-tenant
+    namespace: modela-system
+  owner: admin

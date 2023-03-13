@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/Masterminds/goutils"
 	managementv1 "github.com/metaprov/modela-operator/api/v1alpha1"
 	"github.com/metaprov/modela-operator/pkg/kube"
+	"github.com/metaprov/modela-operator/pkg/vault"
 	infra "github.com/metaprov/modelaapi/pkg/apis/infra/v1alpha1"
 	"golang.org/x/mod/semver"
 	"io/ioutil"
@@ -219,7 +221,6 @@ func (ms ModelaSystem) Install(ctx context.Context, modela *managementv1.Modela)
 		kube.SkipCertManagerFilter{},
 		kube.ContainerVersionFilter{Version: ms.ModelaVersion},
 		kube.LabelFilter{Labels: map[string]string{"management.modela.ai/operator": modela.Name}},
-		kube.JwtSecretFilter{},
 		kube.OwnerReferenceFilter{Owner: modela.GetName(), OwnerNamespace: modela.GetNamespace(), UID: string(modela.GetUID())},
 	}, false)
 	if err != nil {
@@ -232,7 +233,11 @@ func (ms ModelaSystem) Install(ctx context.Context, modela *managementv1.Modela)
 	}
 
 	modela.Status.InstalledVersion = ms.ModelaVersion
-	return nil
+	token, _ := goutils.RandomAlphaNumeric(32)
+	if err != nil {
+		return err
+	}
+	return vault.ApplySecret(modela, "jwt-secret", map[string]interface{}{"token": token})
 }
 
 func (ms ModelaSystem) InstallNewVersion(ctx context.Context, modela *managementv1.Modela) error {

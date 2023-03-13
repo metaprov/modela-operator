@@ -5,6 +5,7 @@ go 1.18
 require (
 	github.com/Masterminds/goutils v1.1.1
 	github.com/hashicorp/vault/api v1.9.0
+	github.com/hashicorp/vault/api/auth/kubernetes v0.4.0
 	github.com/metaprov/modelaapi v0.4.865
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.27.1

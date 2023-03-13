@@ -12,7 +12,7 @@ import (
 
 var _ = Describe("Vault installer", func() {
 	It("Should install vault", func() {
-		vault := NewVault("", "")
+		vault := NewVault()
 		if installed, err := vault.Installed(context.Background()); err == v1alpha1.ComponentNotInstalledByModelaError || installed {
 			Skip("Test should be run on an empty cluster")
 			return
@@ -34,7 +34,7 @@ var _ = Describe("Vault installer", func() {
 		port_forward := exec.Command("kubectl", "port-forward", "-n", "modela-system", "svc/modela-vault", "8200:8200")
 		Expect(port_forward.Start()).To(Succeed())
 
-		vault := NewVault("http://localhost:8200", "")
+		vault := NewVault()
 		Expect(vault.ConfigureVault(context.Background())).To(Succeed())
 
 		_ = port_forward.Process.Kill()

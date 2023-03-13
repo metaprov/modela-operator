@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: default-minio-secret
+  namespace: default-tenant  
+type: Opaque
+stringData:
+  accessKey: 'minio'
+  secretKey: 'minio123'
+---
+
+apiVersion: infra.modela.ai/v1alpha1
+kind: Connection
+metadata:
+  name: default-minio-connection
+  namespace: default-tenant  
+spec:
+  category: cloud
+  owner: admin
+  provider: minio
+  tenantRef:
+    name: default-tenant
+    namespace: modela-system
+  secretRef : 
+     name: default-minio-secret
+     namespace: default-tenant
+  minio:
+    accessKey: admin
+    secretKey: "hidden"
+    host: modela-storage-minio.modela-system.svc.cluster.local:9000

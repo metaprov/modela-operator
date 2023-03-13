@@ -1,0 +1,13 @@
+apiVersion: infra.modela.ai/v1alpha1
+kind: VirtualBucket
+metadata:
+  name: default-minio-bucket
+  namespace: default-tenant
+spec:
+  owner: admin
+  tenantRef:
+    namespace: modela-system
+    name: default-tenant
+  connectionName: default-minio-connection
+
+

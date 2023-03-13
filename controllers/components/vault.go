@@ -6,6 +6,7 @@ import (
 	managementv1 "github.com/metaprov/modela-operator/api/v1alpha1"
 	"github.com/metaprov/modela-operator/pkg/helm"
 	"github.com/metaprov/modela-operator/pkg/kube"
+	"github.com/metaprov/modela-operator/pkg/vault"
 	"github.com/pkg/errors"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/klog/v2"
@@ -28,27 +29,14 @@ type Vault struct {
 	Name          string
 	ReleaseName   string
 	PodNamePrefix string
-
-	VaultAddress string
-	MountPath    string
 }
 
-func NewVault(address, mountPath string) *Vault {
-	if address == "" {
-		address = "modela-vault.modela-system.svc.cluster.local:8200"
-	}
-
-	if mountPath == "" {
-		mountPath = "modela/secrets"
-	}
-
+func NewVault() *Vault {
 	return &Vault{
 		Namespace:     "modela-system",
 		Name:          "vault",
 		ReleaseName:   "modela-vault",
 		PodNamePrefix: "vault-0",
-		VaultAddress:  address,
-		MountPath:     mountPath,
 	}
 }
 
@@ -94,10 +82,8 @@ func (v Vault) Install(ctx context.Context, modela *managementv1.Modela) error {
 	return helm.InstallChart(ctx, v.Name, v.Namespace, v.ReleaseName, values)
 }
 
-func (v Vault) ConfigureVault(ctx context.Context) error {
-	config := api.DefaultConfig()
-	config.Address = v.VaultAddress
-	client, err := api.NewClient(config)
+func (v Vault) ConfigureVault(ctx context.Context, modela *managementv1.Modela) error {
+	client, err := vault.GetUnauthenticatedClient(modela)
 	if err != nil {
 		return err
 	}
@@ -138,7 +124,7 @@ func (v Vault) ConfigureVault(ctx context.Context) error {
 		client.SetToken(initResponse.RootToken)
 
 		// Mount the KVv2 secret engine
-		if err := sys.Mount(v.MountPath, &api.MountInput{
+		if err := sys.Mount(modela.Spec.Vault.MountPath, &api.MountInput{
 			Type:    "kv",
 			Options: map[string]string{"version": "2"},
 		}); err != nil {
@@ -146,7 +132,7 @@ func (v Vault) ConfigureVault(ctx context.Context) error {
 		}
 
 		// Create the policy for the mount
-		var policy = fmt.Sprintf(PolicyTemplate, v.MountPath)
+		var policy = fmt.Sprintf(PolicyTemplate, modela.Spec.Vault.MountPath)
 		if err := sys.PutPolicy("modela-policy", policy); err != nil {
 			return errors.Wrap(err, "Failed to create policy")
 		}
@@ -225,9 +211,7 @@ func performAutoUnseal() {
 		return
 	}
 
-	config := api.DefaultConfig()
-	config.Address = "http://modela-vault.modela-system.svc.cluster.local:8200"
-	client, err := api.NewClient(config)
+	client, err := vault.GetUnauthenticatedClientInCluster()
 	if err != nil {
 		return
 	}
