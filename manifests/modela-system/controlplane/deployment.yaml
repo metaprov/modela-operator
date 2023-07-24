@@ -44,8 +44,8 @@ spec:
             - name: CACHE_PATH
               valueFrom:
                 configMapKeyRef:
-                  name: controlplane-configmap
-                  key: cache-path
+                  name: modela-config
+                  key: cachePath
           resources:
             requests:
               cpu: 400m
@@ -78,8 +78,8 @@ spec:
             - name: CACHE_PATH
               valueFrom:
                 configMapKeyRef:
-                  name: controlplane-configmap
-                  key: cache-path
+                  name: modela-config
+                  key: cachePath
 
       volumes:
         - name: data

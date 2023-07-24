@@ -35,7 +35,7 @@ var _ = Describe("Vault installer", func() {
 		Expect(port_forward.Start()).To(Succeed())
 
 		vault := NewVault()
-		Expect(vault.ConfigureVault(context.Background())).To(Succeed())
+		Expect(vault.ConfigureVault(context.Background(), &v1alpha1.Modela{})).To(Succeed())
 
 		_ = port_forward.Process.Kill()
 

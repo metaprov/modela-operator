@@ -17,6 +17,7 @@ spec:
       labels:
         app.kubernetes.io/name: modela-data-plane
     spec:
+      serviceAccountName: modela-data-plane
       containers:
         - name: main
           image: ghcr.io/metaprov/modela-data-plane:latest

@@ -12,6 +12,4 @@ resources:
   - ./webhook-validation-configuration.yaml
   - ./webhook-mutation-configuration.yaml
   - ./configmap.yaml
-  - ./db-secret.yaml
   - ./certificates.yaml
-  - ./modelasystem.yaml

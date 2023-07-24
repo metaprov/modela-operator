@@ -96,13 +96,14 @@ func (ms ModelaSystem) InstallCRD(ctx context.Context, modela *managementv1.Mode
 
 	// Determine the required version based on the version closest to the Modela version
 	versionData := jsonData.(map[string]interface{})
-	var finalVersion string
+
 	var versions []string
 	for version, _ := range versionData {
 		versions = append(versions, version)
 	}
 	semver.Sort(versions)
 
+	var finalVersion string
 	for _, version := range versions {
 		if semver.Compare(ms.ModelaVersion, version) >= 0 {
 			finalVersion = versionData[version].(string)
@@ -217,8 +218,16 @@ func (ms ModelaSystem) Install(ctx context.Context, modela *managementv1.Modela)
 		return err
 	}
 
+	var vaultAddress string
+	if modela.Spec.Vault.VaultAddress == nil || *modela.Spec.Vault.VaultAddress == "" {
+		vaultAddress = "http://modela-vault.modela-system.svc.cluster.local:8200"
+	} else {
+		vaultAddress = *modela.Spec.Vault.VaultAddress
+	}
+
 	yaml, _, err := kube.LoadResources(ms.SystemManifestPath, []kio.Filter{
 		kube.SkipCertManagerFilter{},
+		kube.ModelaConfigFilter{VaultAddress: vaultAddress, VaultMountPath: modela.Spec.Vault.MountPath},
 		kube.ContainerVersionFilter{Version: ms.ModelaVersion},
 		kube.LabelFilter{Labels: map[string]string{"management.modela.ai/operator": modela.Name}},
 		kube.OwnerReferenceFilter{Owner: modela.GetName(), OwnerNamespace: modela.GetNamespace(), UID: string(modela.GetUID())},

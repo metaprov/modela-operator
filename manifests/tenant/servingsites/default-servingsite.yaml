@@ -5,11 +5,10 @@ metadata:
   namespace: default-tenant
 spec:
   owner: admin
-  description: test
   tenantRef:
     name: default-tenant
     namespace: modela-system
   ingress:
     fqdn: serving.localhost
     grpc: false  
-    rest: false  
+    http: true

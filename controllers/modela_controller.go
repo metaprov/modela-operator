@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"github.com/metaprov/modela-operator/controllers/common"
 	"github.com/metaprov/modela-operator/controllers/components"
-	"github.com/metaprov/modela-operator/pkg/kube"
 	"github.com/metaprov/modelaapi/pkg/util"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -448,19 +447,23 @@ func (r *ModelaReconciler) createIngress(ingress *networkingv1.Ingress, modela *
 func (r *ModelaReconciler) reconcileTenants(ctx context.Context, modela *managementv1.Modela) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
+	var installedTenants = make(map[string]bool)
+	for _, tenant := range modela.Status.Tenants {
+		installedTenants[tenant] = true
+	}
+
 	var tenants = make(map[string]bool)
 	for _, tenantSpec := range modela.Spec.Tenants {
 		tenants[tenantSpec.Name] = true
 		tenant := components.NewTenant(tenantSpec.Name)
-		if installed, err := tenant.Installed(ctx); err != nil {
-			return ctrl.Result{}, err
+		if _, installed := installedTenants[tenantSpec.Name]; installed {
+			continue
 		} else if !installed {
 			if result, _ := r.updatePhase(ctx, modela, managementv1alpha1.ModelaPhaseInstallingTenant); result.Requeue {
 				return result, nil
 			}
 			if err := tenant.Install(ctx, modela, tenantSpec); err != nil {
 				logger.Error(err, "Failed to install tenant", "name", tenant.Name)
-				_ = kube.DeleteNamespace(tenantSpec.Name)
 				return ctrl.Result{
 					Requeue:      true,
 					RequeueAfter: 5 * time.Second,

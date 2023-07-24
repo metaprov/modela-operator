@@ -5,9 +5,6 @@ metadata:
   namespace: default-tenant
 spec:
   owner: admin
-  tenantRef:
-    namespace: modela-system
-    name: default-tenant
   connectionName: default-minio-connection
 
 

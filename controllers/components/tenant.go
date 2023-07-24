@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/metaprov/modela-operator/pkg/kube"
 	"github.com/metaprov/modela-operator/pkg/vault"
+	"golang.org/x/crypto/bcrypt"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/kustomize/kyaml/kio"
@@ -44,13 +45,31 @@ func (t Tenant) Install(ctx context.Context, modela *managementv1.Modela, tenant
 		return err
 	}
 
+	var adminPassword string
+	if tenant.AdminPassword != nil {
+		adminPassword = *tenant.AdminPassword
+	} else {
+		adminPassword = "default"
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(adminPassword), bcrypt.MinCost)
+	if err != nil {
+		return err
+	}
+
+	if err := vault.ApplySecret(modela, fmt.Sprintf("tenant/%s/accounts/admin", t.Name), map[string]interface{}{
+		"password": string(hash),
+	}); err != nil {
+		return err
+	}
+
 	var accessKey, secretKey string
 	if values, err := kube.GetSecretValuesAsString("modela-system", "modela-storage-minio"); err == nil {
 		accessKey, _ = values["root-user"]
 		secretKey, _ = values["root-password"]
 	}
 
-	yaml, _, err := kube.LoadResources(t.ManifestPath, []kio.Filter{
+	yaml, n, err := kube.LoadResources(t.ManifestPath, []kio.Filter{
 		kube.LabelFilter{Labels: map[string]string{"management.modela.ai/operator": modela.Name}},
 		kube.NamespaceFilter{Namespace: t.Name},
 		kube.TenantFilter{TenantName: t.Name},
@@ -60,9 +79,11 @@ func (t Tenant) Install(ctx context.Context, modela *managementv1.Modela, tenant
 		return err
 	}
 
-	logger.Info("Applying tenant resources", "tenant", t.Name, "length", len(yaml))
-	if err := kube.ApplyYaml(string(yaml)); err != nil {
-		return err
+	if n > 0 {
+		logger.Info("Applying tenant resources", "tenant", t.Name, "length", len(yaml))
+		if err := kube.ApplyYaml(string(yaml)); err != nil {
+			return err
+		}
 	}
 
 	if values, err := kube.GetSecretValuesAsString("modela-system", "modela-storage-minio"); err == nil {
@@ -70,10 +91,13 @@ func (t Tenant) Install(ctx context.Context, modela *managementv1.Modela, tenant
 		secretKey, _ = values["root-password"]
 
 		logger.Info("Applying minio secret")
-		return vault.ApplySecret(modela, fmt.Sprintf("tenant/%s/minio-secret", t.Name), map[string]interface{}{
-			"access-key": accessKey,
-			"secret-key": secretKey,
-		})
+		if err := vault.ApplySecret(modela, fmt.Sprintf("tenant/%s/connections/default-minio-connection", t.Name), map[string]interface{}{
+			"accessKey": accessKey,
+			"secretKey": secretKey,
+			"host":      "modela-storage-minio.modela-system.svc.cluster.local:9000",
+		}); err != nil {
+			return err
+		}
 	}
 
 	return nil

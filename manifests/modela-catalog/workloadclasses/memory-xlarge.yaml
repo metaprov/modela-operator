@@ -5,12 +5,6 @@ metadata:
   namespace: modela-catalog
 spec:
   resourcesTemplate:
-    cpuImage:
-      name:  modela-cpu-trainer-latest
-      namespace: modela-catalog 
-    gpuImage:
-      name:  modela-gpu-trainer-latest
-      namespace: modela-catalog       
     requirements:
       requests:
         memory: "2048Mi"

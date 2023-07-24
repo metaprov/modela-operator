@@ -1,19 +1,10 @@
-apiVersion: v1
-kind: Secret
-metadata:
-  name: admin
-  namespace: default-tenant
-type: Opaque
-stringData:
-  password: '$2a$14$d154O63mraxngBiKDbiUc.fZskDLOH9j1VZ9LCl9l3/4dIre/lRny'
----
-
 apiVersion: infra.modela.ai/v1alpha1
 kind: Account
 metadata:
   name: admin
   namespace: default-tenant
 spec:
+  admin: true
   tenantRef:
     name: default-tenant
     namespace: modela-system

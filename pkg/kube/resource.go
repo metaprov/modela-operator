@@ -41,25 +41,24 @@ func LoadResources(folder string, filters []kio.Filter, loadAll bool) ([]byte, i
 
 	var missing = 0
 	k8sclient, err := client.New(config.GetConfigOrDie(), client.Options{})
-	if loadAll {
-		goto skipFilter
-	}
-	for _, res := range resMap.Resources() {
-		obj := &unstructured.Unstructured{}
-		obj.SetGroupVersionKind(schema.GroupVersionKind{
-			Group:   res.GetGvk().Group,
-			Version: res.GetGvk().Version,
-			Kind:    res.GetGvk().Kind,
-		})
-		err := k8sclient.Get(context.Background(), client.ObjectKey{Namespace: res.GetNamespace(), Name: res.GetName()}, obj)
-		if err != nil {
-			missing++
-		} else {
-			_ = resMap.Remove(res.OrgId())
+
+	if !loadAll {
+		for _, res := range resMap.Resources() {
+			obj := &unstructured.Unstructured{}
+			obj.SetGroupVersionKind(schema.GroupVersionKind{
+				Group:   res.GetGvk().Group,
+				Version: res.GetGvk().Version,
+				Kind:    res.GetGvk().Kind,
+			})
+			err := k8sclient.Get(context.Background(), client.ObjectKey{Namespace: res.GetNamespace(), Name: res.GetName()}, obj)
+			if err != nil {
+				missing++
+			} else {
+				_ = resMap.Remove(res.OrgId())
+			}
 		}
 	}
 
-skipFilter:
 	if yaml, err := resMap.AsYaml(); err == nil {
 		return yaml, missing, nil
 	} else {

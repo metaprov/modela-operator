@@ -2,20 +2,21 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    app.kubernetes.io/name: modela-dataplane
+    app.kubernetes.io/name: modela-data-plane
     app.kubernetes.io/part-of: modela
-  name: modela-dataplane
+  name: modela-data-plane
 rules:
   - apiGroups: ["infra.modela.ai"]
     resources:
       - virtualbuckets
       - connections
+      - modelasystems
     verbs:
       - get
       - list
   - apiGroups: [""]
     resources:
-      - secrets
+      - configmaps
     verbs:
       - get
 ---
@@ -24,18 +25,18 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
-    app.kubernetes.io/name: modela-dataplane
+    app.kubernetes.io/name: modela-data-plane
     app.kubernetes.io/part-of: modela
-  name: modela-dataplane
+  name: modela-data-plane
   namespace: modela-system
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: modela-dataplane
+  name: modela-data-plane
 subjects:
   - kind: User
     apiGroup: rbac.authorization.k8s.io
-    name: system:serviceaccount:modela-system:modela-dataplane
+    name: system:serviceaccount:modela-system:modela-data-plane
     namespace: modela-system
 
 ---
@@ -44,7 +45,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
-    app.kubernetes.io/name: modela-dataplane
+    app.kubernetes.io/name: modela-data-plane
     app.kubernetes.io/part-of: modela
-  name: modela-dataplane
+  name: modela-data-plane
   namespace: modela-system

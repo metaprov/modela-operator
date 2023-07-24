@@ -10,12 +10,13 @@ rules:
     resources:
       - virtualbuckets
       - connections
+      - modelasystems
     verbs:
       - get
       - list
   - apiGroups: [""]
     resources:
-      - secrets
+      - configmaps
     verbs:
       - get
 ---

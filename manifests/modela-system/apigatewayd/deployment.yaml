@@ -18,7 +18,7 @@ spec:
       labels:
         app.kubernetes.io/name: modela-api-gateway
     spec:
-      serviceAccountName: modela-apigateway
+      serviceAccountName: modela-api-gateway
       containers:
         - name: main
           image: ghcr.io/metaprov/modela-api-gateway:latest
@@ -53,15 +53,6 @@ spec:
             initialDelaySeconds: 60
             periodSeconds: 10
           env:
-            - name: PRIVATE_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: modela-auth-token
-                  key: jwt-secret
-            - name: AUTH_HOST
-              value: "modela-auth"
-            - name: AUTH_PORT
-              value: "8080"
             - name: FAKE
               value: "false"
             - name: HOST
@@ -70,8 +61,6 @@ spec:
               value: "8080"
             - name: DEBUG
               value: "true"
-            - name: ENV
-              value: "dev"
             - name: CLOUDPROXY_HOST
               value: "127.0.0.1"
             - name: CLOUDPROXY_PORT
@@ -82,8 +71,6 @@ spec:
               value: modela-data-plane
             - name: DS_PORT
               value: "8080"
-
-
         - name: cloudproxy
           image: ghcr.io/metaprov/modela-cloud-proxy
           imagePullPolicy: IfNotPresent
@@ -113,22 +100,12 @@ spec:
               command: [ "/bin/grpc_health_probe", "-addr=:8090" ]
             initialDelaySeconds: 60
           env:
-            - name: GRPC_TRACE
-              value: "all"
-            - name: GRPC_VERBOSITY
-              value: "DEBUG"
-            - name: GRPC_GO_LOG_VERBOSITY_LEVEL
-              value: "99"
-            - name: GRPC_GO_LOG_SEVERITY_LEVEL
-              value: "info"
             - name: HOST
               value: "0.0.0.0"
             - name: PORT
               value: "8090"
             - name: DEBUG
               value: "false"
-            - name: ENV
-              value: "dev"
             - name: CACHE_PATH
               value: "/var/opt/modela/data"
       volumes:

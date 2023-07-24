@@ -4,16 +4,12 @@ metadata:
   name: default-tenant
   namespace: modela-system
 spec:
-  defaultLabRef:
-    name: default-lab
-    namespace: default-tenant
-  defaultServingSiteRef:
-    name: default-serving-site
-    namespace: default-tenant
+  cacheBucketName: default-minio-bucket
+  defaultLabName: default-lab
+  defaultServingSiteName: default-serving-site
+  defaultBucketName: default-minio-bucket
   permissions:
-    stakeholders:
-      - account: admin
+    accounts:
+      - accountName: admin
         roles:
           - name: administrator
-            namespace: default-tenant
-

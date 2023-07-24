@@ -70,24 +70,6 @@ func (nf NamespaceFilter) Filter(nodes []*yaml.RNode) ([]*yaml.RNode, error) {
 		_ = node.SetNamespace(nf.Namespace)
 		_ = node.PipeE(yaml.Lookup("spec", "tenantRef", "name"), yaml.Set(yaml.NewStringRNode(nf.Namespace)))
 		_ = node.PipeE(yaml.Lookup("spec", "secretRef", "namespace"), yaml.Set(yaml.NewStringRNode(nf.Namespace)))
-
-		stakeholders, err := node.Pipe(yaml.Lookup("spec", "permissions", "stakeholders"))
-		if err != nil || stakeholders == nil {
-			continue
-		}
-
-		_ = stakeholders.VisitElements(func(node *yaml.RNode) error {
-			roles, _ := node.Pipe(yaml.Lookup("roles"))
-			_ = roles.VisitElements(func(node *yaml.RNode) error {
-				err = node.PipeE(
-					yaml.Lookup("namespace"),
-					yaml.Set(yaml.NewStringRNode(nf.Namespace)))
-
-				return nil
-			})
-
-			return nil
-		})
 	}
 
 	return nodes, nil
@@ -102,13 +84,13 @@ func (t TenantFilter) Filter(nodes []*yaml.RNode) ([]*yaml.RNode, error) {
 		switch node.GetKind() {
 		case "DataProduct":
 			if err := node.PipeE(
-				yaml.Lookup("spec", "labName"),
+				yaml.Lookup("spec", "defaultLabName"),
 				yaml.Set(yaml.NewStringRNode(t.TenantName+"-lab"))); err != nil {
 				return nil, err
 			}
 
 			if err := node.PipeE(
-				yaml.Lookup("spec", "servingSiteName"),
+				yaml.Lookup("spec", "defaultServingSiteName"),
 				yaml.Set(yaml.NewStringRNode(t.TenantName+"-serving-site"))); err != nil {
 				return nil, err
 			}
@@ -129,25 +111,13 @@ func (t TenantFilter) Filter(nodes []*yaml.RNode) ([]*yaml.RNode, error) {
 			}
 
 			if err := node.PipeE(
-				yaml.Lookup("spec", "defaultLabRef", "namespace"),
-				yaml.Set(yaml.NewStringRNode(t.TenantName))); err != nil {
-				return nil, err
-			}
-
-			if err := node.PipeE(
-				yaml.Lookup("spec", "defaultLabRef", "name"),
+				yaml.Lookup("spec", "defaultLabName"),
 				yaml.Set(yaml.NewStringRNode(t.TenantName+"-lab"))); err != nil {
 				return nil, err
 			}
 
 			if err := node.PipeE(
-				yaml.Lookup("spec", "defaultServingSiteRef", "namespace"),
-				yaml.Set(yaml.NewStringRNode(t.TenantName))); err != nil {
-				return nil, err
-			}
-
-			if err := node.PipeE(
-				yaml.Lookup("spec", "defaultServingSiteRef", "name"),
+				yaml.Lookup("spec", "defaultServingSiteName"),
 				yaml.Set(yaml.NewStringRNode(t.TenantName+"-serving-site"))); err != nil {
 				return nil, err
 			}
@@ -214,6 +184,28 @@ func (r RedisSecretFilter) Filter(nodes []*yaml.RNode) ([]*yaml.RNode, error) {
 			_ = node.PipeE(
 				yaml.Lookup("data", "redis-password"),
 				yaml.Set(yaml.NewStringRNode(base64.StdEncoding.EncodeToString([]byte(r.Password)))),
+			)
+		}
+	}
+
+	return nodes, nil
+}
+
+type ModelaConfigFilter struct {
+	VaultAddress   string
+	VaultMountPath string
+}
+
+func (m ModelaConfigFilter) Filter(nodes []*yaml.RNode) ([]*yaml.RNode, error) {
+	for _, node := range nodes {
+		if node.GetName() == "modela-config" {
+			_ = node.PipeE(
+				yaml.Lookup("spec", "vaultAddress"),
+				yaml.Set(yaml.NewStringRNode(m.VaultAddress)),
+			)
+			_ = node.PipeE(
+				yaml.Lookup("spec", "vaultMountPath"),
+				yaml.Set(yaml.NewStringRNode(m.VaultMountPath)),
 			)
 		}
 	}

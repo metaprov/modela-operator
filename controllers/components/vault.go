@@ -152,8 +152,8 @@ func (v Vault) ConfigureVault(ctx context.Context, modela *managementv1.Modela) 
 		// Configure the Kubernetes auth method role
 		if _, err := c.Write("/auth/kubernetes/role/modela", map[string]interface{}{
 			"name": "modela",
-			"bound_service_account_names": []string{"lab-job-sa", "modela-apigateway", "modela-dataplane",
-				"modela-datadock", "modela-control-plane", "servingsite-job-sa", "modela-operator-controller-manager"},
+			"bound_service_account_names": []string{"lab-job-sa", "modela-api-gateway", "modela-data-plane",
+				"modela-data-dock", "modela-control-plane", "servingsite-job-sa", "modela-operator-controller-manager"},
 			"bound_service_account_namespaces": []string{"*"},
 			"policies":                         []string{"modela-policy"},
 		}); err != nil {
