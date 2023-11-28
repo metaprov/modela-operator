@@ -51,7 +51,7 @@ var _ = Context("Inside the default namespace", func() {
 				Prometheus: true,
 				Grafana:    true,
 			},
-			Ingress: v1alpha1.ModelaAccessSpec{},
+			Ingress: v1alpha1.NetworkSpec{},
 			License: v1alpha1.ModelaLicenseSpec{},
 			Tenants: nil,
 			CertManager: v1alpha1.CertManagerSpec{
@@ -60,7 +60,7 @@ var _ = Context("Inside the default namespace", func() {
 			ObjectStore: v1alpha1.ObjectStorageSpec{
 				Install: true,
 			},
-			SystemDatabase: v1alpha1.SystemDatabaseSpec{},
+			SystemDatabase: v1alpha1.DatabaseSpec{},
 			ControlPlane:   v1alpha1.ControlPlaneSpec{},
 			DataPlane:      v1alpha1.DataPlaneSpec{},
 			ApiGateway:     v1alpha1.ApiGatewaySpec{},
@@ -86,7 +86,7 @@ var _ = Context("Inside the default namespace", func() {
 					time.Second*3, PollInterval).Should(BeNil())
 
 				// Uninstall database, as it should have started installing it
-				//_ = components.NewDatabase("").Uninstall(ctx, testModelaResource)
+				//_ = components.NewPostgresDatabase("").Uninstall(ctx, testModelaResource)
 			})
 		})
 		Context("After creation", func() {
@@ -131,7 +131,7 @@ var _ = Context("Inside the default namespace", func() {
 				Eventually(getComponentInstalled(ctx, prometheusController), time.Minute*3, PollInterval).Should(BeNil())
 			})
 			It("Should install the system database", func() {
-				databaseController := components.NewDatabase()
+				databaseController := components.NewMongoDatabase()
 
 				By("Installing postgres and changing the status")
 				Eventually(getModelaStatus(ctx), TimeoutInterval, PollInterval).Should(Equal(v1alpha1.ModelaPhaseInstallingDatabase))

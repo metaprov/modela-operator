@@ -5,6 +5,6 @@ metadata:
   namespace: default-tenant
 spec:
   owner: admin
-  connectionName: default-minio-connection
+  connectionName: minio-connection
 
 

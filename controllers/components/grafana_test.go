@@ -28,7 +28,7 @@ var _ = Describe("Grafana installer", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(installed).To(BeTrue())
 
-		changeModelaOperatorLabel(false, "grafana", "grafana-stack")
+		changeDeploymentModelaOperatorLabel(false, "grafana", "grafana-stack")
 		installed, err = grafana.Installed(context.Background())
 		Expect(err).To(Equal(v1alpha1.ComponentNotInstalledByModelaError))
 

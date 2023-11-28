@@ -64,21 +64,9 @@ func BuildFrontendIngress(hostname string, modela managementv1alpha1.Modela) (*n
 									PathType: &prefixPathType,
 									Backend: networkingv1.IngressBackend{
 										Service: &networkingv1.IngressServiceBackend{
-											Name: "modela-api-proxy",
+											Name: "modela-api-gateway",
 											Port: networkingv1.ServiceBackendPort{
-												Number: 8080,
-											},
-										},
-									},
-								},
-								{
-									Path:     "/upload",
-									PathType: &prefixPathType,
-									Backend: networkingv1.IngressBackend{
-										Service: &networkingv1.IngressServiceBackend{
-											Name: "modela-data-dock",
-											Port: networkingv1.ServiceBackendPort{
-												Number: 8095,
+												Number: 8081,
 											},
 										},
 									},

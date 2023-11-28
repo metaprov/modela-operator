@@ -34,39 +34,29 @@ spec:
               mountPath: /var/opt/modela/data
           resources:
             limits:
-              cpu: "200m"
-              memory: 512Mi
+              cpu: "1000m"
+              memory: 2048Mi
             requests:
               cpu: "100m"
-              memory: 256Mi    
+              memory: 512Mi
           readinessProbe:
             exec:
               command: ["/bin/grpc_health_probe", "-addr=:8080"]
-            initialDelaySeconds: 60
+            initialDelaySeconds: 10
+            periodSeconds: 10
           livenessProbe:
-              exec:
-                command: ["/bin/grpc_health_probe", "-addr=:8080"]
-              initialDelaySeconds: 60
+            exec:
+              command: ["/bin/grpc_health_probe", "-addr=:8080"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
           env:
-            - name: HOST
-              value:  "0.0.0.0"
-            - name: PORT
-              value: "8080"
-            - name: DEBUG
-              value: "true"
-            - name: ENV
-              value:  "dev"
             - name: CACHE_PATH
-              value: "/var/opt/modela/data"
-            - name: CLOUDS_HOST
-              value: "127.0.0.1"
-            - name: CLOUDS_PORT
-              value: "8090"
-
-
-
+              valueFrom:
+                configMapKeyRef:
+                  name: modela-config
+                  key: cachePath
         - name: clouds
-          image: ghcr.io/metaprov/modela-cloud-proxy
+          image: ghcr.io/metaprov/modela-cloud-proxy:latest
           imagePullPolicy: IfNotPresent
           ports:
             - name: grpc
@@ -74,32 +64,29 @@ spec:
           volumeMounts:
               - name: data
                 mountPath: /var/opt/modela/data
+          env:
+            - name: CACHE_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: modela-config
+                  key: cachePath
           readinessProbe:
             exec:
-              command: ["/bin/grpc_health_probe", "-addr=:8090"]
-            initialDelaySeconds: 60
+              command: [ "/bin/grpc_health_probe", "-addr=:8090" ]
+            initialDelaySeconds: 5
+            periodSeconds: 10
           livenessProbe:
             exec:
-              command: ["/bin/grpc_health_probe", "-addr=:8090"]
-            initialDelaySeconds: 60
+              command: [ "/bin/grpc_health_probe", "-addr=:8090" ]
+            initialDelaySeconds: 5
+            periodSeconds: 10
           resources:
             limits:
-              cpu: "200m"
-              memory: "512Mi"
-            requests:
               cpu: "100m"
-              memory: "256Mi"  
-          env:
-            - name: HOST
-              value:  "0.0.0.0"
-            - name: PORT
-              value: "8090"
-            - name: DEBUG
-              value: "true"
-            - name: ENV
-              value:  "dev"
-            - name: CACHE_PATH
-              value: "/var/opt/modela/data"
+              memory: "128Mi"
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
       volumes:
         - name : data
           emptyDir: {}

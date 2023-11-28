@@ -28,7 +28,7 @@ var _ = Describe("Nginx installer", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(installed).To(BeTrue())
 
-		changeModelaOperatorLabel(false, "nginx", "ingress-nginx-controller")
+		changeDeploymentModelaOperatorLabel(false, "nginx", "ingress-nginx-controller")
 		installed, err = nginx.Installed(context.Background())
 		Expect(err).To(Equal(v1alpha1.ComponentNotInstalledByModelaError))
 

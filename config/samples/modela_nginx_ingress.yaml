@@ -14,15 +14,17 @@ spec:
     install: true
   objectStore:
     install: true
-  observability:
-    installPrometheus: false
-    installLoki: false
-    installGrafana: false
+  database:
+    installPgvector: false
+    installMongoDB: false
   vault:
     install: true
     mountPath: 'modela/secrets'
   tenants:
     - name: 'modela'
-      adminPassword: 'admin'
-  ingress:
-    enabled: true
+  network:
+    nginx:
+      install: true
+    ingress:
+      enabled: true
+      hostname: 'localhost'

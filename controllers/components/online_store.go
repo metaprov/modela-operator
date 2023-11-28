@@ -124,7 +124,6 @@ func (os OnlineStore) InstallNewVersion(ctx context.Context, modela *managementv
 	return nil
 }
 
-// Check if we are still installing the database
 func (os OnlineStore) Installing(ctx context.Context) (bool, error) {
 	installed, err := os.Installed(ctx)
 	if !installed {

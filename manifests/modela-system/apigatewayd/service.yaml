@@ -7,9 +7,9 @@ metadata:
   name: modela-api-gateway
 spec:
   ports:
-    - name: http
-      protocol: TCP
+    - name: grpc
       port: 8080
-      targetPort: 8080
+    - name: http
+      port: 8081
   selector:
     app.kubernetes.io/name: modela-api-gateway

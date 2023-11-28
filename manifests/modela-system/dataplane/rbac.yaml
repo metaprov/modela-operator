@@ -14,6 +14,16 @@ rules:
     verbs:
       - get
       - list
+  - apiGroups: ["data.modela.ai"]
+    resources:
+      - datasets
+    verbs:
+      - get
+  - apiGroups: ["catalog.modela.ai"]
+    resources:
+      - publicdatasets
+    verbs:
+      - get
   - apiGroups: [""]
     resources:
       - configmaps

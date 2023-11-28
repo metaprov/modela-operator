@@ -1,7 +1,19 @@
-# Install a base version of modela without any Helm Charts
 apiVersion: management.modela.ai/v1alpha1
 kind: Modela
 metadata:
-  name: modela-sample
+  name: modela
+  namespace: modela-system
 spec:
-  # TODO(user): Add fields here
+  distribution: 'develop'
+  certManager:
+    install: true
+  objectStore:
+    install: true
+  database:
+    installPgvector: false
+    installMongoDB: false
+  vault:
+    install: true
+    mountPath: 'modela/secrets'
+  tenants:
+    - name: 'modela'

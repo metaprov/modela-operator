@@ -33,46 +33,46 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/opt/modela/data
+          env:
+            - name: CACHE_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: modela-config
+                  key: cachePath
           resources:
             requests:
-              memory: "100Mi"
-              cpu: "128m"
+              memory: "128Mi"
+              cpu: "250m"
             limits:
-              memory: "200Mi"
-              cpu: "256m"
+              memory: "1024Mi"
+              cpu: "500m"
           livenessProbe:
             httpGet:
               path: /healthz
               port: 9090
-            initialDelaySeconds: 15
-            periodSeconds: 20
+            initialDelaySeconds: 5
+            periodSeconds: 5
           readinessProbe:
             httpGet:
               path: /readyz
               port: 9090
-            initialDelaySeconds: 60
-            periodSeconds: 10
-          env:
-            - name: FAKE
-              value: "false"
-            - name: HOST
-              value: "0.0.0.0"
-            - name: PORT
-              value: "8080"
-            - name: DEBUG
-              value: "true"
-            - name: CLOUDPROXY_HOST
-              value: "127.0.0.1"
-            - name: CLOUDPROXY_PORT
-              value: "8090"
-            - name: CACHE_PATH
-              value: "/var/opt/modela/data"
-            - name: DS_HOST
-              value: modela-data-plane
-            - name: DS_PORT
-              value: "8080"
-        - name: cloudproxy
-          image: ghcr.io/metaprov/modela-cloud-proxy
+            initialDelaySeconds: 5
+            periodSeconds: 5
+        - name: proxy
+          image: ghcr.io/metaprov/modela-api-proxy:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8081
+              name: http
+          resources:
+            limits:
+              cpu: "100m"
+              memory: 128Mi
+            requests:
+              cpu: "50m"
+              memory: 64Mi
+        - name: clouds
+          image: ghcr.io/metaprov/modela-cloud-proxy:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8090
@@ -84,30 +84,29 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/opt/modela/data
+          env:
+            - name: CACHE_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: modela-config
+                  key: cachePath
           resources:
             limits:
-              cpu: "200m"
-              memory: 256Mi
-            requests:
               cpu: "100m"
-              memory: 128Mi
+              memory: "128Mi"
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
           readinessProbe:
             exec:
               command: [ "/bin/grpc_health_probe", "-addr=:8090" ]
-            initialDelaySeconds: 60
+            initialDelaySeconds: 5
+            periodSeconds: 10
           livenessProbe:
             exec:
               command: [ "/bin/grpc_health_probe", "-addr=:8090" ]
-            initialDelaySeconds: 60
-          env:
-            - name: HOST
-              value: "0.0.0.0"
-            - name: PORT
-              value: "8090"
-            - name: DEBUG
-              value: "false"
-            - name: CACHE_PATH
-              value: "/var/opt/modela/data"
+            initialDelaySeconds: 5
+            periodSeconds: 10
       volumes:
         - name: data
           emptyDir: { }

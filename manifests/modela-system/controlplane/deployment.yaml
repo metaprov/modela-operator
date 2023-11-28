@@ -28,6 +28,12 @@ spec:
             - name: webhook-server-cert
               mountPath: /tmp/k8s-webhook-server/serving-certs
               readOnly: true
+          env:
+            - name: CACHE_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: modela-config
+                  key: cachePath
           ports:
             - containerPort: 8080
               name: http
@@ -40,47 +46,42 @@ spec:
               protocol: TCP
             - containerPort: 6060
               name: pprof
-          env:
-            - name: CACHE_PATH
-              valueFrom:
-                configMapKeyRef:
-                  name: modela-config
-                  key: cachePath
           resources:
+            limits:
+              cpu: "1000m"
+              memory: "1024Mi"
             requests:
-              cpu: 400m
-              memory: 1024Mi
-
-        - name: cloud-proxy
+              cpu: "200m"
+              memory: "256Mi"
+        - name: clouds
           image: ghcr.io/metaprov/modela-cloud-proxy:develop
           imagePullPolicy: IfNotPresent
           resources:
             limits:
-              cpu: "512m"
-              memory: 512Mi
+              cpu: "100m"
+              memory: "128Mi"
             requests:
-              cpu: "256m"
-              memory: 256Mi
-          ports:
-            - containerPort: 8090
-              name: http
-            - containerPort: 9090
-              name: metrics
-            - containerPort: 8008
-              name: profiling
-            - containerPort: 6060
-              name: pprof
+              cpu: "50m"
+              memory: "64Mi"
           volumeMounts:
             - name: data
               mountPath: /var/opt/modela/data
-
           env:
             - name: CACHE_PATH
               valueFrom:
                 configMapKeyRef:
                   name: modela-config
                   key: cachePath
-
+          readinessProbe:
+            exec:
+              command: [ "/bin/grpc_health_probe", "-addr=:8090" ]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: [ "/bin/grpc_health_probe", "-addr=:8090" ]
+            initialDelaySeconds: 5
+            periodSeconds: 10
       volumes:
         - name: data
           emptyDir: { }

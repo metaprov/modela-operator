@@ -32,7 +32,10 @@ func (n Nginx) GetInstallPhase() managementv1.ModelaPhase {
 }
 
 func (n Nginx) IsEnabled(modela managementv1.Modela) bool {
-	return modela.Spec.Ingress.InstallNginx
+	if modela.Spec.Network.Nginx == nil {
+		return false
+	}
+	return modela.Spec.Network.Nginx.Install
 }
 
 func (n Nginx) Installed(ctx context.Context) (bool, error) {
@@ -54,7 +57,7 @@ func (n Nginx) Install(ctx context.Context, modela *managementv1.Modela) error {
 		return err
 	}
 
-	return helm.InstallChart(ctx, n.Name, n.Namespace, n.ReleaseName, modela.Spec.Ingress.NginxValues.Object)
+	return helm.InstallChart(ctx, n.Name, n.Namespace, n.ReleaseName, modela.Spec.Network.Nginx.Values.Object)
 }
 
 // Check if we are still installing the database

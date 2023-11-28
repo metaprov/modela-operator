@@ -64,8 +64,8 @@ type HelmChart struct {
 	ChartVersion    string // chart version
 	DryRun          bool
 	CreateNamespace bool
-	crt             *helmchart.Chart
 	Values          map[string]interface{}
+	chart           *helmchart.Chart
 }
 
 func NewHelmChart(name, namespace, releaseName string, dryRun bool) *HelmChart {
@@ -97,7 +97,7 @@ func (chart *HelmChart) GetConfig() (*helmaction.Configuration, error) {
 	return actionConfig, nil
 }
 
-// Load the chart, and assign it to the crt field
+// Load the chart, and assign it to the chart field
 func (chart *HelmChart) Load(ctx context.Context) error {
 	logger := log.FromContext(ctx)
 	config, err := chart.GetConfig()
@@ -116,7 +116,7 @@ func (chart *HelmChart) Load(ctx context.Context) error {
 		logger.Error(err, "Failed to load Helm Chart")
 		return errors.Wrapf(err, "Failed to load resources from %s", name)
 	}
-	chart.crt = result
+	chart.chart = result
 	return nil
 }
 
@@ -149,7 +149,7 @@ func (chart *HelmChart) CanInstall(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	switch chart.crt.Metadata.Type {
+	switch chart.chart.Metadata.Type {
 	case "", "application":
 		return true, err
 	}
@@ -256,7 +256,7 @@ func (chart *HelmChart) Install(ctx context.Context) error {
 	inst.Replace = true
 	inst.ClientOnly = false
 
-	_, err = inst.Run(chart.crt, chart.Values)
+	_, err = inst.Run(chart.chart, chart.Values)
 	if err != nil {
 		logger.Error(err, "failed to install")
 		return fmt.Errorf("failed to run install due to %s", err)
@@ -310,7 +310,7 @@ func (chart *HelmChart) Upgrade(ctx context.Context) error {
 		inst.CreateNamespace = chart.CreateNamespace
 		inst.Version = chart.ChartVersion
 
-		_, err = inst.Run(chart.crt, chart.Values)
+		_, err = inst.Run(chart.chart, chart.Values)
 		if err != nil {
 			return fmt.Errorf("failed to run install due to %s", err)
 		}
@@ -323,7 +323,7 @@ func (chart *HelmChart) Upgrade(ctx context.Context) error {
 		inst.DryRun = chart.DryRun
 		inst.Version = chart.ChartVersion
 
-		_, err = inst.Run(chart.ReleaseName, chart.crt, chart.Values)
+		_, err = inst.Run(chart.ReleaseName, chart.chart, chart.Values)
 		if err != nil {
 			return fmt.Errorf("failed to run install due to %s", err)
 		}

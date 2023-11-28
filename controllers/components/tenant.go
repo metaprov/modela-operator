@@ -63,17 +63,14 @@ func (t Tenant) Install(ctx context.Context, modela *managementv1.Modela, tenant
 		return err
 	}
 
-	var accessKey, secretKey string
-	if values, err := kube.GetSecretValuesAsString("modela-system", "modela-storage-minio"); err == nil {
-		accessKey, _ = values["root-user"]
-		secretKey, _ = values["root-password"]
-	}
-
 	yaml, n, err := kube.LoadResources(t.ManifestPath, []kio.Filter{
 		kube.LabelFilter{Labels: map[string]string{"management.modela.ai/operator": modela.Name}},
 		kube.NamespaceFilter{Namespace: t.Name},
 		kube.TenantFilter{TenantName: t.Name},
-		kube.MinioSecretFilter{AccessKey: accessKey, SecretKey: secretKey},
+		kube.ConnectionFilter{
+			PgvectorEnabled: modela.Spec.Database.InstallPgvector,
+			MongoEnabled:    modela.Spec.Database.InstallMongoDB,
+		},
 	}, false)
 	if err != nil {
 		return err
@@ -87,14 +84,45 @@ func (t Tenant) Install(ctx context.Context, modela *managementv1.Modela, tenant
 	}
 
 	if values, err := kube.GetSecretValuesAsString("modela-system", "modela-storage-minio"); err == nil {
-		accessKey, _ = values["root-user"]
-		secretKey, _ = values["root-password"]
+		accessKey, _ := values["root-user"]
+		secretKey, _ := values["root-password"]
 
 		logger.Info("Applying minio secret")
-		if err := vault.ApplySecret(modela, fmt.Sprintf("tenant/%s/connections/default-minio-connection", t.Name), map[string]interface{}{
+		if err := vault.ApplySecret(modela, fmt.Sprintf("tenant/%s/connections/minio-connection", t.Name), map[string]interface{}{
 			"accessKey": accessKey,
 			"secretKey": secretKey,
 			"host":      "modela-storage-minio.modela-system.svc.cluster.local:9000",
+		}); err != nil {
+			return err
+		}
+	}
+
+	if values, err := kube.GetSecretValuesAsString("modela-system", "modela-postgresql"); err == nil {
+		password, _ := values["postgres-password"]
+
+		logger.Info("Applying postgres secret")
+
+		for _, conn := range []string{"postgres-connection", "postgres-vector-connection"} {
+			if err := vault.ApplySecret(modela, fmt.Sprintf("tenant/%s/connections/%s", conn), map[string]interface{}{
+				"username": "postgres",
+				"password": password,
+				"host":     "modela-postgresql.modela-system.svc.cluster.local",
+				"port":     "5432",
+			}); err != nil {
+				return err
+			}
+		}
+	}
+
+	if values, err := kube.GetSecretValuesAsString("modela-system", "modela-mongodb"); err == nil {
+		password, _ := values["mongodb-root-password"]
+
+		logger.Info("Applying mongo secret")
+		if err := vault.ApplySecret(modela, fmt.Sprintf("tenant/%s/connections/mongodb-connection", t.Name), map[string]interface{}{
+			"username": "root",
+			"password": password,
+			"host":     "modela-mongodb.modela-system.svc.cluster.local",
+			"port":     "27017",
 		}); err != nil {
 			return err
 		}

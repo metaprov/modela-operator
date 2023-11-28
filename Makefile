@@ -142,6 +142,7 @@ docker-prepare:
 	wget https://github.com/kubernetes/ingress-nginx/releases/download/helm-chart-4.2.5/ingress-nginx-4.2.5.tgz -O ./nginx.tgz
 	wget https://charts.bitnami.com/bitnami/redis-17.3.8.tgz -O ./redis.tgz
 	wget https://helm.releases.hashicorp.com/vault-0.23.0.tgz -O ./vault.tgz
+	wget https://charts.bitnami.com/bitnami/mongodb-14.0.13.tgz -O ./mongo.tgz
 	tar -xf ./cert-manager.tgz -C ./assets/charts/
 	tar -xf ./minio.tgz -C ./assets/charts/
 	tar -xf ./postgres.tgz -C ./assets/charts/
@@ -151,6 +152,7 @@ docker-prepare:
 	tar -xf ./nginx.tgz -C ./assets/charts
 	tar -xf ./redis.tgz -C ./assets/charts
 	tar -xf ./vault.tgz -C ./assets/charts
+	tar -xf ./mongo.tgz -C ./assets/charts
 
 
 .PHONY: docker-build
@@ -198,7 +200,7 @@ ENVTEST ?= $(LOCALBIN)/setup-envtest
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v3.8.7
-CONTROLLER_TOOLS_VERSION ?= v0.9.0
+CONTROLLER_TOOLS_VERSION ?= v0.13.0
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize

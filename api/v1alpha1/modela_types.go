@@ -75,7 +75,7 @@ type ModelaCondition struct {
 	LastTransitionTime *metav1.Time `json:"lastTransitionTime,omitempty"`
 	// The reason for the condition's last transition.
 	Reason string `json:"reason,omitempty"`
-	// A human readable message indicating details about the transition.
+	// A human-readable message indicating details about the transition.
 	Message string `json:"message,omitempty"`
 }
 
@@ -111,26 +111,61 @@ func (u *ChartValues) DeepCopyInto(out *ChartValues) {
 	out.Object = runtime.DeepCopyJSON(u.Object)
 }
 
-// ModelaAccessSpec defines the configuration for Modela to be exposed externally through Ingress resources.
+// IngressSpec defines the configuration for Modela to be exposed externally through Ingress resources.
 // The Kubernetes Ingress Class annotation (kubernetes.io/ingress.class) must be defined in the parent Modela resource
 // for Ingress resources to be created.
-type ModelaAccessSpec struct {
-	// IngressEnabled indicates if Ingress resources will be created to expose the Modela API gateway, proxy, and frontend.
+type IngressSpec struct {
+	// Enabled indicates if Ingress resources will be created to expose the Modela API gateway and frontend.
 	// +kubebuilder:default:=false
 	Enabled bool `json:"enabled,omitempty"`
-	// +kubebuilder:default:=false
-	// InstallNginx indicates if the NGINX Ingress Controller will be installed
-	InstallNginx bool `json:"installNginx,omitempty"`
-	// NginxValues is the set of Helm values that is used to render the Nginx Ingress Chart.
-	// Values are determined from https://artifacthub.io/packages/helm/ingress-nginx/ingress-nginx
-	// +kubebuilder:pruning:PreserveUnknownFields
-	// +kubebuilder:validation:Optional
-	NginxValues ChartValues `json:"nginxValues,omitempty"`
 	// Hostname specifies the host domain which will be used as the hostname for rules in Ingress resources managed
 	// by the Modela operator. By default, the hostname will default to a localhost alias.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:="localhost"
 	Hostname *string `json:"hostname,omitempty"`
+}
+
+// NginxSpec defines the configuration to install and configure the Nginx ingress controller
+type NginxSpec struct {
+	// Indicates if Nginx should be installed
+	// +kubebuilder:default:=true
+	// +kubebuilder:validation:Optional
+	Install bool `json:"install"`
+	// ChartValues is the set of Helm values that is used to render the Nginx Ingress Chart.
+	// Values are determined from https://artifacthub.io/packages/helm/ingress-nginx/ingress-nginx
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:Optional
+	Values ChartValues `json:"values,omitempty"`
+}
+
+// NodePortSpec defines the configuration to expose Modela through Node Port services
+type NodePortSpec struct {
+	// Indicates if Node Port services will be created
+	// +kubebuilder:default:=false
+	Enabled bool `json:"enabled,omitempty"`
+	// The port which Modela will be exposed through. The port, and the two ports above it, must be available.
+	// NodePort services will be allocated for the API Gateway, Proxy, and Frontend
+	// +kubebuilder:default:=30000
+	// +kubebuilder:validation:Minimum=30000
+	// +kubebuilder:validation:Maximum=32766
+	// +kubebuilder:validation:ExclusiveMaximum=true
+	Port int32 `json:"port,omitempty"`
+	// A map of labels that will select which Node to use when determining an external IP for the cluster.
+	// The external IP of the Node will be used to configure the frontend.
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+}
+
+// NetworkSpec defines the configuration for Modela to be exposed through Kubernetes networking features
+type NetworkSpec struct {
+	// The configuration to create NodePort services
+	// +kubebuilder:validation:Optional
+	NodePort *NodePortSpec `json:"nodePort,omitempty"`
+	// The configuration to create Ingress resources
+	// +kubebuilder:validation:Optional
+	Ingress *IngressSpec `json:"ingress,omitempty"`
+	// The configuration to install Nginx
+	// +kubebuilder:validation:Optional
+	Nginx *NginxSpec `json:"nginx,omitempty"`
 }
 
 type ApiGatewaySpec struct {
@@ -215,18 +250,35 @@ type ObjectStorageSpec struct {
 	Values ChartValues `json:"values,omitempty"`
 }
 
-type SystemDatabaseSpec struct {
+type DatabaseSpec struct {
 	// ChartValues is the set of Helm values that is used to render the Postgres Chart.
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// +kubebuilder:validation:Optional
-	Values ChartValues `json:"values,omitempty"`
+	PostgresValues ChartValues `json:"postgresValues,omitempty"`
+
+	// InstallPgvector indicates if Postgres will be installed with the pgvector vector database extension.
+	// Pgvector is required to use Postgres as a vector database with the Modela LLM RAG engine.
+	// +kubebuilder:default:=true
+	// +kubebuilder:validation:Optional
+	InstallPgvector bool `json:"installPgvector"`
+
+	// InstallMongoDB indicates if MongoDB will be installed.
+	// MongoDB is a required component of the Modela LLM RAG engine.
+	// +kubebuilder:default:=true
+	// +kubebuilder:validation:Optional
+	InstallMongoDB bool `json:"installMongoDB,omitempty"`
+
+	// ChartValues is the set of Helm values that is used to render the MongoDB Chart.
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:Optional
+	MongoDBValues ChartValues `json:"mongoDBValues,omitempty"`
 }
 
 type OnlineStoreSpec struct {
 	// Indicates if Redis should be installed as part of the built-in online store.
 	// +kubebuilder:default:=true
 	// +kubebuilder:validation:Optional
-	Install bool `json:"install"`
+	Install bool `json:"install,omitempty"`
 
 	// ChartValues is the set of Helm values that is used to render the Redis Chart.
 	// +kubebuilder:pruning:PreserveUnknownFields
@@ -236,7 +288,6 @@ type OnlineStoreSpec struct {
 
 type ObservabilitySpec struct {
 	// Prometheus indicates if the Prometheus Helm Chart will be installed
-	// +kubebuilder:default:=false
 	//+kubebuilder:validation:Optional
 	Prometheus bool `json:"installPrometheus,omitempty"`
 	// ChartValues is the set of Helm values that is used to render the Prometheus Chart.
@@ -246,7 +297,6 @@ type ObservabilitySpec struct {
 	PrometheusValues ChartValues `json:"prometheusValues,omitempty"`
 
 	// Loki indicates if the Loki Helm Chart will be installed
-	// +kubebuilder:default:=false
 	//+kubebuilder:validation:Optional
 	Loki bool `json:"installLoki,omitempty"`
 	// ChartValues is the set of Helm values that is used to render the Loki Chart.
@@ -256,7 +306,6 @@ type ObservabilitySpec struct {
 	LokiValues ChartValues `json:"lokiValues,omitempty"`
 
 	// Grafana indicates if the Grafana Helm Chart will be installed
-	// +kubebuilder:default:=false
 	//+kubebuilder:validation:Optional
 	Grafana bool `json:"installGrafana,omitempty"`
 	// ChartValues is the set of Helm values that is used to render the Grafana Chart.
@@ -298,8 +347,8 @@ type ModelaSpec struct {
 	// Observability specifies the configuration to install monitoring tools (Prometheus, Loki, Grafana)
 	Observability ObservabilitySpec `json:"observability,omitempty"`
 
-	// Ingress specifies the configuration to install Ingress resources that will expose Modela externally
-	Ingress ModelaAccessSpec `json:"ingress,omitempty"`
+	// Network specifies the configuration to make Modela accessible through networking features
+	Network NetworkSpec `json:"network,omitempty"`
 
 	// License specifies the license information
 	// that will be applied to the installation of Modela
@@ -316,7 +365,7 @@ type ModelaSpec struct {
 	ObjectStore ObjectStorageSpec `json:"objectStore,omitempty"`
 
 	//+kubebuilder:validation:Optional
-	SystemDatabase SystemDatabaseSpec `json:"systemDatabase,omitempty"`
+	Database DatabaseSpec `json:"database,omitempty"`
 
 	//+kubebuilder:validation:Optional
 	OnlineStore OnlineStoreSpec `json:"onlineStore,omitempty"`

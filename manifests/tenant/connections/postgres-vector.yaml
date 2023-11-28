@@ -1,0 +1,9 @@
+apiVersion: infra.modela.ai/v1alpha1
+kind: Connection
+metadata:
+  name: postgres-vector-connection
+  namespace: default-tenant
+spec:
+  owner: admin
+  provider: postgres
+  category: vector-database

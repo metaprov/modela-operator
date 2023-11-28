@@ -30,7 +30,7 @@ var _ = Describe("Object storage installer", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(installed).To(BeTrue())
 
-		changeModelaOperatorLabel(false, "modela-system", "modela-storage-minio")
+		changeDeploymentModelaOperatorLabel(false, "modela-system", "modela-storage-minio")
 		installed, err = objectStorage.Installed(context.Background())
 		Expect(err).To(Equal(v1alpha1.ComponentNotInstalledByModelaError))
 

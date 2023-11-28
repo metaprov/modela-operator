@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.9.0
+    controller-gen.kubebuilder.io/version: v0.13.0
   name: modelas.management.modela.ai
 spec:
   group: management.modela.ai
@@ -161,40 +161,37 @@ spec:
                         type: object
                     type: object
                 type: object
+              database:
+                properties:
+                  installMongoDB:
+                    default: true
+                    description: InstallMongoDB indicates if MongoDB will be installed.
+                      MongoDB is a required component of the Modela LLM RAG engine.
+                    type: boolean
+                  installPgvector:
+                    default: true
+                    description: InstallPgvector indicates if Postgres will be installed
+                      with the pgvector vector database extension. Pgvector is required
+                      to use Postgres as a vector database with the Modela LLM RAG
+                      engine.
+                    type: boolean
+                  mongoDBValues:
+                    description: ChartValues is the set of Helm values that is used
+                      to render the MongoDB Chart.
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                  postgresValues:
+                    description: ChartValues is the set of Helm values that is used
+                      to render the Postgres Chart.
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                type: object
               distribution:
                 default: develop
                 description: Distribution denotes the desired version of Modela. This
                   version will determine the Docker image tags for all Modela images
                   provided by Metaprov
                 type: string
-              ingress:
-                description: Ingress specifies the configuration to install Ingress
-                  resources that will expose Modela externally
-                properties:
-                  enabled:
-                    default: false
-                    description: IngressEnabled indicates if Ingress resources will
-                      be created to expose the Modela API gateway, proxy, and frontend.
-                    type: boolean
-                  hostname:
-                    default: ""
-                    description: Hostname specifies the host domain which will be
-                      used as the hostname for rules in Ingress resources managed
-                      by the Modela operator. By default, the hostname will default
-                      to a localhost alias.
-                    type: string
-                  installNginx:
-                    default: false
-                    description: InstallNginx indicates if the NGINX Ingress Controller
-                      will be installed
-                    type: boolean
-                  nginxValues:
-                    description: NginxValues is the set of Helm values that is used
-                      to render the Nginx Ingress Chart. Values are determined from
-                      https://artifacthub.io/packages/helm/ingress-nginx/ingress-nginx
-                    type: object
-                    x-kubernetes-preserve-unknown-fields: true
-                type: object
               license:
                 description: License specifies the license information that will be
                   applied to the installation of Modela
@@ -208,6 +205,67 @@ spec:
                       license. The URL which must be opened by the administrator will
                       be stored in the status of the Modela resource.
                     type: boolean
+                type: object
+              network:
+                description: Network specifies the configuration to make Modela accessible
+                  through networking features
+                properties:
+                  ingress:
+                    description: The configuration to create Ingress resources
+                    properties:
+                      enabled:
+                        default: false
+                        description: Enabled indicates if Ingress resources will be
+                          created to expose the Modela API gateway and frontend.
+                        type: boolean
+                      hostname:
+                        default: localhost
+                        description: Hostname specifies the host domain which will
+                          be used as the hostname for rules in Ingress resources managed
+                          by the Modela operator. By default, the hostname will default
+                          to a localhost alias.
+                        type: string
+                    type: object
+                  nginx:
+                    description: The configuration to install Nginx
+                    properties:
+                      install:
+                        default: true
+                        description: Indicates if Nginx should be installed
+                        type: boolean
+                      values:
+                        description: ChartValues is the set of Helm values that is
+                          used to render the Nginx Ingress Chart. Values are determined
+                          from https://artifacthub.io/packages/helm/ingress-nginx/ingress-nginx
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                    type: object
+                  nodePort:
+                    description: The configuration to create NodePort services
+                    properties:
+                      enabled:
+                        default: false
+                        description: Indicates if Node Port services will be created
+                        type: boolean
+                      nodeSelector:
+                        additionalProperties:
+                          type: string
+                        description: A map of labels that will select which Node to
+                          use when determining an external IP for the cluster. The
+                          external IP of the Node will be used to configure the frontend.
+                        type: object
+                      port:
+                        default: 30000
+                        description: The port which Modela will be exposed through.
+                          The port, and the two ports above it, must be available.
+                          NodePort services will be allocated for the API Gateway,
+                          Proxy, and Frontend
+                        exclusiveMaximum: true
+                        format: int32
+                        maximum: 32766
+                        minimum: 30000
+                        type: integer
+                    type: object
                 type: object
               objectStore:
                 properties:
@@ -230,16 +288,13 @@ spec:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                   installGrafana:
-                    default: false
                     description: Grafana indicates if the Grafana Helm Chart will
                       be installed
                     type: boolean
                   installLoki:
-                    default: false
                     description: Loki indicates if the Loki Helm Chart will be installed
                     type: boolean
                   installPrometheus:
-                    default: false
                     description: Prometheus indicates if the Prometheus Helm Chart
                       will be installed
                     type: boolean
@@ -267,14 +322,6 @@ spec:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                 type: object
-              systemDatabase:
-                properties:
-                  values:
-                    description: ChartValues is the set of Helm values that is used
-                      to render the Postgres Chart.
-                    type: object
-                    x-kubernetes-preserve-unknown-fields: true
-                type: object
               tenants:
                 description: Tenants contains the collection of tenants that will
                   be installed
@@ -283,8 +330,8 @@ spec:
                     adminPassword:
                       description: The password for the default admin account (with
                         the username "admin"). If empty, then the Modela Operator
-                        will generate a random, 16-character long password that will
-                        be logged to the output of the operator's container.
+                        will set the password to "default". Setting a secure password
+                        is highly recommended.
                       type: string
                     name:
                       description: The name of the Tenant. This will determine the
@@ -339,7 +386,7 @@ spec:
                       format: date-time
                       type: string
                     message:
-                      description: A human readable message indicating details about
+                      description: A human-readable message indicating details about
                         the transition.
                       type: string
                     reason:
@@ -358,8 +405,7 @@ spec:
                   with an error message in the case of a failure
                 type: string
               installedTenants:
-                description: InstalledTenants contains the names of all Tenants installed
-                  by the Modela resource
+                description: Tenants contains the names of installed Tenant
                 items:
                   type: string
                 type: array
@@ -409,6 +455,7 @@ spec:
                     description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                     type: string
                 type: object
+                x-kubernetes-map-type: atomic
               linkLicenseUrl:
                 description: LinkLicenseUrl contains the URL which the system administrator
                   must open in order to link their https://modela.ai account to the

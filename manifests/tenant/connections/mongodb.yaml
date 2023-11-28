@@ -1,0 +1,9 @@
+apiVersion: infra.modela.ai/v1alpha1
+kind: Connection
+metadata:
+  name: mongodb-connection
+  namespace: default-tenant
+spec:
+  category: cloud
+  owner: admin
+  provider: mongodb

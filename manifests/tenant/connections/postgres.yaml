@@ -1,7 +1,7 @@
 apiVersion: infra.modela.ai/v1alpha1
 kind: Connection
 metadata:
-  name: default-postgres-connection
+  name: postgres-connection
   namespace: default-tenant  
 spec:
   owner: admin

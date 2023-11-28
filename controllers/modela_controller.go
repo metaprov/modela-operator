@@ -204,7 +204,8 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 		components.NewLoki(),
 		components.NewGrafana(),
 		components.NewPrometheus(),
-		components.NewDatabase(),
+		components.NewPostgresDatabase(),
+		components.NewMongoDatabase(),
 		components.NewNginx(),
 		components.NewOnlineStore(),
 		components.NewVault(),
@@ -375,15 +376,15 @@ func (r *ModelaReconciler) reconcileIngress(ctx context.Context, modela *managem
 	apiUrl, _ := frontendConfigMap.Data["apiUrl"]
 	dataUrl, _ := frontendConfigMap.Data["dataUrl"]
 
-	if !modela.Spec.Ingress.Enabled {
+	if modela.Spec.Network.Ingress == nil || !modela.Spec.Network.Ingress.Enabled {
 		return ctrl.Result{}, nil
 	}
 
 	var hostname string
-	if modela.Spec.Ingress.Hostname == nil {
+	if modela.Spec.Network.Ingress.Hostname == nil {
 		hostname = "localhost"
 	} else {
-		hostname = *modela.Spec.Ingress.Hostname
+		hostname = *modela.Spec.Network.Ingress.Hostname
 	}
 
 	desiredApiUrl := fmt.Sprintf("http://modela-api.%s", hostname)

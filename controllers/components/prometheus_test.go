@@ -28,7 +28,7 @@ var _ = Describe("Prometheus installer", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(installed).To(BeTrue())
 
-		changeModelaOperatorLabel(false, "prometheus-community", "kube-prometheus-server")
+		changeDeploymentModelaOperatorLabel(false, "prometheus-community", "kube-prometheus-server")
 		installed, err = prometheus.Installed(context.Background())
 		Expect(err).To(Equal(v1alpha1.ComponentNotInstalledByModelaError))
 

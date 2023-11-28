@@ -32,8 +32,6 @@ func (r *Modela) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-// TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-
 //+kubebuilder:webhook:path=/mutate-management-modela-ai-v1alpha1-modela,mutating=true,failurePolicy=fail,sideEffects=None,groups=management.modela.ai,resources=modelas,verbs=create;update,versions=v1alpha1,name=mmodela.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &Modela{}
@@ -41,8 +39,6 @@ var _ webhook.Defaulter = &Modela{}
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (r *Modela) Default() {
 	modelalog.Info("default", "name", r.Name)
-
-	// TODO(user): fill in your defaulting logic.
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
@@ -54,22 +50,17 @@ var _ webhook.Validator = &Modela{}
 func (r *Modela) ValidateCreate() error {
 	modelalog.Info("validate create", "name", r.Name)
 
-	// TODO(user): fill in your validation logic upon object creation.
 	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Modela) ValidateUpdate(old runtime.Object) error {
+func (r *Modela) ValidateUpdate(_ runtime.Object) error {
 	modelalog.Info("validate update", "name", r.Name)
-
-	// TODO(user): fill in your validation logic upon object update.
 	return nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (r *Modela) ValidateDelete() error {
 	modelalog.Info("validate delete", "name", r.Name)
-
-	// TODO(user): fill in your validation logic upon object deletion.
 	return nil
 }

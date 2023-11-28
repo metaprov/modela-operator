@@ -7,5 +7,5 @@ data:
   release: develop
   vaultAddress: http://modela-vault.modela-system.svc.cluster.local:8200
   vaultMountPath: modela/secrets
-  imagePullPolicy: Always
+  imagePullPolicy: IfNotPresent
   cachePath: "/var/opt/modela/data"

@@ -153,27 +153,6 @@ func (j JwtSecretFilter) Filter(nodes []*yaml.RNode) ([]*yaml.RNode, error) {
 	return nodes, nil
 }
 
-type MinioSecretFilter struct {
-	AccessKey string
-	SecretKey string
-}
-
-func (m MinioSecretFilter) Filter(nodes []*yaml.RNode) ([]*yaml.RNode, error) {
-	for _, node := range nodes {
-		if node.GetName() == "default-minio-secret" {
-			_ = node.PipeE(
-				yaml.Lookup("data", "accessKey"),
-				yaml.Set(yaml.NewStringRNode(base64.StdEncoding.EncodeToString([]byte(m.AccessKey)))),
-			)
-			_ = node.PipeE(
-				yaml.Lookup("data", "secretKey"),
-				yaml.Set(yaml.NewStringRNode(base64.StdEncoding.EncodeToString([]byte(m.SecretKey)))),
-			)
-		}
-	}
-	return nodes, nil
-}
-
 type RedisSecretFilter struct {
 	Password string
 }
@@ -246,6 +225,26 @@ func (o SkipCertManagerFilter) Filter(nodes []*yaml.RNode) ([]*yaml.RNode, error
 	var certManagerMissing = k8serr.IsNotFound(err)
 	for _, node := range nodes {
 		if certManagerMissing && node.GetApiVersion() == "cert-manager.io/v1" {
+			continue
+		}
+		outNodes = append(outNodes, node)
+	}
+
+	return outNodes, nil
+}
+
+type ConnectionFilter struct {
+	PgvectorEnabled bool
+	MongoEnabled    bool
+}
+
+func (cf ConnectionFilter) Filter(nodes []*yaml.RNode) ([]*yaml.RNode, error) {
+	var outNodes []*yaml.RNode
+	for _, node := range nodes {
+		if node.GetName() == "postgres-vector-connection" && !cf.PgvectorEnabled {
+			continue
+		}
+		if node.GetName() == "mongodb-connection" && !cf.MongoEnabled {
 			continue
 		}
 		outNodes = append(outNodes, node)

@@ -1,7 +1,7 @@
 apiVersion: infra.modela.ai/v1alpha1
 kind: Connection
 metadata:
-  name: default-minio-connection
+  name: minio-connection
   namespace: default-tenant  
 spec:
   category: cloud

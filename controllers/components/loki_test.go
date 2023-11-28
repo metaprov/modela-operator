@@ -26,7 +26,7 @@ var _ = Describe("Loki installer", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(installed).To(BeTrue())
 
-			changeModelaOperatorLabel(false, "modela-system", "modela-postgresql")
+			changeDeploymentModelaOperatorLabel(false, "modela-system", "modela-postgresql")
 			installed, err = loki.Installed(context.Background())
 			Expect(err).To(Equal(controllers.ComponentNotInstalledByModelaError))
 

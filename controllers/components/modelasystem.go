@@ -56,8 +56,9 @@ func (ms ModelaSystem) Installed(ctx context.Context) (bool, error) {
 	if created, err := kube.IsNamespaceCreated("modela-system"); !created || err != nil {
 		return created, err
 	}
-	if _, missing, err := kube.LoadResources(ms.SystemManifestPath, []kio.Filter{kube.SkipCertManagerFilter{}}, false); missing > 0 {
+	if resc, missing, err := kube.LoadResources(ms.SystemManifestPath, []kio.Filter{kube.SkipCertManagerFilter{}}, false); missing > 0 {
 		log.FromContext(ctx).Info("Resources detected as missing from the modela-system namespace", "count", missing)
+		fmt.Println(string(resc))
 		return false, managementv1.ComponentMissingResourcesError
 	} else if err != nil {
 		return false, err

@@ -31,7 +31,7 @@ var _ = Describe("Cert manager installer", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(installed).To(BeTrue())
 
-		changeModelaOperatorLabel(false, "cert-manager", "cert-manager")
+		changeDeploymentModelaOperatorLabel(false, "cert-manager", "cert-manager")
 		installed, err = certmanager.Installed(context.Background())
 		Expect(err).To(Equal(v1alpha1.ComponentNotInstalledByModelaError))
 
@@ -55,7 +55,7 @@ var _ = Describe("Cert manager installer", func() {
 	})
 })
 
-func changeModelaOperatorLabel(add bool, ns string, name string) {
+func changeDeploymentModelaOperatorLabel(add bool, ns string, name string) {
 	clientSet := kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie())
 	deployment, err := clientSet.AppsV1().Deployments(ns).Get(context.Background(), name, v1.GetOptions{})
 	if err != nil {
@@ -68,5 +68,21 @@ func changeModelaOperatorLabel(add bool, ns string, name string) {
 	}
 
 	_, err = clientSet.AppsV1().Deployments(ns).Update(context.Background(), deployment, v1.UpdateOptions{})
+	return
+}
+
+func changeStatefulSetModelaOperatorLabel(add bool, ns string, name string) {
+	clientSet := kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie())
+	statefulSet, err := clientSet.AppsV1().StatefulSets(ns).Get(context.Background(), name, v1.GetOptions{})
+	if err != nil {
+		return
+	}
+	if add {
+		statefulSet.SetLabels(map[string]string{"app.kubernetes.io/created-by": "modela-operator"})
+	} else {
+		statefulSet.SetLabels(map[string]string{"app.kubernetes.io/created-by": ""})
+	}
+
+	_, err = clientSet.AppsV1().StatefulSets(ns).Update(context.Background(), statefulSet, v1.UpdateOptions{})
 	return
 }

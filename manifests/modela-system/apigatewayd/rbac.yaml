@@ -10,12 +10,7 @@ rules:
   - apiGroups:
       - catalog.modela.ai
     resources:
-      - algorithms
-      - mlframeworks
-      - workloadclasses
-      - userroleclasses
-      - publicdatasets
-      - managedimages
+      - "*"
     verbs:
       - "*"
   - apiGroups:

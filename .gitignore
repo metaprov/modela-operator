@@ -12,6 +12,8 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
+modela/**
+assets/charts/**
 ./.vscode/
 .idea/
 .DS_Store
