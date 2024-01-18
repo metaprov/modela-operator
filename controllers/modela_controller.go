@@ -207,7 +207,6 @@ func (r *ModelaReconciler) Install(ctx context.Context, modela *managementv1alph
 		components.NewPostgresDatabase(),
 		components.NewMongoDatabase(),
 		components.NewNginx(),
-		components.NewOnlineStore(),
 		components.NewVault(),
 	}
 

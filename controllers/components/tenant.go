@@ -103,7 +103,7 @@ func (t Tenant) Install(ctx context.Context, modela *managementv1.Modela, tenant
 		logger.Info("Applying postgres secret")
 
 		for _, conn := range []string{"postgres-connection", "postgres-vector-connection"} {
-			if err := vault.ApplySecret(modela, fmt.Sprintf("tenant/%s/connections/%s", conn), map[string]interface{}{
+			if err := vault.ApplySecret(modela, fmt.Sprintf("tenant/%s/connections/%s", t.Name, conn), map[string]interface{}{
 				"username": "postgres",
 				"password": password,
 				"host":     "modela-postgresql.modela-system.svc.cluster.local",
