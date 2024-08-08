@@ -1,0 +1,13 @@
+apiVersion: catalog.modela.ai/v1alpha1
+kind: ManagedImage
+metadata:
+  name: modela-llm-plane-latest
+  namespace: modela-catalog
+spec:
+  description: "Modela LLM Plane Image"
+  registry: "ghcr.io"
+  repository: "metaprov/modela-llm-plane"
+  tag: "latest"
+  role: system
+  active: true
+  maintainedBy: "Metaprov Inc"

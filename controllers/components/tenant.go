@@ -2,6 +2,8 @@ package components
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"github.com/metaprov/modela-operator/pkg/kube"
 	"github.com/metaprov/modela-operator/pkg/vault"
@@ -81,6 +83,18 @@ func (t Tenant) Install(ctx context.Context, modela *managementv1.Modela, tenant
 		if err := kube.ApplyYaml(string(yaml)); err != nil {
 			return err
 		}
+	}
+
+	key := make([]byte, 32)
+	_, err = rand.Read(key)
+	if err != nil {
+		return err
+	}
+
+	if err := vault.ApplySecret(modela, fmt.Sprintf("tenant/%s/api-key-secret", t.Name), map[string]interface{}{
+		"secret": hex.EncodeToString(key),
+	}); err != nil {
+		return err
 	}
 
 	if values, err := kube.GetSecretValuesAsString("modela-system", "modela-storage-minio"); err == nil {

@@ -10,7 +10,6 @@ resources:
   - modela-api-proxy.yaml  
   - modela-control-plane.yaml
   - modela-dashboard-server.yaml
-  - modela-data-dock.yaml
   - modela-data-plane.yaml
   - modela-database-proxy.yaml
   - modela-frontend.yaml
@@ -18,3 +17,4 @@ resources:
   - modela-prediction-server.yaml  
   - modela-workload.yaml
   - modela-publisher.yaml
+  - modela-llm-plane.yaml
